@@ -29,7 +29,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Overheard {__version__} on http://{host}:{port}  (LLM mode: {settings.llm_mode})")
         uvicorn.run(create_app(settings), host=host, port=port, log_level="warning")
         return 0
-    if args.command in ("seed", "record", "batch-label"):
+    if args.command == "seed":
+        from overheard.config import Settings
+        from overheard.data.generator import seed
+
+        settings = Settings()
+        counts = seed(settings.db_path, settings.seed)
+        print(f"seeded {settings.db_path} (seed {settings.seed}): " + ", ".join(f"{v:,} {k}" for k, v in counts.items()))
+        return 0
+    if args.command in ("record", "batch-label"):
         print(f"overheard {args.command}: not built yet (this is an early release)", file=sys.stderr)
         return 2
     parser.print_help()

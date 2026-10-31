@@ -1,0 +1,50 @@
+"""The archive's call drivers: what people call about, how often, how long it takes, and how they say it.
+(id, team, contacts per week at baseline, handling minutes, share resolved, ways people put it)"""
+
+DRIVERS: list[tuple[str, str, float, float, float, list[str]]] = [
+    ("payment-status", "payments", 9.0, 4.0, 0.95, ["When will my {month} payment arrive?", "I haven't seen my payment yet this month.", "Was my payment sent?"]),
+    ("payment-date-shift", "payments", 0.6, 4.5, 0.93, ["My payment always comes on the third and it didn't come.", "Why did my payment date change?"]),
+    ("returned-deposit", "payments", 1.2, 7.5, 0.85, ["My bank says the deposit came back.", "I changed banks and my payment didn't arrive."]),
+    ("overpayment-notice", "payments", 2.0, 9.0, 0.70, ["I got a letter saying I was overpaid {amount}.", "Why do you say I owe money back?"]),
+    ("payment-amount-question", "payments", 2.5, 5.0, 0.92, ["Why is my payment {amount} less this month?", "My amount changed and I don't know why."]),
+    ("tax-form-1099", "payments", 0.4, 4.0, 0.90, ["I need my 1099 for taxes.", "I never got my tax form this year."]),
+    ("document-received-confirmation", "documents", 6.0, 3.5, 0.97, ["Did you receive the {doc} I sent?", "I mailed my {doc}, can you confirm you got it?"]),
+    ("document-submission-method", "documents", 2.0, 3.0, 0.98, ["Can I fax the {doc}?", "Where do I send the {doc}?", "Can I upload the {doc} online?"]),
+    ("medical-statement-request", "documents", 1.5, 5.0, 0.90, ["You asked for a medical statement, what does it need to say?", "My doctor sent the medical form."]),
+    ("address-change", "accounts", 4.0, 4.0, 0.97, ["I moved and need to change my address.", "Did my address change go through?"]),
+    ("contact-info-change", "accounts", 1.5, 3.0, 0.98, ["I need to update my phone number.", "My email changed."]),
+    ("direct-deposit-change", "accounts", 2.5, 5.0, 0.95, ["I want to change my bank account.", "How long does a direct deposit change take?"]),
+    ("temporary-address", "accounts", 0.8, 4.0, 0.96, ["I'll be away for a few months, do I need to tell you?", "Can I get mail at my daughter's for a while?"]),
+    ("form-22b-confusion", "accounts", 0.7, 8.5, 0.80, ["I got the 22-B letter, what do I need to re-verify?", "I already sent the 22-B, why did I get another letter?", "The 22-B letter says my benefits will stop, what do I do?", "What does re-verification mean on this letter?"]),
+    ("cola-letter", "accounts", 0.8, 4.0, 0.97, ["What's my new amount after the cost of living change?", "I got a letter about my payment going up."]),
+    ("income-reporting-question", "accounts", 1.8, 6.0, 0.90, ["How do I report my income now?", "Do I have to report my part-time job?"]),
+    ("portal-sign-in-failure", "portal_support", 2.0, 4.5, 0.93, ["I can't sign in to the website.", "The portal gives me an error when I log in.", "My verification code doesn't work."]),
+    ("portal-navigation", "portal_support", 1.5, 3.5, 0.97, ["Where do I find my letters on the website?", "How do I upload a document online?"]),
+    ("password-reset", "portal_support", 1.5, 3.0, 0.98, ["I forgot my password.", "The reset link doesn't work."]),
+    ("identity-check-hold", "correspondence", 0.8, 9.0, 0.75, ["My payment is on hold for an identity check.", "I sent my ID twice and it's still on hold."]),
+    ("appeal-status", "correspondence", 1.5, 6.0, 0.70, ["What's happening with my appeal?", "I filed an appeal months ago."]),
+    ("claim-status", "correspondence", 2.0, 5.5, 0.85, ["Has my claim been decided?", "How long does a new claim take?"]),
+    ("records-request", "correspondence", 0.3, 7.0, 0.85, ["I'd like a copy of my file.", "Can I get all the letters you sent me?"]),
+    ("congressional-follow-up", "correspondence", 0.2, 8.0, 0.80, ["My congressman's office told me to call.", "My senator's caseworker is following up."]),
+    ("complaint-service", "general", 1.0, 7.0, 0.80, ["Nobody has called me back.", "I've been waiting weeks for an answer."]),
+    ("complaint-letter-unclear", "general", 0.6, 5.0, 0.90, ["Your letter doesn't make sense.", "I can't tell what this notice wants me to do."]),
+    ("eligibility-question", "general", 2.0, 6.0, 0.92, ["Am I still eligible if I start working?", "Does my spouse's income count?"]),
+    ("representative-payee", "general", 0.7, 8.0, 0.85, ["I'm calling for my mother, she can't manage her payments.", "How do I become a payee?"]),
+    ("death-report", "general", 0.5, 9.0, 0.95, ["I'm calling to report that my father passed away.", "My husband died, what happens to his benefits?"]),
+    ("welfare-concern", "escalations", 0.1, 10.0, 0.90, ["I'm worried about my neighbor, his money stopped.", "My mother sounds confused and isn't eating."]),
+    ("urgent-hardship", "escalations", 0.4, 9.0, 0.85, ["My power is being shut off because my payment didn't come.", "I'm going to be evicted, I need my payment."]),
+    ("wrong-agency", "general", 1.5, 1.5, 1.00, ["Is this where I renew my passport?", "I'm trying to reach the tax office."]),
+    ("compliment", "general", 0.5, 1.0, 1.00, ["I just wanted to say thank you.", "The man who helped me was wonderful."]),
+    ("no-content", "general", 1.0, 0.5, 1.00, ["(silence)", "(hang-up)"]),
+    ("fraud-report", "correspondence", 0.3, 8.0, 0.85, ["Someone changed my bank details, it wasn't me.", "I got a strange call claiming to be from you."]),
+    ("benefit-letter-request", "documents", 1.2, 3.0, 0.98, ["I need a letter showing my benefit amount.", "My landlord wants proof of income."]),
+    ("interpreter-request", "general", 0.4, 4.0, 0.90, ["I need someone who speaks {language}.", "Can I get an interpreter?"]),
+    ("hold-time-complaint", "general", 0.8, 3.0, 0.95, ["I waited an hour on hold.", "Why is it so hard to get through?"]),
+    ("check-replacement", "payments", 0.6, 6.0, 0.88, ["My paper check never arrived.", "I lost my check, can you send another?"]),
+    ("garnishment-question", "payments", 0.3, 7.0, 0.80, ["Why is part of my payment being taken?", "Can my benefits be garnished?"]),
+]
+
+MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+          "November", "December"]
+DOCS = ["birth certificate", "bank letter", "medical statement", "Form 14", "Form 9", "ID copy", "income statement"]
+LANGUAGES = {"es": "Spanish", "vi": "Vietnamese", "tl": "Tagalog", "zh": "Chinese", "en": "English"}

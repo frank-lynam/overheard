@@ -36,3 +36,4 @@ def test_wheel_has_the_front_end(tmp_path):
     names = zipfile.ZipFile(next(tmp_path.glob("*.whl"))).namelist()
     for needed in ("index.html", "css/app.css", "js/main.js", "js/core/store.js"):
         assert f"overheard/static/{needed}" in names
+    assert "overheard/data/seed_today.json" in names

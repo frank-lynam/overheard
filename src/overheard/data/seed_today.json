@@ -1,0 +1,1941 @@
+{
+ "date": "2026-03-10",
+ "voicemails": [
+  {
+   "receivedAt": "2026-03-09T16:41",
+   "callerId": "+1-614-555-0142",
+   "durationSec": 48,
+   "lang": "en",
+   "script": "Hi, this is Dolores Whitfield, case number F B S one oh four two two seven. I'm calling because my March payment\ndidn't come. I got a letter about a form, the twenty-two B, and I sent that back, I think in February. Could someone\ncall me back at this number? Thank you.",
+   "truth": {
+    "intent": "status_payment",
+    "urgency": 3,
+    "rootCause": "form-22b-confusion",
+    "team": "accounts",
+    "callerName": "Dolores Whitfield",
+    "callbackNumber": "+1-614-555-0142",
+    "caseId": "FBS-104227",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [
+     "m03",
+     "m42"
+    ],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m01"
+  },
+  {
+   "receivedAt": "2026-03-09T17:12",
+   "callerId": "+1-404-555-0117",
+   "durationSec": 37,
+   "lang": "en",
+   "script": "Yeah, hi, Marcus Bell. Case three one one nine oh two. My payment usually hits on the third and it's the tenth now,\nwell, the ninth, and nothing. Did something happen? Just want to know if I need to do anything.",
+   "truth": {
+    "intent": "status_payment",
+    "urgency": 2,
+    "rootCause": "payment-date-shift",
+    "team": "payments",
+    "callerName": "Marcus Bell",
+    "callbackNumber": "+1-404-555-0117",
+    "caseId": "FBS-311902",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": "thinks the payment was missed; it's scheduled for 2026-03-12",
+    "englishGist": null
+   },
+   "id": "m02"
+  },
+  {
+   "receivedAt": "2026-03-09T19:05",
+   "callerId": "+1-614-555-0142",
+   "durationSec": 71,
+   "lang": "en",
+   "script": "It's Dolores Whitfield again, I called this afternoon. I haven't heard anything. I really need to know what's going on\nwith my money because rent is due and I already sent that form back. One oh four two two seven. I'm home all\nevening. Please call me.",
+   "truth": {
+    "intent": "status_payment",
+    "urgency": 3,
+    "rootCause": "form-22b-confusion",
+    "team": "accounts",
+    "callerName": "Dolores Whitfield",
+    "callbackNumber": "+1-614-555-0142",
+    "caseId": "FBS-104227",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [
+     "m01",
+     "m42"
+    ],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m03"
+  },
+  {
+   "receivedAt": "2026-03-09T20:33",
+   "callerId": "+1-305-555-0163",
+   "durationSec": 52,
+   "lang": "es",
+   "script": "Hola, buenas noches, habla Ana Lucía Ortega. Mi número de caso es el dos dos ocho ocho uno cero. Quería saber si\nrecibieron la carta del banco que mandé la semana pasada, y si mi pago de marzo ya salió. Muchas gracias, que tenga\nbuena noche.",
+   "truth": {
+    "intent": "status_document",
+    "urgency": 2,
+    "rootCause": "document-received-confirmation",
+    "team": "payments",
+    "callerName": "Ana Lucía Ortega",
+    "callbackNumber": "+1-305-555-0163",
+    "caseId": "FBS-228810",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": "Asks whether the bank letter she sent last week arrived and whether her March payment went out."
+   },
+   "id": "m04"
+  },
+  {
+   "receivedAt": "2026-03-09T21:58",
+   "callerId": "+1-216-555-0188",
+   "durationSec": 39,
+   "lang": "en",
+   "script": "Gerald Pruitt here. I mailed in my birth certificate and the direct deposit form, uh, last Monday. Just making sure\nyou got them. I don't have my case number in front of me, sorry. Thanks.",
+   "truth": {
+    "intent": "status_document",
+    "urgency": 2,
+    "rootCause": "document-received-confirmation",
+    "team": "documents",
+    "callerName": "Gerald Pruitt",
+    "callbackNumber": "+1-216-555-0188",
+    "caseId": "FBS-190455",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m05"
+  },
+  {
+   "receivedAt": "2026-03-09T23:14",
+   "callerId": "+1-480-555-0110",
+   "durationSec": 9,
+   "lang": "en",
+   "script": "(silence, then a click)",
+   "truth": {
+    "intent": "other",
+    "urgency": 1,
+    "rootCause": "no-content",
+    "team": "general",
+    "callerName": null,
+    "callbackNumber": "+1-480-555-0110",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m06"
+  },
+  {
+   "receivedAt": "2026-03-10T06:02",
+   "callerId": "+1-865-555-0102",
+   "durationSec": 44,
+   "lang": "en",
+   "script": "Good morning, this is Ruth Abernathy. I just wanted to say thank you to the young man who helped me last week with\nmy address, Kevin I think, everything came through fine. You don't need to call me back. Bless you.",
+   "truth": {
+    "intent": "other",
+    "urgency": 1,
+    "rootCause": "compliment",
+    "team": "general",
+    "callerName": "Ruth Abernathy",
+    "callbackNumber": "+1-865-555-0102",
+    "caseId": "FBS-366047",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m07"
+  },
+  {
+   "receivedAt": "2026-03-10T06:47",
+   "callerId": "+1-502-555-0109",
+   "durationSec": 88,
+   "lang": "en",
+   "script": "This is, um, Harold Jennings. My bank closed my old account, they merged with another bank, and I gave you all the new\none, I think, or maybe I didn't. My payment didn't come. Case number... I've got it here... F B S four zero two seven\nseven one. Can someone tell me what I need to send? My number is five oh two, five five five, oh one oh nine.",
+   "truth": {
+    "intent": "direct_deposit_change",
+    "urgency": 3,
+    "rootCause": "returned-deposit",
+    "team": "payments",
+    "callerName": "Harold Jennings",
+    "callbackNumber": "+1-502-555-0109",
+    "caseId": "FBS-402771",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m08"
+  },
+  {
+   "receivedAt": "2026-03-10T07:20",
+   "callerId": "+1-612-555-0139",
+   "durationSec": 96,
+   "lang": "en",
+   "script": "My name is Patricia Lund, case two nine eight three four four. My March payment has been on hold since February for\nwhat your letter calls an identity check. I have sent everything twice. I've now spoken with my attorney and if this\nisn't resolved by the twentieth we are prepared to take legal action. I'd like a call back today, please, at six one\ntwo, five five five, oh one three nine.",
+   "truth": {
+    "intent": "complaint",
+    "urgency": 4,
+    "rootCause": "identity-check-hold",
+    "team": "correspondence",
+    "callerName": "Patricia Lund",
+    "callbackNumber": "+1-612-555-0139",
+    "caseId": "FBS-298344",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [
+     "legal"
+    ],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m09"
+  },
+  {
+   "receivedAt": "2026-03-10T07:38",
+   "callerId": "+1-317-555-0172",
+   "durationSec": 41,
+   "lang": "en",
+   "script": "Hi, Kevin Moore. I got a second one of those twenty-two B letters, the re-verification. I already sent it back in, like,\ntwo weeks ago. Do I have to do it again? It says thirty days or my benefits stop, so. Call me back, please.",
+   "truth": {
+    "intent": "form_question",
+    "urgency": 2,
+    "rootCause": "form-22b-confusion",
+    "team": "accounts",
+    "callerName": "Kevin Moore",
+    "callbackNumber": "+1-317-555-0172",
+    "caseId": "FBS-251873",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": "thinks he must re-send Form 22-B; it was received 2026-03-02 and re-verification is complete",
+    "englishGist": null
+   },
+   "id": "m10"
+  },
+  {
+   "receivedAt": "2026-03-10T07:52",
+   "callerId": "+1-919-555-0124",
+   "durationSec": 33,
+   "lang": "en",
+   "script": "Darnell Hughes, case three one nine two six six. Was my March payment sent? I didn't see it yet. Thanks.",
+   "truth": {
+    "intent": "status_payment",
+    "urgency": 2,
+    "rootCause": "payment-status",
+    "team": "payments",
+    "callerName": "Darnell Hughes",
+    "callbackNumber": "+1-919-555-0124",
+    "caseId": "FBS-319266",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m11"
+  },
+  {
+   "receivedAt": "2026-03-10T08:03",
+   "callerId": "+1-713-555-0146",
+   "durationSec": 63,
+   "lang": "en",
+   "script": "Hello, this is Yolanda Price. You sent me a letter in February asking for a medical statement. My doctor's office says\nthey faxed it to you on the first. I wanted to check that you got it because I don't want my case closed. My number\nis seven one three, five five five, oh one four six. I'm at work until five so after that is best.",
+   "truth": {
+    "intent": "status_document",
+    "urgency": 3,
+    "rootCause": "document-received-confirmation",
+    "team": "documents",
+    "callerName": "Yolanda Price",
+    "callbackNumber": "+1-713-555-0146",
+    "caseId": "FBS-284019",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": "after 17:00",
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m12"
+  },
+  {
+   "receivedAt": "2026-03-10T08:16",
+   "callerId": "+1-702-555-0193",
+   "durationSec": 29,
+   "lang": "en",
+   "script": "Frank Delgado. Where's my payment? It's always on the third. Call me.",
+   "truth": {
+    "intent": "status_payment",
+    "urgency": 2,
+    "rootCause": "payment-date-shift",
+    "team": "payments",
+    "callerName": "Frank Delgado",
+    "callbackNumber": "+1-702-555-0193",
+    "caseId": "FBS-133702",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": "thinks the payment was missed; it's scheduled for 2026-03-12",
+    "englishGist": null
+   },
+   "id": "m13"
+  },
+  {
+   "receivedAt": "2026-03-10T08:29",
+   "callerId": "+1-202-555-0181",
+   "durationSec": 74,
+   "lang": "en",
+   "script": "Hi, my name is Cheryl Banks, I'm calling about my mother, Edna Banks, she's one of your beneficiaries. I don't have her\ncase number, I'm sorry. I would like to get copies of, well, everything you have on her. All the letters you've sent,\nthe notes from her calls, whatever is in her file. She's moving in with me and I'm trying to sort out her paperwork.\nMy number is two oh two, five five five, oh one eight one.",
+   "truth": {
+    "intent": "records_request",
+    "urgency": 3,
+    "rootCause": "records-request",
+    "team": "correspondence",
+    "callerName": "Cheryl Banks",
+    "callbackNumber": "+1-202-555-0181",
+    "caseId": null,
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [
+     "records"
+    ],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m14"
+  },
+  {
+   "receivedAt": "2026-03-10T08:41",
+   "callerId": "+1-312-555-0155",
+   "durationSec": 36,
+   "lang": "en",
+   "script": "Hi, Teresa Wojcik, case one five oh three nine eight. I moved and sent the address change form last week. Did that go\nthrough? I don't want my mail going to the old place.",
+   "truth": {
+    "intent": "status_document",
+    "urgency": 2,
+    "rootCause": "address-change",
+    "team": "accounts",
+    "callerName": "Teresa Wojcik",
+    "callbackNumber": "+1-312-555-0155",
+    "caseId": "FBS-150398",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m15"
+  },
+  {
+   "receivedAt": "2026-03-10T08:50",
+   "callerId": "+1-614-555-0168",
+   "durationSec": 92,
+   "lang": "en",
+   "script": "Good morning. My name is Samuel Okafor. My appeal has been pending since January fourteenth and I haven't heard a single\nthing. I want you to know I have contacted the office of Congresswoman Alvarez about this and they said they would be\nreaching out to you as well. I would appreciate a call back. Case two zero five one one nine.",
+   "truth": {
+    "intent": "congressional",
+    "urgency": 4,
+    "rootCause": "appeal-delay",
+    "team": "correspondence",
+    "callerName": "Samuel Okafor",
+    "callbackNumber": "+1-614-555-0168",
+    "caseId": "FBS-205119",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [
+     "congressional"
+    ],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m16"
+  },
+  {
+   "receivedAt": "2026-03-10T08:58",
+   "callerId": "+1-410-555-0115",
+   "durationSec": 40,
+   "lang": "en",
+   "script": "Hi, this is Bernice Coleman. I sent in the direct deposit form yesterday, well, I dropped it off, the form fourteen.\nHow long does it take to switch? I want to make sure the next payment goes to the new account.",
+   "truth": {
+    "intent": "status_document",
+    "urgency": 2,
+    "rootCause": "direct-deposit-change",
+    "team": "accounts",
+    "callerName": "Bernice Coleman",
+    "callbackNumber": "+1-410-555-0115",
+    "caseId": "FBS-412688",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m17"
+  },
+  {
+   "receivedAt": "2026-03-10T09:04",
+   "callerId": "+1-207-555-0133",
+   "durationSec": 58,
+   "lang": "en",
+   "script": "Jim Haskell, case three four five nine oh one. Simple question: I'm going to be in Florida for three months, from\nApril. Do I need to tell you, or change my address, or what? The website wasn't clear. Thanks. Any time is fine.",
+   "truth": {
+    "intent": "address_change",
+    "urgency": 1,
+    "rootCause": "temporary-address",
+    "team": "accounts",
+    "callerName": "Jim Haskell",
+    "callbackNumber": "+1-207-555-0133",
+    "caseId": "FBS-345901",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m18"
+  },
+  {
+   "receivedAt": "2026-03-10T09:07",
+   "callerId": "+1-559-555-0125",
+   "durationSec": 31,
+   "lang": "en",
+   "script": "Hi, um, I'm trying to renew my passport and the website gave me this number? Is this the right place? My name's Josh,\nmy number's five five nine, five five five, oh one two five.",
+   "truth": {
+    "intent": "other",
+    "urgency": 1,
+    "rootCause": "wrong-agency",
+    "team": "general",
+    "callerName": "Josh",
+    "callbackNumber": "+1-559-555-0125",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m19"
+  },
+  {
+   "receivedAt": "2026-03-10T09:10",
+   "callerId": "+1-503-555-0184",
+   "durationSec": 49,
+   "lang": "en",
+   "script": "Hello, Walter Kim, case one eight seven five two oh. I got a letter saying my payment amount is changing in April\nbecause of the cost of living thing. I just want to understand the new amount. Not urgent.",
+   "truth": {
+    "intent": "form_question",
+    "urgency": 1,
+    "rootCause": "cola-letter",
+    "team": "accounts",
+    "callerName": "Walter Kim",
+    "callbackNumber": "+1-503-555-0184",
+    "caseId": "FBS-187520",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m20"
+  },
+  {
+   "receivedAt": "2026-03-10T09:12",
+   "callerId": "+1-216-555-0103",
+   "durationSec": 34,
+   "lang": "en",
+   "script": "Hi, I'm trying to log into the portal to upload my form and it keeps saying something went wrong, error E four oh one two. I tried three times. My name is Brenda Sykes.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-216-555-0103",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m21"
+  },
+  {
+   "receivedAt": "2026-03-10T09:15",
+   "callerId": "+1-971-555-0112",
+   "durationSec": 27,
+   "lang": "en",
+   "script": "Yeah, the website won't let me in. I put my password in and it just spins and then sends me back to the start. Call me, it's Tom.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-971-555-0112",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m22"
+  },
+  {
+   "receivedAt": "2026-03-10T09:19",
+   "callerId": "+1-480-555-0144",
+   "durationSec": 41,
+   "lang": "en",
+   "script": "Hello. I reset my password this morning like it said, and now it says my password is wrong anyway. I typed it very carefully. This is Gloria Mendez, four eight oh, five five five, oh one four four.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-480-555-0144",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m23"
+  },
+  {
+   "receivedAt": "2026-03-10T09:22",
+   "callerId": "+1-608-555-0129",
+   "durationSec": 23,
+   "lang": "en",
+   "script": "Your sign-in page is broken. Error 4012. Fix it please.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-608-555-0129",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m24"
+  },
+  {
+   "receivedAt": "2026-03-10T09:26",
+   "callerId": "+1-757-555-0161",
+   "durationSec": 38,
+   "lang": "en",
+   "script": "Hi, I'm stuck on the verification code part, it says it sent me a code and nothing comes. I've waited like twenty minutes. Ray Castillo.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-757-555-0161",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m25"
+  },
+  {
+   "receivedAt": "2026-03-10T09:29",
+   "callerId": "+1-646-555-0175",
+   "durationSec": 30,
+   "lang": "en",
+   "script": "Morning, I can't get into my account, it says unable to verify identity, please try again later. What does that mean? I need to check my letters.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-646-555-0175",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m26"
+  },
+  {
+   "receivedAt": "2026-03-10T09:33",
+   "callerId": "+1-330-555-0148",
+   "durationSec": 45,
+   "lang": "en",
+   "script": "Yes hello, my granddaughter set up the online thing for me and today it won't open. It says, hold on, it says, uh, E dash forty twelve. I don't know what that is. This is Mabel Turner.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-330-555-0148",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m27"
+  },
+  {
+   "receivedAt": "2026-03-10T09:36",
+   "callerId": "+1-913-555-0136",
+   "durationSec": 19,
+   "lang": "en",
+   "script": "Login's not working. Kicked out every time. Thanks.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-913-555-0136",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m28"
+  },
+  {
+   "receivedAt": "2026-03-10T09:40",
+   "callerId": "+1-801-555-0119",
+   "durationSec": 52,
+   "lang": "en",
+   "script": "Hi there. I've been trying to log in since about nine and the page just goes white after I enter my code. I cleared my cookies, I tried my phone, same thing. I need to submit my income statement today. Priya, P R I Y A, Sharma.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-801-555-0119",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m29"
+  },
+  {
+   "receivedAt": "2026-03-10T09:43",
+   "callerId": "+1-617-555-0187",
+   "durationSec": 33,
+   "lang": "en",
+   "script": "Hi, quick one, the portal is saying session expired the second I sign in. Is it me or is it you guys? Dan Whitaker.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-617-555-0187",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m30"
+  },
+  {
+   "receivedAt": "2026-03-10T09:47",
+   "callerId": "+1-503-555-0158",
+   "durationSec": 28,
+   "lang": "en",
+   "script": "I keep getting an error when I sign in, something about E four zero one two, and it says to call you. So I'm calling you.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-503-555-0158",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m31"
+  },
+  {
+   "receivedAt": "2026-03-10T09:48",
+   "callerId": "+1-206-555-0177",
+   "durationSec": 66,
+   "lang": "tl",
+   "script": "Kumusta po, ako po si Rosario Dimaculangan. Nakatanggap po ako ng sulat tungkol sa Form 22-B. Ipinadala ko na po iyon\nnoong Pebrero. Kailangan ko pa po bang magpadala ulit? Natatakot po ako na mahinto ang aking benepisyo. Salamat po.",
+   "truth": {
+    "intent": "form_question",
+    "urgency": 2,
+    "rootCause": "form-22b-confusion",
+    "team": "accounts",
+    "callerName": "Rosario Dimaculangan",
+    "callbackNumber": "+1-206-555-0177",
+    "caseId": "FBS-266533",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": "fears she must re-send Form 22-B; it was received 2026-02-25",
+    "englishGist": "Got a letter about Form 22-B; already sent it in February. Asks whether she must send it again; afraid her benefits will stop."
+   },
+   "id": "m32"
+  },
+  {
+   "receivedAt": "2026-03-10T09:50",
+   "callerId": "+1-412-555-0114",
+   "durationSec": 47,
+   "lang": "en",
+   "script": "Good morning, my name is Hector Ruiz. I wanted to upload the document your letter asked for, but I cannot get past the login. It says something went wrong. Is there another way I can send it? Mail? Fax?",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-412-555-0114",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m33"
+  },
+  {
+   "receivedAt": "2026-03-10T09:54",
+   "callerId": "+1-919-555-0166",
+   "durationSec": 35,
+   "lang": "en",
+   "script": "Hello, the sign-in keeps asking me for the code again and again, like in a loop. I put the code in and it asks for another one. Monica.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-919-555-0166",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m34"
+  },
+  {
+   "receivedAt": "2026-03-10T09:57",
+   "callerId": "+1-205-555-0121",
+   "durationSec": 26,
+   "lang": "en",
+   "script": "Can't log in. Error. Please call back. Five five five oh one two one, area code two oh five.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-205-555-0121",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m35"
+  },
+  {
+   "receivedAt": "2026-03-10T10:01",
+   "callerId": "+1-585-555-0140",
+   "durationSec": 39,
+   "lang": "en",
+   "script": "Hi, I'm locked out of my account? It said too many attempts but I only tried twice and it was right both times. This is Courtney Hall.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-585-555-0140",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m36"
+  },
+  {
+   "receivedAt": "2026-03-10T10:04",
+   "callerId": "+1-865-555-0190",
+   "durationSec": 141,
+   "lang": "en",
+   "script": "Hi, um, hello. My name is Eleanor Voss, I'm, um, I'm seventy-eight and I've never had to call about anything before so I\nhope this is the right number. I'm calling about my payment, the March one, it didn't come, and I called my bank and they\nsaid nothing came in. And I don't, I'm not sure what happened. I did get a letter, I think, about my bank, or maybe that was\nfrom the bank. Anyway. The reason I'm calling is the electric company sent me a notice and they're going to shut off my\npower on Friday if I don't pay, and it's still cold at night here, and I, I have my oxygen machine that needs the power. So\nI'm a little worried. My daughter usually helps me but she's in the hospital right now. My number is eight six five, five\nfive five, oh one, nine oh. Eight six five, five five five, oh one nine zero. Thank you, I'm sorry for the long message.",
+   "truth": {
+    "intent": "urgent_hardship",
+    "urgency": 5,
+    "rootCause": "returned-deposit",
+    "team": "escalations",
+    "callerName": "Eleanor Voss",
+    "callbackNumber": "+1-865-555-0190",
+    "caseId": "FBS-366098",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [
+     "welfare"
+    ],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m37"
+  },
+  {
+   "receivedAt": "2026-03-10T10:05",
+   "callerId": "+1-775-555-0152",
+   "durationSec": 31,
+   "lang": "en",
+   "script": "Yes, I'm trying to see my payment history on your website and it won't let me sign in. Is something going on today?",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-775-555-0152",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m38"
+  },
+  {
+   "receivedAt": "2026-03-10T10:08",
+   "callerId": "+1-714-555-0131",
+   "durationSec": 58,
+   "lang": "vi",
+   "script": "Xin chào, tôi là Trần Linh, số hồ sơ ba bảy bảy không một bốn. Tôi không đăng nhập vào trang web được, nó báo lỗi E bốn không một hai. Tôi cần xem thư của tôi. Xin gọi lại cho tôi. Cảm ơn.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": "Linh Tran",
+    "callbackNumber": "+1-714-555-0131",
+    "caseId": "FBS-377014",
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": "Can't sign in to the website; it shows error E4012. Needs to read their letters. Asks for a call back."
+   },
+   "id": "m39"
+  },
+  {
+   "receivedAt": "2026-03-10T10:12",
+   "callerId": "+1-860-555-0109",
+   "durationSec": 24,
+   "lang": "en",
+   "script": "Website down? Can't sign in. Error four zero one two. Bye.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-860-555-0109",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m40"
+  },
+  {
+   "receivedAt": "2026-03-10T10:16",
+   "callerId": "+1-215-555-0137",
+   "durationSec": 44,
+   "lang": "en",
+   "script": "Hello, I'm sorry to bother you, I'm not very good with computers but I am trying to sign in and it keeps saying unable to verify. Did I do something wrong? My name is Agnes Kowalski.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-215-555-0137",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m41"
+  },
+  {
+   "receivedAt": "2026-03-10T10:19",
+   "callerId": "+1-614-555-0142",
+   "durationSec": 83,
+   "lang": "en",
+   "script": "This is the THIRD time I'm calling. Dolores Whitfield. Nobody has called me back. I sent your form, I sent it in February,\nand you're holding my money. My rent was due on the first. I've been a customer, or whatever you call it, for eleven years\nand I have never been treated like this. One oh four two two seven. Call me. Today.",
+   "truth": {
+    "intent": "complaint",
+    "urgency": 4,
+    "rootCause": "form-22b-confusion",
+    "team": "accounts",
+    "callerName": "Dolores Whitfield",
+    "callbackNumber": "+1-614-555-0142",
+    "caseId": "FBS-104227",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [
+     "m01",
+     "m03"
+    ],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m42"
+  },
+  {
+   "receivedAt": "2026-03-10T10:22",
+   "callerId": "+1-937-555-0127",
+   "durationSec": 36,
+   "lang": "en",
+   "script": "Hey, it's Brian. Your login is giving me error 4012 since this morning. I need to update my bank info before Friday.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-937-555-0127",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m43"
+  },
+  {
+   "receivedAt": "2026-03-10T10:27",
+   "callerId": "+1-210-555-0158",
+   "durationSec": 54,
+   "lang": "es-en",
+   "script": "Hola, habla Carmen Reyes. I sent the change of address, the form nine, el sábado. Quería saber si ya lo recibieron porque\nme voy a mudar el quince y no quiero que se pierda mi cheque. Gracias, my number is the one I'm calling from.",
+   "truth": {
+    "intent": "status_document",
+    "urgency": 2,
+    "rootCause": "address-change",
+    "team": "accounts",
+    "callerName": "Carmen Reyes",
+    "callbackNumber": "+1-210-555-0158",
+    "caseId": "FBS-170266",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": "Sent the change-of-address form (Form 9) on Saturday; asks whether it arrived, since she moves on the 15th and doesn't want her check lost."
+   },
+   "id": "m44"
+  },
+  {
+   "receivedAt": "2026-03-10T10:31",
+   "callerId": "+1-651-555-0170",
+   "durationSec": 29,
+   "lang": "en",
+   "script": "Hi, I can't access the portal, it just loops back to the sign-in screen after the verification step. Please advise.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-651-555-0170",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m45"
+  },
+  {
+   "receivedAt": "2026-03-10T10:44",
+   "callerId": "+1-402-555-0118",
+   "durationSec": 40,
+   "lang": "en",
+   "script": "Hello, I am calling because the online account is not working for me. I put in my information and it says try again later. I have tried again later, many times! Ha. Please call me. Ines Moreau.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-402-555-0118",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m46"
+  },
+  {
+   "receivedAt": "2026-03-10T10:52",
+   "callerId": "+1-571-555-0193",
+   "durationSec": 22,
+   "lang": "en",
+   "script": "Sign in broken. E-4012. Thanks.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-571-555-0193",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m47"
+  },
+  {
+   "receivedAt": "2026-03-10T11:12",
+   "callerId": "+1-385-555-0141",
+   "durationSec": 33,
+   "lang": "en",
+   "script": "Hi, my wife and I both can't get into our accounts this morning, same error, something went wrong E four oh one two. Is there a problem with the system? Paul Jensen.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-385-555-0141",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m48"
+  },
+  {
+   "receivedAt": "2026-03-10T11:18",
+   "callerId": "+1-505-555-0187",
+   "durationSec": 35,
+   "lang": "en",
+   "script": "Angela Ruiz, two two four four one seven. My payment is late. It's always the third. Is it coming or not? Thanks.",
+   "truth": {
+    "intent": "status_payment",
+    "urgency": 2,
+    "rootCause": "payment-date-shift",
+    "team": "payments",
+    "callerName": "Angela Ruiz",
+    "callbackNumber": "+1-505-555-0187",
+    "caseId": "FBS-224417",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": "thinks the payment was missed; it's scheduled for 2026-03-12",
+    "englishGist": null
+   },
+   "id": "m49"
+  },
+  {
+   "receivedAt": "2026-03-10T11:25",
+   "callerId": "+1-303-555-0116",
+   "durationSec": 37,
+   "lang": "en",
+   "script": "I've tried the website on two computers. Same message: we couldn't verify your sign-in. Can you look into it? I need my tax form.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-303-555-0116",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m50"
+  },
+  {
+   "receivedAt": "2026-03-10T11:33",
+   "callerId": "+1-423-555-0106",
+   "durationSec": 79,
+   "lang": "en",
+   "script": "Hi, my name is Denise Carter. I'm calling about my neighbor, Mr. Albert Price, he's on your benefits. I'm worried about him.\nHe told me his money stopped coming and he hasn't been eating much, and yesterday he seemed really confused, he didn't\nknow what day it was. He lives alone. I don't know who else to call. I'm at four two three, five five five, oh one oh six.",
+   "truth": {
+    "intent": "welfare",
+    "urgency": 5,
+    "rootCause": "welfare-concern",
+    "team": "escalations",
+    "callerName": "Denise Carter",
+    "callbackNumber": "+1-423-555-0106",
+    "caseId": null,
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [
+     "welfare"
+    ],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m51"
+  },
+  {
+   "receivedAt": "2026-03-10T11:41",
+   "callerId": "+1-516-555-0134",
+   "durationSec": 26,
+   "lang": "en",
+   "script": "Yeah, your portal won't take my code. Says expired every time even though I use it right away. Call me back.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-516-555-0134",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m52"
+  },
+  {
+   "receivedAt": "2026-03-10T11:49",
+   "callerId": "+1-859-555-0183",
+   "durationSec": 70,
+   "lang": "en",
+   "script": "Yes, good morning, this is Raymond Ellis. I'm calling because my senator's caseworker, Ms. Patel in Senator Brooks'\noffice, asked me to call and get an update on my claim and she said she'd be following up with you directly. I filed back\nin December. Case three oh eight five five two. Thank you.",
+   "truth": {
+    "intent": "congressional",
+    "urgency": 4,
+    "rootCause": "claim-delay",
+    "team": "correspondence",
+    "callerName": "Raymond Ellis",
+    "callbackNumber": "+1-859-555-0183",
+    "caseId": "FBS-308552",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [
+     "congressional"
+    ],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m53"
+  },
+  {
+   "receivedAt": "2026-03-10T12:03",
+   "callerId": "+1-405-555-0150",
+   "durationSec": 30,
+   "lang": "en",
+   "script": "Hello, I've been trying since nine thirty this morning to log in. It doesn't work. What is going on? Call me please.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-405-555-0150",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m54"
+  },
+  {
+   "receivedAt": "2026-03-10T12:18",
+   "callerId": "+1-262-555-0164",
+   "durationSec": 34,
+   "lang": "en",
+   "script": "Hi, still can't sign in, been trying all morning. Same thing every time, it gets to the code and then says something went wrong. Is anybody working on this? Thanks, it's Nora.",
+   "truth": {
+    "intent": "portal_access",
+    "urgency": 2,
+    "rootCause": "portal-sign-in-failure",
+    "team": "portal_support",
+    "callerName": null,
+    "callbackNumber": "+1-262-555-0164",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": "portal-sign-in",
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m55"
+  },
+  {
+   "receivedAt": "2026-03-10T12:41",
+   "callerId": "+1-314-555-0178",
+   "durationSec": 63,
+   "lang": "en",
+   "script": "Hi there, I got this letter, the twenty-two B, it says I have to re-verify within thirty days or my benefits could be\nsuspended. Re-verify what? My address? My income? It doesn't really say. And it says enclosed form but there's nothing\nenclosed, just the letter. I'm a little nervous about it. Terrence Gibbs, three one four, five five five, oh one seven eight.",
+   "truth": {
+    "intent": "form_question",
+    "urgency": 2,
+    "rootCause": "form-22b-confusion",
+    "team": "accounts",
+    "callerName": "Terrence Gibbs",
+    "callbackNumber": "+1-314-555-0178",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m56"
+  },
+  {
+   "receivedAt": "2026-03-10T13:20",
+   "callerId": "+1-252-555-0128",
+   "durationSec": 46,
+   "lang": "en",
+   "script": "Hi, I need to change my phone number on file, the old one is disconnected. The new one is two five two, five five five,\noh one two eight. My name is Lisa Grant. Case one nine nine four seven three. Mornings before ten are best.",
+   "truth": {
+    "intent": "address_change",
+    "urgency": 1,
+    "rootCause": "contact-info-change",
+    "team": "accounts",
+    "callerName": "Lisa Grant",
+    "callbackNumber": "+1-252-555-0128",
+    "caseId": "FBS-199473",
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": "before 10:00",
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m57"
+  },
+  {
+   "receivedAt": "2026-03-10T13:47",
+   "callerId": "+1-334-555-0135",
+   "durationSec": 33,
+   "lang": "en",
+   "script": "Hello, can I fax the medical form instead of mailing it? And if I can, what's the fax number? The letter only has a\nmailing address. This is Gwen Porter. Thanks so much.",
+   "truth": {
+    "intent": "form_question",
+    "urgency": 1,
+    "rootCause": "document-submission-method",
+    "team": "documents",
+    "callerName": "Gwen Porter",
+    "callbackNumber": "+1-334-555-0135",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m58"
+  },
+  {
+   "receivedAt": "2026-03-10T14:05",
+   "callerId": "+1-865-555-0102",
+   "durationSec": 38,
+   "lang": "en",
+   "script": "Ruth Abernathy again, I'm so sorry, I forgot to ask this morning. Is my payment still the third of the month after my\naddress change? That's all. Thank you dear.",
+   "truth": {
+    "intent": "status_payment",
+    "urgency": 1,
+    "rootCause": "payment-status",
+    "team": "payments",
+    "callerName": "Ruth Abernathy",
+    "callbackNumber": "+1-865-555-0102",
+    "caseId": "FBS-366047",
+    "caseNumberSaid": false,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": "status_lookup",
+    "linkedTo": [],
+    "callbackWindow": null,
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m59"
+  },
+  {
+   "receivedAt": "2026-03-10T15:12",
+   "callerId": "+1-563-555-0151",
+   "durationSec": 118,
+   "lang": "en",
+   "script": "Yeah, hi, this is, uh, Douglas, Doug Brenner, I got a letter that says I was overpaid, overpaid in, um, was it January?\nNo, wait, December and January, and they want, it says I owe four hundred, no, sorry, four thousand two hundred and, uh,\nsixty dollars, which, I don't have that, obviously. And I don't understand how I was overpaid because nothing changed,\nI didn't, I mean my hours went up a little at the hardware store but I reported that, I'm pretty sure I reported it.\nSo I don't know if I'm supposed to appeal it or what. The letter has a, a number on it, O P dash two oh two six dash, uh,\nI can't read the rest. Five six three, five five five, oh one five one. I'm off after three thirty most days.",
+   "truth": {
+    "intent": "overpayment",
+    "urgency": 3,
+    "rootCause": "overpayment-notice",
+    "team": "payments",
+    "callerName": "Doug Brenner",
+    "callbackNumber": "+1-563-555-0151",
+    "caseId": null,
+    "caseNumberSaid": true,
+    "group": null,
+    "obligations": [],
+    "resolvableBy": null,
+    "linkedTo": [],
+    "callbackWindow": "after 15:30",
+    "beliefMismatch": null,
+    "englishGist": null
+   },
+   "id": "m60"
+  }
+ ],
+ "cases": [
+  {
+   "id": "FBS-104227",
+   "name": "Dolores Whitfield",
+   "phone": "+1-614-555-0142",
+   "status": "payment held: address re-verification (Form 22-B) pending",
+   "region": "OH",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-02-03",
+     "amount": 1184.0,
+     "status": "paid"
+    },
+    {
+     "date": "2026-03-03",
+     "amount": 1184.0,
+     "status": "held"
+    }
+   ],
+   "docs": [
+    {
+     "name": "Form 22-B",
+     "received": null
+    }
+   ],
+   "lastAction": "2026-02-20 payment held pending re-verification",
+   "team": "accounts"
+  },
+  {
+   "id": "FBS-133702",
+   "name": "Frank Delgado",
+   "phone": "+1-702-555-0193",
+   "status": "active",
+   "region": "NV",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-12",
+     "amount": 977.0,
+     "status": "scheduled"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-02-27 payment date moved to the 12th",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-150398",
+   "name": "Teresa Wojcik",
+   "phone": "+1-312-555-0155",
+   "status": "active",
+   "region": "IL",
+   "lang": "en",
+   "payments": [],
+   "docs": [
+    {
+     "name": "Form 9 (address change)",
+     "received": "2026-03-04"
+    }
+   ],
+   "lastAction": "2026-03-06 address updated",
+   "team": "accounts"
+  },
+  {
+   "id": "FBS-170266",
+   "name": "Carmen Reyes",
+   "phone": "+1-210-555-0158",
+   "status": "active",
+   "region": "TX",
+   "lang": "es",
+   "payments": [],
+   "docs": [
+    {
+     "name": "Form 9 (address change)",
+     "received": "2026-03-08"
+    }
+   ],
+   "lastAction": "2026-03-08 address change received",
+   "team": "accounts"
+  },
+  {
+   "id": "FBS-187520",
+   "name": "Walter Kim",
+   "phone": "+1-503-555-0184",
+   "status": "active",
+   "region": "OR",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 1480.0,
+     "status": "paid"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-03-03 payment issued",
+   "team": "accounts"
+  },
+  {
+   "id": "FBS-190455",
+   "name": "Gerald Pruitt",
+   "phone": "+1-216-555-0188",
+   "status": "active",
+   "region": "OH",
+   "lang": "en",
+   "payments": [],
+   "docs": [
+    {
+     "name": "Birth certificate copy",
+     "received": "2026-03-06"
+    },
+    {
+     "name": "Form 14 (direct deposit)",
+     "received": "2026-03-06"
+    }
+   ],
+   "lastAction": "2026-03-06 documents scanned",
+   "team": "documents"
+  },
+  {
+   "id": "FBS-199473",
+   "name": "Lisa Grant",
+   "phone": "+1-252-555-0128",
+   "status": "active",
+   "region": "NC",
+   "lang": "en",
+   "payments": [],
+   "docs": [],
+   "lastAction": "2026-02-02 payment issued",
+   "team": "accounts"
+  },
+  {
+   "id": "FBS-205119",
+   "name": "Samuel Okafor",
+   "phone": "+1-614-555-0168",
+   "status": "appeal pending",
+   "region": "OH",
+   "lang": "en",
+   "payments": [],
+   "docs": [],
+   "lastAction": "2026-01-14 appeal filed; no decision",
+   "team": "correspondence"
+  },
+  {
+   "id": "FBS-224417",
+   "name": "Angela Ruiz",
+   "phone": "+1-505-555-0187",
+   "status": "active",
+   "region": "NM",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-12",
+     "amount": 1199.0,
+     "status": "scheduled"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-02-27 payment date moved to the 12th",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-228810",
+   "name": "Ana Lucía Ortega",
+   "phone": "+1-305-555-0163",
+   "status": "active",
+   "region": "FL",
+   "lang": "es",
+   "payments": [
+    {
+     "date": "2026-03-05",
+     "amount": 1040.0,
+     "status": "paid"
+    }
+   ],
+   "docs": [
+    {
+     "name": "Bank letter",
+     "received": "2026-03-02"
+    }
+   ],
+   "lastAction": "2026-03-05 payment issued",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-251873",
+   "name": "Kevin Moore",
+   "phone": "+1-317-555-0172",
+   "status": "active",
+   "region": "IN",
+   "lang": "en",
+   "payments": [],
+   "docs": [
+    {
+     "name": "Form 22-B",
+     "received": "2026-03-02"
+    }
+   ],
+   "lastAction": "2026-03-02 Form 22-B received; re-verification complete",
+   "team": "accounts"
+  },
+  {
+   "id": "FBS-266533",
+   "name": "Rosario Dimaculangan",
+   "phone": "+1-206-555-0177",
+   "status": "re-verification requested",
+   "region": "WA",
+   "lang": "tl",
+   "payments": [],
+   "docs": [
+    {
+     "name": "Form 22-B",
+     "received": "2026-02-25"
+    }
+   ],
+   "lastAction": "2026-02-25 Form 22-B received",
+   "team": "accounts"
+  },
+  {
+   "id": "FBS-284019",
+   "name": "Yolanda Price",
+   "phone": "+1-713-555-0146",
+   "status": "under review",
+   "region": "TX",
+   "lang": "en",
+   "payments": [],
+   "docs": [
+    {
+     "name": "Medical statement",
+     "received": null
+    }
+   ],
+   "lastAction": "2026-02-18 medical statement requested",
+   "team": "documents"
+  },
+  {
+   "id": "FBS-298344",
+   "name": "Patricia Lund",
+   "phone": "+1-612-555-0139",
+   "status": "payment held: identity check",
+   "region": "MN",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 1250.0,
+     "status": "held"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-02-24 identity check opened",
+   "team": "correspondence"
+  },
+  {
+   "id": "FBS-308552",
+   "name": "Raymond Ellis",
+   "phone": "+1-859-555-0183",
+   "status": "claim pending",
+   "region": "KY",
+   "lang": "en",
+   "payments": [],
+   "docs": [],
+   "lastAction": "2025-12-08 claim filed",
+   "team": "correspondence"
+  },
+  {
+   "id": "FBS-311902",
+   "name": "Marcus Bell",
+   "phone": "+1-404-555-0117",
+   "status": "active",
+   "region": "GA",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-02-12",
+     "amount": 962.5,
+     "status": "paid"
+    },
+    {
+     "date": "2026-03-12",
+     "amount": 962.5,
+     "status": "scheduled"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-02-27 payment date moved to the 12th (calendar change)",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-319266",
+   "name": "Darnell Hughes",
+   "phone": "+1-919-555-0124",
+   "status": "active",
+   "region": "NC",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 1105.0,
+     "status": "paid"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-03-03 payment issued",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-345901",
+   "name": "Jim Haskell",
+   "phone": "+1-207-555-0133",
+   "status": "active",
+   "region": "ME",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 1020.0,
+     "status": "paid"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-03-03 payment issued",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-366047",
+   "name": "Ruth Abernathy",
+   "phone": "+1-865-555-0102",
+   "status": "active",
+   "region": "TN",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 845.0,
+     "status": "paid"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-03-03 payment issued",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-366098",
+   "name": "Eleanor Voss",
+   "phone": "+1-865-555-0190",
+   "status": "payment returned by bank",
+   "region": "TN",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 905.0,
+     "status": "returned: account number invalid"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-03-05 deposit returned",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-377014",
+   "name": "Linh Tran",
+   "phone": "+1-714-555-0131",
+   "status": "active",
+   "region": "CA",
+   "lang": "vi",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 890.0,
+     "status": "paid"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-03-03 payment issued",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-402771",
+   "name": "Harold Jennings",
+   "phone": "+1-502-555-0109",
+   "status": "payment returned by bank",
+   "region": "KY",
+   "lang": "en",
+   "payments": [
+    {
+     "date": "2026-03-03",
+     "amount": 1312.0,
+     "status": "returned: account closed"
+    }
+   ],
+   "docs": [],
+   "lastAction": "2026-03-05 deposit returned; new account details needed",
+   "team": "payments"
+  },
+  {
+   "id": "FBS-412688",
+   "name": "Bernice Coleman",
+   "phone": "+1-410-555-0115",
+   "status": "active",
+   "region": "MD",
+   "lang": "en",
+   "payments": [],
+   "docs": [
+    {
+     "name": "Form 14 (direct deposit)",
+     "received": "2026-03-09"
+    }
+   ],
+   "lastAction": "2026-03-09 direct deposit change received",
+   "team": "accounts"
+  }
+ ]
+}
