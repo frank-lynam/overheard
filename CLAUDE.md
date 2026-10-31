@@ -84,6 +84,9 @@ docs/DESIGN.md
 - LLM: an external OpenAI-compatible host; configured with an endpoint and API key (`OVERHEARD_LLM_BASE_URL`, `OVERHEARD_LLM_API_KEY`, `OVERHEARD_LLM_MODEL`).
 - Releases: public PyPI, plain versions below 1.0.0.
 - Text-only transcripts until nearer 1.0.0; audio integration then.
+- The customer is a small centre: the archive is the whole centre, not a sample, and the headline numbers are
+  whatever it actually produces (no scaling). The design doc's "$600K a year" and "6,100 extra calls" are not the
+  targets; tests check the planted patterns' ranks and shares, not absolute dollars.
 
 ## Still open (ask rather than guess)
 
