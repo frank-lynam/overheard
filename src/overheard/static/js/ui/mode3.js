@@ -451,3 +451,34 @@ export function renderWeakSignals(el, data) {
     <p class="m3-headline">${data.headline}</p>
     ${cards ? `<h3 class="muted">The trickle that preceded the spike</h3><div class="m3-ws-cards">${cards}</div>` : ""}`;
 }
+
+export function renderStaffingForecast(el, data) {
+  const rows = (data.days || []).map((d) => `<tr>
+      <td>${d.date}</td><td>${d.weekday}</td>
+      <td>${d.baseline}</td><td>${d.eventExcess}</td>
+      <td><b>${d.projectedContacts}</b></td><td>${d.projectedAgentHours}h</td>
+    </tr>`).join("");
+  const cards = (data.events || []).map((e) => `<div class="m3-sf-card">
+      <div class="m3-sf-title"><b>${e.name}</b> <span class="muted">${e.date} · ${e.type}</span></div>
+      <p class="muted">Still active in the window: <b>${e.remainingDays} day${e.remainingDays === 1 ? "" : "s"} left</b>.
+        Projected to add <b>${e.projectedExcessContacts} more ${e.driver} calls</b>
+        (~${e.projectedExcessAgentHours} agent-hours) on top of the baseline.</p>
+    </div>`).join("");
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Staffing forecast <span class="prov">${data.prov}</span></h2>
+      <p class="muted">The next ${data.horizonDays} days, projected from the archive's trailing
+        90-weekday average (${data.weekdayBaseline} contacts a weekday) plus the events calendar's own
+        decay curve, with the agent-hours each day needs at the archive's measured handling times.</p>
+    </div>
+    <p class="m3-headline">${data.headline}</p>
+    ${cards ? `<h3 class="muted">Calendar events in the window</h3><div class="m3-sf-cards">${cards}</div>` : ""}
+    <h3 class="muted">Day by day</h3>
+    <table class="m3-sf-table">
+      <thead><tr><th>date</th><th>day</th><th>baseline</th><th>event excess</th><th>projected contacts</th><th>agent-hours</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p class="muted">Totals: <b>${data.totalProjectedContacts} contacts</b> and
+      <b>${data.totalProjectedAgentHours} agent-hours</b> across the window. Weekends project at the
+      calendar alone — the archive is weekdays, so there is no weekday baseline to add.</p>`;
+}

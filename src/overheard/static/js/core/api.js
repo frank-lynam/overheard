@@ -37,4 +37,5 @@ export const api = {
   askArchive: (question) => call("POST", "/archive/ask", { question }),
   knowledgeGaps: () => call("GET", "/knowledge-gaps"),
   weakSignals: () => call("GET", "/weak-signals"),
+  staffingForecast: () => call("GET", "/staffing-forecast"),
 };

@@ -4,7 +4,7 @@ import { renderContext, bindResolutionBump } from "./ui/context.js";
 import { renderMessage } from "./ui/message.js";
 import { renderQueue } from "./ui/queue.js";
 import { renderScoreboard } from "./ui/scoreboard.js";
-import { renderRootCauses, renderEventImpact, renderJourneys, renderPromises, renderEquity, renderLetterLab, renderAsk, renderKnowledgeGaps, renderWeakSignals } from "./ui/mode3.js";
+import { renderRootCauses, renderEventImpact, renderJourneys, renderPromises, renderEquity, renderLetterLab, renderAsk, renderKnowledgeGaps, renderWeakSignals, renderStaffingForecast } from "./ui/mode3.js";
 
 const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null, incidents: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
@@ -78,6 +78,13 @@ store.subscribe(({ mode }) => {
       api.weakSignals().then((data) => {
         wpane.dataset.loaded = "1";
         renderWeakSignals(wpane, data);
+      }).catch(() => {});
+    }
+    const sp = m3.querySelector(".m3-pane.staffing-forecast");
+    if (sp.dataset.loaded !== "1") {
+      api.staffingForecast().then((data) => {
+        sp.dataset.loaded = "1";
+        renderStaffingForecast(sp, data);
       }).catch(() => {});
     }
   }

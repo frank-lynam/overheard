@@ -31,7 +31,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
     <section class="m3-pane letter-lab"></section>
     <section class="m3-pane ask"></section>
     <section class="m3-pane knowledge-gaps"></section>
-    <section class="m3-pane weak-signals"></section></main>
+    <section class="m3-pane weak-signals"></section>
+    <section class="m3-pane staffing-forecast"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -68,6 +69,10 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       // the weak-signals pane: wait for its cards (fetched from /api/weak-signals)
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.weak-signals .m3-ws-card"); i++) await sleep(200);
       document.querySelector(".m3-pane.weak-signals").scrollIntoView();
+      await sleep(1000);
+      // the staffing-forecast pane: wait for its day-by-day table (fetched from /api/staffing-forecast)
+      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.staffing-forecast .m3-sf-table"); i++) await sleep(200);
+      document.querySelector(".m3-pane.staffing-forecast").scrollIntoView();
       await sleep(1000);
       const out = {
         errs,
@@ -131,7 +136,13 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         wsEarly: [...document.querySelectorAll(".m3-pane.weak-signals .m3-ws-card b")]
           .map(b => b.textContent).find(t => /months early/.test(t)) || "",
         wsTrig: (document.querySelector(".m3-pane.weak-signals .m3-ws-card p:last-of-type") || {}).textContent || "",
-        wsProv: (document.querySelector(".m3-pane.weak-signals .prov") || {}).textContent || ""
+        wsProv: (document.querySelector(".m3-pane.weak-signals .prov") || {}).textContent || "",
+        sfPane: !!document.querySelector(".m3-pane.staffing-forecast .m3-sf-table"),
+        sfHeadline: (document.querySelector(".m3-pane.staffing-forecast .m3-headline") || {}).textContent || "",
+        sfDays: document.querySelectorAll(".m3-pane.staffing-forecast .m3-sf-table tbody tr").length,
+        sfEventCards: document.querySelectorAll(".m3-pane.staffing-forecast .m3-sf-card").length,
+        sfEventTitle: (document.querySelector(".m3-pane.staffing-forecast .m3-sf-card .m3-sf-title b") || {}).textContent || "",
+        sfProv: (document.querySelector(".m3-pane.staffing-forecast .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -160,7 +171,7 @@ try:
     shot = str(Path(__file__).resolve().parent.parent / "probe_mode3_shot.png")
     res = subprocess.run(
         ["chromium", "--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
-         "--virtual-time-budget=30000", "--window-size=1400,5600", f"--screenshot={shot}",
+         "--virtual-time-budget=30000", "--window-size=1400,6200", f"--screenshot={shot}",
          "--dump-dom", f"http://127.0.0.1:{PORT}/__probe_mode3.html"],
         capture_output=True, text=True, timeout=180)
     print("chromium rc:", res.returncode, (res.stderr or "").strip()[-400:])
@@ -218,6 +229,12 @@ try:
     assert "1099" in out["wsHeadline"].lower(), out["wsHeadline"]
     assert "vendor change" in out["wsTrig"].lower(), out["wsTrig"]
     assert "plain code" in out["wsProv"] and "weekly totals" in out["wsProv"], out["wsProv"]
+    assert out["sfPane"], "staffing-forecast pane not rendered"
+    assert out["sfDays"] == 14, out["sfDays"]
+    assert out["sfEventCards"] == 1, out["sfEventCards"]
+    assert "Payment date" in out["sfEventTitle"], out["sfEventTitle"]
+    assert "payment-date-shift" in out["sfHeadline"], out["sfHeadline"]
+    assert "plain code" in out["sfProv"], out["sfProv"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()

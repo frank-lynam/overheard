@@ -542,3 +542,73 @@ async def test_api_weak_signals(client):
     assert body["signals"][0]["driver"] == "tax-form-1099"
     assert "ev-1099-spike" in body["headline"] or "1099" in body["headline"]
     assert body["prov"].startswith("plain code")
+
+
+# --- view 10: event-driven staffing forecast ---------------------------------
+
+from overheard.analytics.staffing import staffing_forecast  # noqa: E402
+
+TODAY = "2026-03-10"  # the seed's meta today
+
+
+def test_staffing_forecast_is_14_days_of_10_weekdays_and_4_weekends(seeded):
+    _, con, _ = seeded
+    r = staffing_forecast(con)
+    assert len(r["days"]) == 14
+    assert r["horizonStart"] == TODAY
+    weekdays = [d for d in r["days"] if d["baseline"] > 0]
+    weekends = [d for d in r["days"] if d["baseline"] == 0.0]
+    assert len(weekdays) == 10
+    assert len(weekends) == 4
+    # weekends have no baseline: the archive is weekdays only
+    assert all(d["weekday"] in ("Saturday", "Sunday") for d in weekends)
+    # the baseline is the archive's recent weekday average, not a guess
+    assert 80 <= r["weekdayBaseline"] <= 100
+
+
+def test_staffing_forecast_shows_the_payday_tail_then_steady_baseline(seeded):
+    """The only event active at today is ev-payday-12 (2026-02-27, 14 days ->
+    ends 2026-03-12): its 3-day tail (Mar 10-12) carries a decaying excess, and
+    every day from Mar 13 on is pure baseline."""
+    _, con, _ = seeded
+    r = staffing_forecast(con)
+    by_date = {d["date"]: d for d in r["days"]}
+    tail = [by_date[d]["eventExcess"] for d in ("2026-03-10", "2026-03-11", "2026-03-12")]
+    assert all(e > 0 for e in tail)
+    # the decay is falling: each tail day adds less than the last
+    assert tail[0] > tail[1] > tail[2]
+    assert 8 <= sum(tail) <= 12  # ~9.4 excess contacts, per the calendar's own curve
+    # from Mar 13 on: no event excess anywhere, steady weekday baseline
+    for d in r["days"]:
+        if d["date"] > "2026-03-12":
+            assert d["eventExcess"] == 0.0
+            if d["weekday"] not in ("Saturday", "Sunday"):
+                assert d["projectedContacts"] == r["weekdayBaseline"]
+    # agent hours: a few hours on weekdays, nothing on weekends
+    assert all(d["projectedAgentHours"] > 0 for d in r["days"] if d["baseline"] > 0)
+    assert all(d["projectedAgentHours"] == 0.0 for d in r["days"] if d["baseline"] == 0.0)
+
+
+def test_staffing_forecast_event_card(seeded):
+    _, con, _ = seeded
+    r = staffing_forecast(con)
+    assert len(r["events"]) == 1
+    e = r["events"][0]
+    assert e["driver"] == "payment-date-shift"
+    assert e["date"] == "2026-02-27"
+    assert e["remainingDays"] == 3
+    # the card's excess matches the day rows, at the driver's measured handling time
+    assert abs(e["projectedExcessContacts"] - sum(d["eventExcess"] for d in r["days"])) < 0.2
+    assert 0.4 <= e["projectedExcessAgentHours"] <= 1.0
+    # and the whole window's hours line up with its contacts at ~the archive rate
+    total_min = r["totalProjectedAgentHours"] * 60
+    assert abs(total_min - sum(d["projectedContacts"] for d in r["days"]) * 5.2) < 5.0
+
+
+async def test_api_staffing_forecast(client):
+    r = await client.get("/api/staffing-forecast")
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["days"]) == 14
+    assert "payment-date-shift" in body["headline"]
+    assert body["prov"].startswith("plain code")

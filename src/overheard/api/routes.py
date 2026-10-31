@@ -488,3 +488,33 @@ def weak_signals_route(request: Request) -> dict:
         headline = "No weak signals found: no driver ran elevated in the weeks before any spike."
     return {"headline": headline, "signals": cards,
             "prov": "plain code · weekly totals over the archive"}
+
+
+@router.get("/staffing-forecast")
+def staffing_forecast_route(request: Request) -> dict:
+    """Mode 3, view 10: the next 14 days of call volume and agent hours,
+    projected from the archive's recent weekday average plus the events
+    calendar's own decay curve."""
+    from overheard.analytics.staffing import staffing_forecast
+
+    r = staffing_forecast(con(request))
+    if r["events"]:
+        e = r["events"][0]
+        headline = (
+            f"Over the next {r['horizonDays']} days, {e['name']} is in its last "
+            f"{e['remainingDays']} day"
+            f"{'s' if e['remainingDays'] != 1 else ''} "
+            f"({e['date']}), adding about {e['projectedExcessContacts']} more "
+            f"{e['driver']} calls (~{e['projectedExcessAgentHours']} agent-hours). "
+            f"Beyond it the desk is steady: ~{r['weekdayBaseline']} contacts a weekday "
+            f"baseline, ~{r['totalProjectedAgentHours']} agent-hours across the "
+            f"{r['horizonDays']} days."
+        )
+    else:
+        headline = (
+            f"No calendar events are active in the next {r['horizonDays']} days: "
+            f"steady ~{r['weekdayBaseline']} contacts a weekday, "
+            f"~{r['totalProjectedAgentHours']} agent-hours across the window."
+        )
+    return {"headline": headline, **r,
+            "prov": "plain code · trailing 90-weekday baseline + events-calendar decay"}
