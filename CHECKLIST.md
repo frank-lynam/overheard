@@ -23,4 +23,4 @@ New src/overheard/analytics/journeys.py: group contacts by (case_id, root_cause)
 - [x] 5. ruff + full pytest green
 - [x] 6. chromium probe: assert journeys pane + screenshot
 - [x] 7. commit + push
-- [x] 8. board comment with report + screenshot (comment 148, attachment 72)
+- [x] 8. board comment with report + screenshot
