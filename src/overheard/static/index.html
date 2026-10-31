@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Overheard</title>
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Overheard <span class="agency">Federal Benefits Service Center · voicemail</span></div>
+    <nav class="stepper" aria-label="AI mode">
+      <button data-mode="0"><b>0</b> No AI</button>
+      <button data-mode="1"><b>1</b> Obvious AI</button>
+      <button data-mode="2"><b>2</b> Non-obvious AI</button>
+      <button data-mode="3"><b>3</b> Impossible without AI</button>
+    </nav>
+    <div class="scoreboard" aria-live="polite"><span class="muted">scoreboard</span></div>
+  </header>
+  <main class="workbench">
+    <section class="pane queue"><h2>Queue</h2><p class="muted">No messages yet.</p></section>
+    <section class="pane message"><h2>Message</h2><p class="muted">Pick a message.</p></section>
+    <section class="pane context"><h2>Context</h2><p class="muted">Case record and history appear here.</p></section>
+  </main>
+</body>
+</html>
