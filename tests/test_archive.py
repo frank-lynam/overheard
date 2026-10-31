@@ -23,7 +23,7 @@ def test_same_seed_same_data_other_seed_other_data(seeded, tmp_path):
 
 def test_size(seeded):
     _, _, counts = seeded
-    assert 13_500 <= counts["contacts"] <= 16_500, counts
+    assert 60_000 <= counts["contacts"] <= 80_000, counts
 
 
 def test_form_22b_costs_the_most(seeded):
@@ -69,4 +69,4 @@ def test_callers_stuck_in_loops(seeded):
     _, con, _ = seeded
     stuck = q(con, "SELECT count(*) FROM (SELECT case_id FROM contacts WHERE resolved=0 GROUP BY case_id, root_cause "
                    "HAVING count(*) >= 3)")[0][0]
-    assert stuck >= 150
+    assert stuck >= 600

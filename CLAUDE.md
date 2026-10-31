@@ -30,7 +30,7 @@ A demo application that shows how AI streamlines call-center voicemail work for 
 - **Rule of thumb:** LLM for language judgment; plain code for counting, statistics, joins, and baselines.
 - **Storage:** SQLite (stdlib `sqlite3` or a thin wrapper) for seeded data and the pipeline cache keyed by (message, mode). LLM responses live in the response store (above).
 - **Adapters** (all `Protocol` + mock + live): `TranscriptionProvider` (mock now; AWS Transcribe later), `LLMProvider`, `CaseBackend` (mock now; real system of record later). These are the seams for a future real integration; keep business logic out of them.
-- **Data is synthetic and deterministic.** `overheard seed` generates the 60-message "today" queue (hand-written scripts in `data/seed_today.json` with ground-truth labels) and a ~15,000-contact, 3-year archive from a fixed seed. Same seed → byte-identical database. Every planted pattern has a test that the analytics recover it (e.g. Form 22-B tops the root-cause Pareto, within ±10% of its planted cost).
+- **Data is synthetic and deterministic.** `overheard seed` generates the 60-message "today" queue (hand-written scripts in `data/seed_today.json` with ground-truth labels) and a ~70,000-contact, 3-year archive from a fixed seed. Same seed → byte-identical database. Every planted pattern has a test that the analytics recover it (e.g. Form 22-B tops the root-cause Pareto, within ±10% of its planted cost).
 - **Mode 3 is measured, not only planted.** Before a demo, `overheard batch-label` labels a sample of the archive (~1,000 contacts) with the live LLM; Mode 3 shows that measured accuracy against the truth and scales from it.
 - **Config:** pydantic-settings, `OVERHEARD_*` environment variables (`OVERHEARD_LLM_MODE`, `OVERHEARD_LLM_BASE_URL`, `OVERHEARD_LLM_API_KEY`, `OVERHEARD_LLM_MODEL`, `OVERHEARD_LLM_TIMEOUT`, `OVERHEARD_DB_PATH`, `OVERHEARD_SEED`, `OVERHEARD_HOST`, `OVERHEARD_PORT`).
 
@@ -86,7 +86,9 @@ docs/DESIGN.md
 - Text-only transcripts until nearer 1.0.0; audio integration then.
 - The customer is a small centre: the archive is the whole centre, not a sample, and the headline numbers are
   whatever it actually produces (no scaling). The design doc's "$600K a year" and "6,100 extra calls" are not the
-  targets; tests check the planted patterns' ranks and shares, not absolute dollars.
+  targets; tests check the planted patterns' ranks and shares, not absolute dollars. The archive is sized so
+  "today" reads as a normal day plus an incident (~70,000 contacts over 3 years, ~67 a weekday); the demo leads
+  with shares and hours ("one letter takes 1 in 8 agent-hours"), dollars alongside.
 
 ## Still open (ask rather than guess)
 

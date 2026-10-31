@@ -16,7 +16,9 @@ START, END = date(2023, 3, 10), date(2026, 3, 9)         # the archive: three ye
 LANGS = [("en", 0.80), ("es", 0.13), ("vi", 0.03), ("tl", 0.02), ("zh", 0.02)]
 REGIONS = [("CA", 12), ("TX", 10), ("FL", 8), ("NY", 7), ("PA", 5), ("OH", 5), ("IL", 5), ("GA", 4), ("NC", 4), ("MI", 4),
            ("AZ", 3), ("WA", 3), ("TN", 3), ("KY", 2), ("MD", 2), ("NM", 2), ("NV", 2), ("OR", 2), ("MN", 2), ("ME", 1)]
-VOLUME = 1.35               # scales every driver and event alike: about 15,000 archive contacts
+VOLUME = 6.75               # scales every driver and event alike: ~90 contacts a weekday (~27 of them voicemail),
+                            # so the 60-voicemail "today" is a normal day plus an incident: about 70,000 contacts
+CALLERS = 25000             # the archive's caller pool (cases)
 LOOP_SHARE = 0.04            # PLANTED: callers stuck in a loop: 3-6 contacts on one issue, never resolved
 SLOW_LANG = "vi"             # PLANTED: slower, less often resolved service for one language
 BROKEN = {"appeal-status": 0.62, "claim-status": 0.35, "identity-check-hold": 0.45}   # PLANTED: promises broken
@@ -85,7 +87,7 @@ def seed(path: Path | str, seed_value: int = 2026) -> dict:
 
     # The archive's callers: a pool of cases, each with a language and region
     callers = []
-    for i in range(6000):
+    for i in range(CALLERS):
         lang, region = pick(rng, LANGS), pick(rng, REGIONS)
         cid = f"FBS-{500000 + i}"
         name = f"{rng.choice(FIRST)} {rng.choice(LAST)}"
