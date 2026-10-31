@@ -1,26 +1,26 @@
 # Goal
 
-Mode 3 view 8 (knowledge-gap mining) live end to end: an analytics module that cross-references archive contacts against kb_articles topics, ranks the questions callers ask often that no article answers, drafts FAQ and IVR text for each gap (plain code), a GET route, a mode-3 pane, and tests that recover the planted 22-B and 1099 gaps.
+Mode 3 view 9 (missed weak signals) live end to end: analytics module finding drivers that showed an elevated slow-burn BEFORE their spike event (how early they could have been caught), GET route, mode-3 pane, tests recovering the planted 1099 trickle-then-spike, probe + screenshot, commit/push, board report.
 
 ## How it works
 
-Verified: generator.py KB (lines 29-38) has 8 articles, topics = JSON list of driver ids they cover; comment marks PLANTED gaps (22-B re-verification, fax number, 1099 vendor change). contacts table carries root_cause; kb_articles table exists (db.py:18) but nothing reads it yet. Real seed: 32,211 of 71,788 archive contacts (45%) have no covering article; form-22b-confusion (4,807) and tax-form-1099 (801) are the planted ones. Established pattern from views 4-7: analytics module -> route in routes.py -> .m3-pane in index.html + render fn in mode3.js + lazy block in main.js + css -> pytest -> ruff --no-fix -> full pytest -> probe+shot -> commit/push -> board comment.
+View 8 done (commit 03fc391, 88 passed, probe OK, comment 158, shot 77, checklist 8/8). Planted weak signal is in events.py: ev-1099-quiet (policy 2024-10-01, peak 0.25 extra/day, 110 days, driver tax-form-1099) — a trickle — then ev-1099-spike (mailing 2025-01-27, peak 8.0, 20 days). contacts table has root_cause + at (ISO). Established pattern per view: analytics module -> GET route -> pane + render fn + lazy block + css -> pytest -> ruff --no-fix -> full pytest -> probe+shot -> commit/push -> board comment + attachment + checklist PUT.
 
 ## Why it doesn't
 
-No analytics module reads kb_articles; no /api/knowledge-gaps route; index.html has 7 of 8 mode-3 panes (no knowledge-gaps section); no tests. The planted gaps live only in generator comments + the topics column.
+No analytics module scans for pre-spike slow-burns: events.py module only measures excess AROUND events, journeys/promises/equity/letter-lab/ask don't touch the question "how early could this have been caught?". No /api/weak-signals route, no pane, no tests.
 
 ## What would
 
-analytics/knowledge_gaps.py: load KB topics; per-driver contact totals (count, handle, resolve rate); gaps = drivers with no covering article, ranked by count; weak coverage = covered drivers whose real phrasings use content words the article body never mentions (catches the planted fax-number gap: kb-documents says 'Mail documents...' and never says fax); FAQ draft per gap (title = a real caller phrasing, body = plain-code answer from the driver's data) and a short IVR line. GET /api/knowledge-gaps in routes.py. Pane .m3-pane.knowledge-gaps in index.html + renderKnowledgeGaps in mode3.js + lazy block in main.js + css. Tests: form-22b-confusion is the #1 gap, tax-form-1099 flagged, covered driver payment-status is NOT a gap, fax word surfaces as weak coverage of kb-documents, FAQ drafts non-empty, API 200. Ruff --no-fix, full pytest, extend probe + screenshot (real repo path), commit + push (announce), board comment + attachment, tick checklist.
+analytics/weak_signals.py: for each driver, weekly contact series; baseline = median of that driver's weeks outside known event windows; scan the ~12 weeks before each major spike event for weeks above a multiple of baseline; a driver with a sustained early elevation (several weeks above) gets a card: the spike event, when the trickle started, how many weeks/months early a threshold alert would have fired, trickle size vs spike size. GET /api/weak-signals in routes.py. Pane .m3-pane.weak-signals + renderWeakSignals + lazy block + css. Tests: tax-form-1099 flagged with signal predating ev-1099-spike (and ev-1099-quiet the trigger), a driver with no pre-spike elevation NOT flagged, API 200. Ruff --no-fix, full pytest, extend probe + screenshot (repo path), commit+push (announce), board comment + shot, tick+PUT checklist.
 
 ## Steps
 
-- [x] 1. analytics/knowledge_gaps.py (gap ranking + weak coverage + FAQ/IVR drafts)
-- [x] 2. GET /api/knowledge-gaps route
-- [x] 3. Mode-3 pane: index.html + api.js + mode3.js + main.js + css
-- [x] 4. pytest: planted 22-B gap #1, 1099 flagged, covered driver not a gap, fax weak coverage, API 200
-- [x] 5. ruff --no-fix + full pytest green
-- [x] 6. extend chromium probe: knowledge-gaps pane + screenshot
-- [ ] 7. commit + push
-- [ ] 8. board comment with report + screenshot
+- [x] 1. 1. analytics/weak_signals.py (baseline per driver, pre-spike slow-burn scan, how-early estimate)
+- [x] 2. 2. GET /api/weak-signals route
+- [x] 3. 3. Mode-3 pane: index.html + api.js + mode3.js + main.js + css
+- [x] 4. 4. pytest: 1099 trickle predates its spike, quiet event named, no-fake-flag, API 200
+- [x] 5. 5. ruff --no-fix + full pytest green
+- [x] 6. 6. extend chromium probe + screenshot
+- [ ] 7. 7. commit + push (announce)
+- [ ] 8. 8. board comment + screenshot + PUT checklist 8/8

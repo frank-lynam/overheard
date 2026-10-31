@@ -426,3 +426,28 @@ export function renderKnowledgeGaps(el, data) {
     <h3 class="muted">Weak coverage: claimed but not really explained</h3>
     <div class="m3-kg-weaks">${weak}</div>`;
 }
+
+export function renderWeakSignals(el, data) {
+  const cards = (data.signals || []).map((s) => {
+    const trig = (s.triggers || []).map((t) => `${t.name} (${t.date})`).join(", ");
+    return `<div class="m3-ws-card">
+      <div class="m3-ws-title"><b>${s.spikeEvent.name}</b> <span class="muted">${s.spikeEvent.date}</span></div>
+      <p class="muted">The spike week did ${s.spikeWeekContacts.toLocaleString()} contacts. But the weeks before it
+        already ran high: ${s.trickleWeeks} elevated weeks from ${s.trickleStart}, peaking at ${s.tricklePeak}
+        (${s.multipleOfBaseline}x the ${s.driver} baseline of ${s.baselinePerWeek}/week).</p>
+      <p><span class="prov">could have been caught</span> about <b>${s.monthsEarly} months early</b>
+        (${s.weeksEarly} weeks) on a simple threshold alert — ${s.trickleTotal} early contacts vs
+        ${s.spikeWeekContacts.toLocaleString()} in the spike week.</p>
+      ${trig ? `<p class="muted">The trickle lines up with: ${trig}.</p>` : ""}
+    </div>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Missed weak signals <span class="prov">${data.prov}</span></h2>
+      <p class="muted">Spikes look sudden in the week they happen. This looks at the weeks <i>before</i>
+        each spike and asks: how early could we have caught it? Baseline is each driver's own median
+        week outside event windows, so a slow cause is judged against itself.</p>
+    </div>
+    <p class="m3-headline">${data.headline}</p>
+    ${cards ? `<h3 class="muted">The trickle that preceded the spike</h3><div class="m3-ws-cards">${cards}</div>` : ""}`;
+}

@@ -30,7 +30,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
     <section class="m3-pane equity"></section>
     <section class="m3-pane letter-lab"></section>
     <section class="m3-pane ask"></section>
-    <section class="m3-pane knowledge-gaps"></section></main>
+    <section class="m3-pane knowledge-gaps"></section>
+    <section class="m3-pane weak-signals"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -63,6 +64,10 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       // the knowledge-gaps pane: wait for its rows (fetched from /api/knowledge-gaps)
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.knowledge-gaps .m3-kg-row"); i++) await sleep(200);
       document.querySelector(".m3-pane.knowledge-gaps").scrollIntoView();
+      await sleep(1000);
+      // the weak-signals pane: wait for its cards (fetched from /api/weak-signals)
+      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.weak-signals .m3-ws-card"); i++) await sleep(200);
+      document.querySelector(".m3-pane.weak-signals").scrollIntoView();
       await sleep(1000);
       const out = {
         errs,
@@ -118,7 +123,15 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         kgWeak: document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-weak").length,
         kgFax: [...document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-weak")]
           .map(w => w.textContent).find(t => t.includes("Sending documents")) || "",
-        kgProv: (document.querySelector(".m3-pane.knowledge-gaps .prov") || {}).textContent || ""
+        kgProv: (document.querySelector(".m3-pane.knowledge-gaps .prov") || {}).textContent || "",
+        wsPane: !!document.querySelector(".m3-pane.weak-signals .m3-ws-cards"),
+        wsHeadline: (document.querySelector(".m3-pane.weak-signals .m3-headline") || {}).textContent || "",
+        wsCards: document.querySelectorAll(".m3-pane.weak-signals .m3-ws-card").length,
+        wsTopTitle: (document.querySelector(".m3-pane.weak-signals .m3-ws-card .m3-ws-title b") || {}).textContent || "",
+        wsEarly: [...document.querySelectorAll(".m3-pane.weak-signals .m3-ws-card b")]
+          .map(b => b.textContent).find(t => /months early/.test(t)) || "",
+        wsTrig: (document.querySelector(".m3-pane.weak-signals .m3-ws-card p:last-of-type") || {}).textContent || "",
+        wsProv: (document.querySelector(".m3-pane.weak-signals .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -147,7 +160,7 @@ try:
     shot = str(Path(__file__).resolve().parent.parent / "probe_mode3_shot.png")
     res = subprocess.run(
         ["chromium", "--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
-         "--virtual-time-budget=25000", "--window-size=1400,3000", f"--screenshot={shot}",
+         "--virtual-time-budget=30000", "--window-size=1400,5600", f"--screenshot={shot}",
          "--dump-dom", f"http://127.0.0.1:{PORT}/__probe_mode3.html"],
         capture_output=True, text=True, timeout=180)
     print("chromium rc:", res.returncode, (res.stderr or "").strip()[-400:])
@@ -198,6 +211,13 @@ try:
     assert "Sending documents" in out["kgFax"] and "fax" in out["kgFax"].lower(), out["kgFax"]
     assert "kb_articles against the archive" in out["kgProv"], out["kgProv"]
     assert "topics covered" in out["kgHeadline"], out["kgHeadline"]
+    assert out["wsPane"], "weak-signals pane not rendered"
+    assert out["wsCards"] >= 1, out["wsCards"]
+    assert "1099" in out["wsTopTitle"], out["wsTopTitle"]
+    assert "early" in out["wsEarly"].lower(), out["wsEarly"]
+    assert "1099" in out["wsHeadline"].lower(), out["wsHeadline"]
+    assert "vendor change" in out["wsTrig"].lower(), out["wsTrig"]
+    assert "plain code" in out["wsProv"] and "weekly totals" in out["wsProv"], out["wsProv"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()

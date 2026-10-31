@@ -494,3 +494,51 @@ async def test_api_knowledge_gaps(client):
     assert any(g["driver"] == "tax-form-1099" for g in body["gaps"])
     assert any(w["articleId"] == "kb-documents" and "fax" in w["uncovered"]
                for w in body["weakCoverage"])
+
+
+# --- view 9: missed weak signals ---------------------------------------------
+
+from overheard.analytics.weak_signals import weak_signals  # noqa: E402
+
+
+def test_weak_signals_recovers_the_planted_1099_trickle(seeded):
+    _, con, _ = seeded
+    cards = weak_signals(con)
+    assert cards, "the planted trickle-then-spike must surface"
+    top = cards[0]
+    assert top["driver"] == "tax-form-1099"
+    assert top["spikeEvent"]["id"] == "ev-1099-spike"
+    # the trickle is the quiet policy change, on 2024-10-01: the signal starts after it
+    assert any(t["id"] == "ev-1099-quiet" for t in top["triggers"])
+    assert top["trickleStart"] >= "2024-09-25"
+    assert top["trickleStart"] < "2025-01-27"
+    # an alert on the trickle would have fired months before the spike week
+    assert top["weeksEarly"] >= 12
+    assert top["trickleWeeks"] >= 3
+    assert top["tricklePeak"] >= 2.5 * top["baselinePerWeek"]
+    # and the trickle really was small next to the spike it preceded
+    assert top["trickleTotal"] < top["spikeWeekContacts"]
+
+
+def test_weak_signals_does_not_fake_a_flag(seeded):
+    """Drivers with no pre-spike elevation must not get a card: the spike week is
+    excluded from the scan, so a driver whose series is flat until the spike is
+    not 'early' for itself."""
+    _, con, _ = seeded
+    cards = weak_signals(con)
+    by_driver = {c["driver"]: c for c in cards}
+    assert "tax-form-1099" in by_driver
+    # every card's trickle must actually precede its spike event date
+    for c in cards:
+        assert c["trickleStart"] < c["spikeEvent"]["date"]
+        assert c["tricklePeak"] < 20  # a 'trickle' week below SPIKE_MIN_WEEKLY
+
+
+async def test_api_weak_signals(client):
+    r = await client.get("/api/weak-signals")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["signals"]
+    assert body["signals"][0]["driver"] == "tax-form-1099"
+    assert "ev-1099-spike" in body["headline"] or "1099" in body["headline"]
+    assert body["prov"].startswith("plain code")

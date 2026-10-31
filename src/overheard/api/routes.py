@@ -461,3 +461,30 @@ def knowledge_gaps(request: Request) -> dict:
     from overheard.analytics.knowledge_gaps import knowledge_gaps as gaps
 
     return gaps(con(request))
+
+
+@router.get("/weak-signals")
+def weak_signals_route(request: Request) -> dict:
+    """Mode 3, view 9: the weak signals the archive shows that could have
+    caught each spike before it happened — trickle vs spike, how early."""
+    from overheard.analytics.weak_signals import weak_signals
+
+    cards = weak_signals(con(request))
+    if cards:
+        top = cards[0]
+        trig = top["triggers"][0]["name"] if top["triggers"] else "no calendar event"
+        trig_date = top["triggers"][0]["date"] if top["triggers"] else "nothing on the calendar"
+        headline = (
+            f"{top['spikeEvent']['name']} ({top['spikeEvent']['date']}) was not sudden: "
+            f"{top['trickleWeeks']} weeks of elevated calls ran ahead of it, peaking at "
+            f"{top['multipleOfBaseline']}x the {top['driver']} baseline of "
+            f"{top['baselinePerWeek']}/week. A simple threshold alert would have fired "
+            f"about {top['monthsEarly']} months ({top['weeksEarly']} weeks) before the "
+            f"spike. The trickle lines up with {trig} ({trig_date}) — "
+            f"the early cost was {top['trickleTotal']} contacts; the spike week was "
+            f"{top['spikeWeekContacts']}."
+        )
+    else:
+        headline = "No weak signals found: no driver ran elevated in the weeks before any spike."
+    return {"headline": headline, "signals": cards,
+            "prov": "plain code · weekly totals over the archive"}
