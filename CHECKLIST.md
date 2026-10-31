@@ -24,4 +24,4 @@ Backend: llm/tasks/resolution.py + pipeline/resolution.py (tool lookups via Mock
 - [x] 6. CSS for banner/badges/clocks/collapse
 - [x] 7. tests/test_mode2.py offline (grouping, incident, resolution+approve, obligations+rules, repeats, windows, queue, scoreboard); ruff + full pytest green
 - [x] 8. chromium smoke probe + screenshot
-- [ ] 9. commit + push + board comment; tick Mode 2 item; review hand-off (comment + PATCH status=review); tidy
+- [x] 9. commit `d3a0ea4` + push to `deploy ticket/fancy-wombat` + board "Done" comment 141 (screenshot 69) + checklist 8/11 + status=review; tidy
