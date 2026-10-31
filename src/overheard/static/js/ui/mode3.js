@@ -397,3 +397,32 @@ function renderAskResults(el, data) {
     ${t.events?.length ? `<h3 class="muted">Calendar events overlapping the period</h3><ul class="m3-ask-events">${events}</ul>` : ""}
     ${t.evidence?.length ? `<h3 class="muted">Evidence: real messages from the archive</h3><ul class="m3-ask-evidence">${evidence}</ul>` : ""}`;
 }
+
+export function renderKnowledgeGaps(el, data) {
+  const gaps = (data.gaps || []).map((g, i) => `<div class="m3-kg-row">
+      <div class="m3-kg-gap">
+        <b class="m3-kg-rank">#${i + 1}</b> <b>${g.name}</b>
+        <span class="muted">${g.count.toLocaleString()} contacts · ${g.sharePct}% of archive · ${g.hours}h · ${Math.round(g.resolveRate * 100)}% resolved</span>
+      </div>
+      <div class="m3-kg-faq"><span class="prov">FAQ draft</span><b>${g.faq.title}</b><p>${g.faq.body}</p></div>
+      <div class="m3-kg-ivr"><span class="prov">IVR line</span> ${g.ivr}</div>
+    </div>`).join("");
+  const weak = (data.weakCoverage || []).map((w) => {
+    const words = Object.entries(w.uncovered || {}).slice(0, 8).map(([word, phr]) =>
+      `<li><b>${word}</b> <span class="muted">— “${phr[0]}”</span></li>`).join("");
+    return `<div class="m3-kg-weak"><b>${w.articleTitle}</b> <span class="muted">claims to cover a topic but never says:</span>
+      <ul>${words}</ul></div>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Knowledge gaps <span class="prov">plain code · kb_articles against the archive</span></h2>
+      <p class="muted">What callers ask about that no knowledge-base article answers, ranked by archive
+        volume, with a drafted FAQ entry and IVR line for each — plain code, from the driver's measured
+        data. Under that: articles that claim a topic but whose body never uses the words callers actually
+        use (weak coverage).</p>
+    </div>
+    <p class="m3-headline">${data.coveredDrivers} of ${data.drivers} topics covered · ${data.coveragePct}% of archive contacts on covered topics · ${data.articles} articles</p>
+    ${gaps ? `<h3 class="muted">Unanswered questions, ranked</h3><div class="m3-kg-gaps">${gaps}</div>` : ""}
+    <h3 class="muted">Weak coverage: claimed but not really explained</h3>
+    <div class="m3-kg-weaks">${weak}</div>`;
+}

@@ -452,3 +452,12 @@ def archive_ask(request: Request, q: ArchiveQuestion) -> dict:
     from overheard.analytics.ask import ask
 
     return ask(con(request), q.question.strip())
+
+
+@router.get("/knowledge-gaps")
+def knowledge_gaps(request: Request) -> dict:
+    """Mode 3, view 8: the questions the knowledge base doesn't answer, ranked
+    by the archive's contact volume, with plain-code FAQ and IVR drafts."""
+    from overheard.analytics.knowledge_gaps import knowledge_gaps as gaps
+
+    return gaps(con(request))

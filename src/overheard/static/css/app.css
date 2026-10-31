@@ -158,6 +158,15 @@ body[data-mode="2"] .queue-row { grid-template-columns: 4.4rem 1fr 2.5rem 1.2rem
 .m3-letterlab-run[disabled] { opacity: .6; cursor: default; }
 .m3-letterlab-results { margin-top: 1rem; }
 .m3-letterlab-questions { padding-left: 1.2rem; font-size: .9rem; line-height: 1.5; }
+.m3-kg-gaps { margin: .5rem 0 1rem; display: flex; flex-direction: column; gap: .8rem; }
+.m3-kg-row { border: 1px solid var(--line); border-radius: 4px; padding: .6rem; display: flex; flex-direction: column; gap: .4rem; }
+.m3-kg-gap { font-size: .9rem; }
+.m3-kg-rank { color: #c9573f; }
+.m3-kg-faq, .m3-kg-ivr { font-size: .85rem; line-height: 1.45; background: var(--line); border-radius: 4px; padding: .4rem .6rem; }
+.m3-kg-faq p { margin: .25rem 0 0; }
+.m3-kg-weaks { display: flex; flex-direction: column; gap: .5rem; }
+.m3-kg-weak { font-size: .85rem; line-height: 1.45; }
+.m3-kg-weak ul { margin: .2rem 0 0; padding-left: 1.2rem; }
 .m3-letterlab-rewrite { white-space: pre-wrap; font-size: .9rem; line-height: 1.45; background: var(--line); border-radius: 4px; padding: .6rem .8rem; overflow-wrap: anywhere; }
 .m3-ask-form { margin: .75rem 0; }
 .m3-ask-form label { display: block; font-size: .85rem; margin-bottom: .25rem; }

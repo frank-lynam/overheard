@@ -35,4 +35,5 @@ export const api = {
   equity: () => call("GET", "/archive/equity"),
   letterLab: (text) => call("POST", "/archive/letter-lab", { text }),
   askArchive: (question) => call("POST", "/archive/ask", { question }),
+  knowledgeGaps: () => call("GET", "/knowledge-gaps"),
 };

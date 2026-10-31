@@ -29,7 +29,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
     <section class="m3-pane promises"></section>
     <section class="m3-pane equity"></section>
     <section class="m3-pane letter-lab"></section>
-    <section class="m3-pane ask"></section></main>
+    <section class="m3-pane ask"></section>
+    <section class="m3-pane knowledge-gaps"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -58,6 +59,10 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       document.querySelector(".m3-pane.ask #ask-sample").click();
       for (let i = 0; i < 150 && (askp.querySelector(".m3-ask-results") || {}).hidden; i++) await sleep(200);
       askp.scrollIntoView();
+      await sleep(1000);
+      // the knowledge-gaps pane: wait for its rows (fetched from /api/knowledge-gaps)
+      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.knowledge-gaps .m3-kg-row"); i++) await sleep(200);
+      document.querySelector(".m3-pane.knowledge-gaps").scrollIntoView();
       await sleep(1000);
       const out = {
         errs,
@@ -103,7 +108,17 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         askHeadline: (document.querySelector(".m3-pane.ask .m3-ask-results .m3-headline") || {}).textContent || "",
         askEvents: [...document.querySelectorAll(".m3-pane.ask .m3-ask-events li")].map(li => li.textContent),
         askEvidence: document.querySelectorAll(".m3-pane.ask .m3-ask-evidence li").length,
-        askProv: (document.querySelector(".m3-pane.ask .prov") || {}).textContent || ""
+        askProv: (document.querySelector(".m3-pane.ask .prov") || {}).textContent || "",
+        kgPane: !!document.querySelector(".m3-pane.knowledge-gaps .m3-kg-gaps"),
+        kgHeadline: (document.querySelector(".m3-pane.knowledge-gaps .m3-headline") || {}).textContent || "",
+        kgRows: document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-row").length,
+        kgTopGap: (document.querySelector(".m3-pane.knowledge-gaps .m3-kg-gap") || {}).textContent || "",
+        kgFaq: (document.querySelector(".m3-pane.knowledge-gaps .m3-kg-faq b") || {}).textContent || "",
+        kgIvr: (document.querySelector(".m3-pane.knowledge-gaps .m3-kg-ivr") || {}).textContent || "",
+        kgWeak: document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-weak").length,
+        kgFax: [...document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-weak")]
+          .map(w => w.textContent).find(t => t.includes("Sending documents")) || "",
+        kgProv: (document.querySelector(".m3-pane.knowledge-gaps .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -175,6 +190,14 @@ try:
     assert "ev-22b-3" not in out["askHeadline"] and any("3rd mailing" in e for e in out["askEvents"]), out["askEvents"]
     assert out["askEvidence"] >= 1
     assert "plain code" in out["askProv"] and "totals over the archive" in out["askProv"]
+    assert out["kgPane"] and out["kgRows"] >= 5, out["kgRows"]
+    assert "form 22b" in out["kgTopGap"].lower(), out["kgTopGap"]
+    assert "22-B" in out["kgFaq"], out["kgFaq"]
+    assert "for help with this topic from the" in out["kgIvr"], out["kgIvr"]
+    assert out["kgWeak"] >= 4, out["kgWeak"]
+    assert "Sending documents" in out["kgFax"] and "fax" in out["kgFax"].lower(), out["kgFax"]
+    assert "kb_articles against the archive" in out["kgProv"], out["kgProv"]
+    assert "topics covered" in out["kgHeadline"], out["kgHeadline"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()

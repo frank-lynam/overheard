@@ -435,3 +435,62 @@ async def test_api_ask(client):
     assert body["matchedCause"] == PLANTED_TOP
     assert body["totals"]["count"] >= 100
     assert body["totals"]["events"][0]["id"] == "ev-22b-3"
+
+
+# --- Mode 3, view 8: knowledge gaps --------------------------------------------
+
+from overheard.analytics.knowledge_gaps import knowledge_gaps  # noqa: E402
+
+
+def test_knowledge_gaps_ranks_the_planted_22b_first(seeded):
+    _, con, _ = seeded
+    result = knowledge_gaps(con)
+    assert result["gaps"], "the planted gaps must surface"
+    assert result["gaps"][0]["driver"] == PLANTED_TOP
+    assert result["gaps"][0]["count"] >= 1000  # the four 22-B mailings are a real excess
+
+
+def test_knowledge_gaps_flags_the_planted_1099(seeded):
+    _, con, _ = seeded
+    drivers = {g["driver"] for g in knowledge_gaps(con)["gaps"]}
+    assert "tax-form-1099" in drivers  # no article covers the 1099 vendor change
+    assert "payment-status" not in drivers  # kb-payment-dates covers it: not a gap
+
+
+def test_knowledge_gaps_faq_and_ivr_drafts_are_real(seeded):
+    _, con, _ = seeded
+    gaps = knowledge_gaps(con)["gaps"]
+    for g in gaps[:3]:
+        assert g["faq"]["title"].strip() and g["faq"]["body"].strip()
+        assert g["ivr"].strip()
+        assert g["faq"]["body"].startswith("Callers ask about")
+    top = gaps[0]
+    assert "22-B" in top["faq"]["title"]  # a real caller phrasing, not invented copy
+    assert top["sharePct"] > 0
+
+
+def test_knowledge_gaps_surfaces_the_planted_fax_weakness(seeded):
+    _, con, _ = seeded
+    result = knowledge_gaps(con)
+    doc = next(w for w in result["weakCoverage"] if w["articleId"] == "kb-documents")
+    assert "fax" in doc["uncovered"]  # article says mail, never says fax
+    assert any("fax" in p.lower() for p in doc["uncovered"]["fax"])
+
+
+def test_knowledge_gaps_coverage_math_is_honest(seeded):
+    _, con, _ = seeded
+    result = knowledge_gaps(con)
+    assert 0 < result["coveredDrivers"] < result["drivers"]
+    assert result["coveredContacts"] < result["allContacts"]
+    truth = con.execute("SELECT COUNT(*) FROM kb_articles").fetchone()[0]
+    assert result["articles"] == truth
+
+
+async def test_api_knowledge_gaps(client):
+    r = await client.get("/api/knowledge-gaps")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["gaps"][0]["driver"] == PLANTED_TOP
+    assert any(g["driver"] == "tax-form-1099" for g in body["gaps"])
+    assert any(w["articleId"] == "kb-documents" and "fax" in w["uncovered"]
+               for w in body["weakCoverage"])
