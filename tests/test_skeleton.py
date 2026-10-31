@@ -20,8 +20,10 @@ def test_version(capsys):
     assert __version__ in capsys.readouterr().out
 
 
-async def test_health_and_shell():
-    transport = httpx.ASGITransport(app=create_app())
+async def test_health_and_shell(seeded):
+    from overheard.config import Settings
+
+    transport = httpx.ASGITransport(app=create_app(Settings(db_path=seeded[0])))
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         health = (await client.get("/api/health")).json()
         assert health == {"ok": True, "version": __version__, "llm_mode": "mock"}

@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Overheard</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232e5d8a'/%3E%3Cpath d='M11 13a5 5 0 0 1 10 0c0 4-5 4-5 8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/app.css">
   <script type="module" src="js/main.js"></script>
 </head>
@@ -18,10 +19,11 @@
     </nav>
     <div class="scoreboard" aria-live="polite"><span class="muted">scoreboard</span></div>
   </header>
+  <p class="later" hidden>This mode arrives in a later build. For now the workbench shows Mode 0.</p>
   <main class="workbench">
-    <section class="pane queue"><h2>Queue</h2><p class="muted">No messages yet.</p></section>
-    <section class="pane message"><h2>Message</h2><p class="muted">Pick a message.</p></section>
-    <section class="pane context"><h2>Context</h2><p class="muted">Case record and history appear here.</p></section>
+    <section class="pane queue"></section>
+    <section class="pane message"><p class="muted">Pick a message.</p></section>
+    <section class="pane context"></section>
   </main>
 </body>
 </html>

@@ -1,15 +1,52 @@
+import { api } from "./core/api.js";
 import { createStore } from "./core/store.js";
+import { renderContext } from "./ui/context.js";
+import { renderMessage } from "./ui/message.js";
+import { renderQueue } from "./ui/queue.js";
+import { renderScoreboard } from "./ui/scoreboard.js";
 
-const store = createStore({ mode: 0 });
+const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
-
 buttons.forEach((b) => b.addEventListener("click", () => store.set({ mode: Number(b.dataset.mode) })));
 document.addEventListener("keydown", (e) => {
-  if (["1", "2", "3", "4"].includes(e.key) && !e.target.closest("input, textarea")) {
-    store.set({ mode: Number(e.key) - 1 });
-  }
+  if (["1", "2", "3", "4"].includes(e.key) && !e.target.closest("input, textarea, select")) store.set({ mode: Number(e.key) - 1 });
 });
 store.subscribe(({ mode }) => {
   buttons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.mode) === mode)));
   document.body.dataset.mode = mode;
+  document.querySelector(".later").hidden = mode === 0;
+}, ["mode"]);
+
+renderQueue(document.querySelector(".pane.queue"), store);
+renderMessage(document.querySelector(".pane.message"), store);
+renderContext(document.querySelector(".pane.context"));
+renderScoreboard(document.querySelector(".scoreboard"), store);
+
+const refresh = async () => store.set({ queue: await api.queue() });
+store.on("saved", async ({ seconds }) => {
+  const times = (store.get()._times || []).concat(seconds);
+  store.set({ _times: times, pace: times.reduce((a, b) => a + b, 0) / times.length });
+  await refresh();
 });
+
+// "Work the queue": fast-forward one simulated agent through the day, stamping each message as it's reached.
+store.on("simulate", async () => {
+  const sim = await api.simulation(store.get().mode);
+  const touches = {};
+  store.set({ touches, sim: null });
+  const reached = sim.touches.filter((t) => t.firstTouch);
+  for (const t of reached) {
+    touches[t.id] = { at: t.firstTouch, late: t.id === sim.urgentId };
+    store.set({ touches: { ...touches }, simClock: t.firstTouch });
+    document.querySelector(`[data-id="${t.id}"]`)?.scrollIntoView({ block: "nearest" });
+    await new Promise((r) => setTimeout(r, 120));
+  }
+  for (const t of sim.touches.filter((x) => !x.firstTouch)) touches[t.id] = { at: null, late: true };
+  store.set({ touches: { ...touches }, sim, simClock: null });
+});
+
+(async () => {
+  const day = await api.day();
+  store.set({ today: day.date });
+  await refresh();
+})();
