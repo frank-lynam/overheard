@@ -23,7 +23,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
   <button data-mode="2">2</button><button data-mode="3">3</button></nav>
   <div class="scoreboard"></div></header>
   <p class="later" hidden></p>
-  <main class="mode3" hidden><section class="m3-pane root-causes"></section></main>
+  <main class="mode3" hidden><section class="m3-pane root-causes"></section>
+    <section class="m3-pane event-impact"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -35,7 +36,7 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
     (async () => {
       for (let i = 0; i < 100 && document.querySelectorAll(".queue-row").length < 60; i++) await sleep(100);
       document.querySelector('button[data-mode="3"]').click();
-      for (let i = 0; i < 150 && !document.querySelector(".m3-chart svg"); i++) await sleep(200);
+      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.event-impact .m3-table tbody tr"); i++) await sleep(200);
       await sleep(1500);
       const out = {
         errs,
@@ -45,8 +46,12 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         stats: [...document.querySelectorAll(".m3-stats .stat b")].map(b => b.textContent),
         bars: document.querySelectorAll(".m3-chart rect").length,
         cumLine: !!document.querySelector(".m3-chart polyline"),
-        tableRows: document.querySelectorAll(".m3-table tbody tr").length,
-        topCause: (document.querySelector(".m3-table tbody tr td") || {}).textContent || ""
+        tableRows: document.querySelectorAll(".m3-pane.root-causes .m3-table tbody tr").length,
+        topCause: (document.querySelector(".m3-pane.root-causes .m3-table tbody tr td") || {}).textContent || "",
+        eventRows: document.querySelectorAll(".m3-pane.event-impact .m3-table tbody tr").length,
+        topEvent: (document.querySelector(".m3-pane.event-impact .m3-table tbody tr td:nth-child(2)") || {})
+          .textContent || "",
+        quietTags: document.querySelectorAll(".m3-pane.event-impact .quiet").length
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -88,6 +93,9 @@ try:
     assert out["topCause"].replace(" ", "").lower() == "form22bconfusion", out["topCause"]
     assert out["bars"] >= 12 and out["cumLine"]
     assert out["tableRows"] == 10
+    assert out["eventRows"] == 14, out["eventRows"]
+    assert "22-B" in out["topEvent"] and "1st mailing" in out["topEvent"], out["topEvent"]
+    assert out["quietTags"] >= 1
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()

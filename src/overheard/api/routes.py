@@ -394,3 +394,11 @@ def get_archive_root_causes(request: Request) -> dict:
     from overheard.analytics.root_causes import root_causes
 
     return root_causes(con(request), request.app.state.settings.labor_rate)
+
+
+@router.get("/archive/event-impact")
+def get_archive_event_impact(request: Request) -> dict:
+    """Mode 3, view 2: which moments (mailings, releases, policy changes) moved the call volume."""
+    from overheard.analytics.events import event_impact
+
+    return {"events": event_impact(con(request))}

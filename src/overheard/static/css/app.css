@@ -136,3 +136,6 @@ body[data-mode="2"] .queue-row { grid-template-columns: 4.4rem 1fr 2.5rem 1.2rem
 .m3-table th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: .3rem .5rem; border-bottom: 2px solid var(--line); }
 .m3-table td { padding: .3rem .5rem; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .m3-table .num { text-align: right; }
+.mode3 .m3-pane + .m3-pane { margin-top: 1rem; }
+.m3-table tr.hot td { background: rgba(255, 180, 60, .12); }
+.m3-table .quiet { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }

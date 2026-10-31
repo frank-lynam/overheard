@@ -29,4 +29,5 @@ export const api = {
   scoreboard2: () => call("GET", "/scoreboard2"),
   // mode 3: the archive analytics
   rootCauses: () => call("GET", "/archive/root-causes"),
+  eventImpact: () => call("GET", "/archive/event-impact"),
 };
