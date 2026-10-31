@@ -5,7 +5,7 @@ import { renderMessage } from "./ui/message.js";
 import { renderQueue } from "./ui/queue.js";
 import { renderScoreboard } from "./ui/scoreboard.js";
 
-const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null });
+const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
 buttons.forEach((b) => b.addEventListener("click", () => store.set({ mode: Number(b.dataset.mode) })));
 document.addEventListener("keydown", (e) => {
@@ -46,7 +46,8 @@ store.on("simulate", async () => {
 });
 
 (async () => {
-  const day = await api.day();
-  store.set({ today: day.date });
+  const [day, assumptions] = await Promise.all([api.day(), api.assumptions()]);
+  store.set({ today: day.date, assumptions });
   await refresh();
+  store.set({ sim: await api.simulation(store.get().mode) });
 })();

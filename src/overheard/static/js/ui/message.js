@@ -1,6 +1,6 @@
 // Mode 0's message: "listen" (the transcript appears at speaking pace), then the manual form.
 import { api } from "../core/api.js";
-import { clock, el, mmss, phone, put } from "../core/format.js";
+import { clock, el, hm, mmss, phone, put } from "../core/format.js";
 
 const WPM = 150;
 const CATEGORIES = ["", "Payment status", "Document status", "Portal / sign-in", "Address or contact change",
@@ -17,6 +17,10 @@ export function renderMessage(root, store) {
     if (!id) { put(root, el("p", { class: "muted" }, "Pick a message.")); return; }
     current = await api.message(id);
     const saved = (await api.entries())[id] || {};
+    let a = store.get().assumptions;
+    if (!a) { a = await api.assumptions(); store.set({ assumptions: a }); }
+    const listenMin = current.durationSec / 60;
+    const workloadMin = listenMin + a.handleMin + a.callbackMin;
     opened = performance.now();
     const words = current.script.split(/\s+/);
     const totalSec = Math.max(current.durationSec, (words.length / WPM) * 60);
@@ -84,6 +88,8 @@ export function renderMessage(root, store) {
     put(root, 
       el("div", { class: "pane-head" }, el("h2", {}, "Message"),
         el("span", { class: "muted" }, `${clock(current.receivedAt)} · ${phone(current.callerId)} · ${mmss(current.durationSec)}`)),
+       el("p", { class: "workload muted" },
+         `Costs the agent ${hm(workloadMin)}: ${hm(listenMin)} listening, ${hm(a.handleMin)} handling, ${hm(a.callbackMin)} on a callback.`),
       el("div", { class: "player" }, playBtn, speedBtn, bar, time),
       text,
       el("h3", {}, "Your entry"),

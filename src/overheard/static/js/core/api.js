@@ -17,4 +17,5 @@ export const api = {
   saveEntry: (id, entry) => call("PUT", `/entries/${id}`, entry),
   simulation: (mode) => call("GET", `/simulation?mode=${mode}`),
   assumptions: () => call("GET", "/assumptions"),
+  saveAssumptions: (a) => call("PUT", "/assumptions", a),
 };
