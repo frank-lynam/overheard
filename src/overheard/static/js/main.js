@@ -4,7 +4,7 @@ import { renderContext, bindResolutionBump } from "./ui/context.js";
 import { renderMessage } from "./ui/message.js";
 import { renderQueue } from "./ui/queue.js";
 import { renderScoreboard } from "./ui/scoreboard.js";
-import { renderRootCauses, renderEventImpact, renderJourneys, renderPromises } from "./ui/mode3.js";
+import { renderRootCauses, renderEventImpact, renderJourneys, renderPromises, renderEquity } from "./ui/mode3.js";
 
 const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null, incidents: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
@@ -47,6 +47,13 @@ store.subscribe(({ mode }) => {
       api.promises().then((data) => {
         ppane.dataset.loaded = "1";
         renderPromises(ppane, data);
+      }).catch(() => {});
+    }
+    const qpane = m3.querySelector(".m3-pane.equity");
+    if (qpane.dataset.loaded !== "1") {
+      api.equity().then((data) => {
+        qpane.dataset.loaded = "1";
+        renderEquity(qpane, data);
       }).catch(() => {});
     }
   }

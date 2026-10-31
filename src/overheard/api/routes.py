@@ -418,3 +418,11 @@ def get_archive_promises(request: Request) -> dict:
     from overheard.analytics.promises import promise_outcomes
 
     return promise_outcomes(con(request))
+
+
+@router.get("/archive/equity")
+def get_archive_equity(request: Request) -> dict:
+    """Mode 3, view 5: equity — wait times and outcomes by language and channel, and the gaps."""
+    from overheard.analytics.equity import equity_report
+
+    return equity_report(con(request))

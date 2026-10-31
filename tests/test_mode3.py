@@ -8,6 +8,7 @@ Offline: no LLM involved at all."""
 import httpx
 import pytest
 
+from overheard.analytics.equity import equity_report
 from overheard.analytics.events import event_impact
 from overheard.analytics.journeys import repeat_callers
 from overheard.analytics.promises import promise_outcomes
@@ -237,3 +238,51 @@ async def test_api_promises(client):
     top = {c["cause"]: c["brokenRate"] for c in body["causes"]}
     assert top["appeal-status"] == max(top.values())  # the worst offender is the planted worst cause
     assert body["worstOffender"]["cause"] == "appeal-status"
+
+
+PLANTED_SLOW_LANG = "vi"
+PLANTED_WAIT_RATIO = 1.35  # the generator scales the slow language's handle time by this
+
+
+def test_equity_flags_the_planted_slow_language(seeded):
+    _, con, _ = seeded
+    report = equity_report(con)
+    langs = {r["name"]: r for r in report["languages"]}
+    # vi is the slowest language by a real margin
+    assert report["worstLanguage"]["slow"] == PLANTED_SLOW_LANG
+    others = [r["avgWaitMin"] for n, r in langs.items() if n != PLANTED_SLOW_LANG]
+    assert langs[PLANTED_SLOW_LANG]["avgWaitMin"] > max(others) * 1.1
+    # the wait gap is within ~10% of the planted 1.35x (gaussian noise wobbles it a bit)
+    ratio = report["worstLanguage"]["waitRatio"]
+    assert 1.25 <= ratio <= 1.45, (ratio, PLANTED_WAIT_RATIO)
+    # the planted resolution penalty (~15 points) and doubled time-to-resolution show up
+    fast = report["worstLanguage"]["fastResolveRate"]
+    slow = report["worstLanguage"]["slowResolveRate"]
+    assert 0.10 <= fast - slow <= 0.20, (fast, slow)
+    assert langs[PLANTED_SLOW_LANG]["avgDaysToResolve"] > 1.7 * max(
+        r["avgDaysToResolve"] for n, r in langs.items() if n != PLANTED_SLOW_LANG
+    )
+
+
+def test_equity_is_complete(seeded):
+    _, con, _ = seeded
+    report = equity_report(con)
+    total = con.execute("SELECT COUNT(*) FROM contacts").fetchone()[0]
+    assert report["totalContacts"] == total
+    assert sum(r["contacts"] for r in report["languages"]) == total
+    assert sum(r["contacts"] for r in report["channels"]) == total
+    # group means agree with the raw SQL baseline
+    for lang, m in con.execute("SELECT lang, AVG(handle_min) FROM contacts GROUP BY lang"):
+        row = next(r for r in report["languages"] if r["name"] == lang)
+        assert row["avgWaitMin"] == round(m, 2), (lang, row, m)
+    # channels are the archive's three, nothing invented
+    assert {r["name"] for r in report["channels"]} == {"voicemail", "phone", "web"}
+
+
+async def test_api_equity(client):
+    r = await client.get("/api/archive/equity")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["totalContacts"] > 50_000
+    assert body["worstLanguage"]["slow"] == PLANTED_SLOW_LANG
+    assert body["worstLanguage"]["waitRatio"] > 1.2

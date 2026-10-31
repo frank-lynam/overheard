@@ -194,3 +194,51 @@ export function renderPromises(el, data) {
       <span class="m3-promise-num">${pct(c.brokenRate)}</span>
     </div>`).join("");
 }
+
+export function renderEquity(el, data) {
+  const rows = (list, unit) => list.map((r) => `<tr>
+      <td>${r.name}</td>
+      <td class="num">${r.contacts.toLocaleString()}</td>
+      <td class="num">${r.avgWaitMin.toFixed(1)}${unit}</td>
+      <td class="num">${r.medianWaitMin.toFixed(1)}${unit}</td>
+      <td class="num">${(r.resolveRate * 100).toFixed(0)}%</td>
+      <td class="num">${r.avgDaysToResolve == null ? "–" : r.avgDaysToResolve.toFixed(0)}</td>
+    </tr>`).join("");
+  const table = (list, name, unit) => `
+    <h3 class="muted">${name}</h3>
+    <table class="m3-table">
+      <thead><tr><th>${name.toLowerCase()}</th><th class="num">contacts</th><th class="num">avg wait</th>
+        <th class="num">median wait</th><th class="num">resolved</th><th class="num">days to resolve</th></tr></thead>
+      <tbody>${rows(list, unit)}</tbody>
+    </table>`;
+  const worst = data.worstLanguage;
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Who waits how long <span class="prov">plain code · contacts by language and channel</span></h2>
+      <p class="muted">${data.totalContacts.toLocaleString()} contacts, grouped by the caller's language and
+        channel. "Wait" is the centre's handle time per contact; "days to resolve" is how long the issue stayed
+        open on the ones that did close:</p>
+      ${worst ? `<p class="m3-headline"><b>${worst.slow}</b> callers wait the longest: ${worst.slowWaitMin.toFixed(1)} min
+        per contact on average — <b>${worst.waitRatio}x</b> the ${worst.fast} callers at ${worst.fastWaitMin.toFixed(1)} min —
+        and their issues resolve less often (${(worst.slowResolveRate * 100).toFixed(0)}% vs ${(worst.fastResolveRate * 100).toFixed(0)}%)
+        and slower (${worst.slowDays} vs ${worst.fastDays} days). That's a service gap, not an accident of the average.</p>` : ""}
+      <div class="m3-stats">
+        <div class="stat"><b>${worst ? worst.waitRatio : "–"}x</b><span class="muted">slowest vs fastest wait ratio</span></div>
+        <div class="stat"><b>${data.languages.length}</b><span class="muted">languages in the archive</span></div>
+        <div class="stat"><b>${data.channels.length}</b><span class="muted">channels</span></div>
+      </div>
+    </div>
+    <h3 class="muted">Average wait per contact, by language</h3>
+    <div class="m3-equity-bars" aria-label="Average wait times by language"></div>
+    ${table(data.languages, "By language", " min")}
+    ${table(data.channels, "By channel", " min")}`;
+  const bars = el.querySelector(".m3-equity-bars");
+  const maxWait = Math.max(0.01, ...data.languages.map((r) => r.avgWaitMin));
+  bars.innerHTML = data.languages.map((r) => `
+    <div class="m3-equity-row" title="${r.name}: ${r.avgWaitMin.toFixed(1)} min average">
+      <span class="m3-equity-label">${r.name}</span>
+      <span class="m3-equity-track"><span class="m3-equity-fill"
+        style="width:${Math.max(1, (r.avgWaitMin / maxWait) * 100).toFixed(1)}%"></span></span>
+      <span class="m3-equity-num">${r.avgWaitMin.toFixed(1)} min</span>
+    </div>`).join("");
+}

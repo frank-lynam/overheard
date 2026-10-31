@@ -32,4 +32,5 @@ export const api = {
   eventImpact: () => call("GET", "/archive/event-impact"),
   journeys: () => call("GET", "/archive/journeys"),
   promises: () => call("GET", "/archive/promises"),
+  equity: () => call("GET", "/archive/equity"),
 };

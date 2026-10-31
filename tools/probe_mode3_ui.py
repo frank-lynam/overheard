@@ -26,7 +26,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
   <main class="mode3" hidden><section class="m3-pane root-causes"></section>
     <section class="m3-pane event-impact"></section>
     <section class="m3-pane journeys"></section>
-    <section class="m3-pane promises"></section></main>
+    <section class="m3-pane promises"></section>
+    <section class="m3-pane equity"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -41,7 +42,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.event-impact .m3-table tbody tr"); i++) await sleep(200);
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.journeys .m3-table tbody tr"); i++) await sleep(200);
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.promises .m3-table tbody tr"); i++) await sleep(200);
-      document.querySelector(".m3-pane.promises").scrollIntoView();
+      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.equity .m3-table tbody tr"); i++) await sleep(200);
+      document.querySelector(".m3-pane.equity").scrollIntoView();
       await sleep(1500);
       const out = {
         errs,
@@ -70,7 +72,13 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         promiseTopCause: (document.querySelector(".m3-pane.promises .m3-table:first-of-type tbody tr td") || {})
           .textContent || "",
         promiseHeadline: (document.querySelector(".m3-pane.promises .m3-headline") || {}).textContent || "",
-        promiseProv: (document.querySelector(".m3-pane.promises .prov") || {}).textContent || ""
+        promiseProv: (document.querySelector(".m3-pane.promises .prov") || {}).textContent || "",
+        equityRows: document.querySelectorAll(".m3-pane.equity .m3-table:first-of-type tbody tr").length,
+        equityBars: document.querySelectorAll(".m3-pane.equity .m3-equity-row").length,
+        equityTop: (document.querySelector(".m3-pane.equity .m3-table:first-of-type tbody tr td") || {})
+          .textContent || "",
+        equityHeadline: (document.querySelector(".m3-pane.equity .m3-headline") || {}).textContent || "",
+        equityProv: (document.querySelector(".m3-pane.equity .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -127,6 +135,11 @@ try:
     assert out["promiseTopCause"].strip() == "appeal status", out["promiseTopCause"]
     assert "appeal status" in out["promiseHeadline"].lower()
     assert "plain code" in out["promiseProv"] and "promises vs. the archive" in out["promiseProv"]
+    assert out["equityRows"] == 5, out["equityRows"]
+    assert out["equityBars"] == 5, out["equityBars"]
+    assert out["equityTop"].strip() == "vi", out["equityTop"]
+    assert "vi" in out["equityHeadline"].lower(), out["equityHeadline"]
+    assert "plain code" in out["equityProv"] and "contacts by language and channel" in out["equityProv"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()
