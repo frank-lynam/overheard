@@ -410,3 +410,11 @@ def get_archive_journeys(request: Request) -> dict:
     from overheard.analytics.journeys import repeat_callers
 
     return repeat_callers(con(request))
+
+
+@router.get("/archive/promises")
+def get_archive_promises(request: Request) -> dict:
+    """Mode 3, view 4: promises vs. outcomes — the centre's broken-promise rate by cause and team."""
+    from overheard.analytics.promises import promise_outcomes
+
+    return promise_outcomes(con(request))

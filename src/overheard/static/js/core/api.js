@@ -31,4 +31,5 @@ export const api = {
   rootCauses: () => call("GET", "/archive/root-causes"),
   eventImpact: () => call("GET", "/archive/event-impact"),
   journeys: () => call("GET", "/archive/journeys"),
+  promises: () => call("GET", "/archive/promises"),
 };

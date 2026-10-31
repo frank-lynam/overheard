@@ -25,7 +25,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
   <p class="later" hidden></p>
   <main class="mode3" hidden><section class="m3-pane root-causes"></section>
     <section class="m3-pane event-impact"></section>
-    <section class="m3-pane journeys"></section></main>
+    <section class="m3-pane journeys"></section>
+    <section class="m3-pane promises"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -39,6 +40,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       document.querySelector('button[data-mode="3"]').click();
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.event-impact .m3-table tbody tr"); i++) await sleep(200);
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.journeys .m3-table tbody tr"); i++) await sleep(200);
+      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.promises .m3-table tbody tr"); i++) await sleep(200);
+      document.querySelector(".m3-pane.promises").scrollIntoView();
       await sleep(1500);
       const out = {
         errs,
@@ -60,7 +63,14 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         loopsStat: (document.querySelector(".m3-pane.journeys .m3-stats .stat b") || {}).textContent || "",
         journeyTopCause: (document.querySelector(".m3-pane.journeys .m3-table tbody tr td") || {}).textContent || "",
         journeyHeadline: (document.querySelector(".m3-pane.journeys .m3-headline") || {}).textContent || "",
-        journeyProv: (document.querySelector(".m3-pane.journeys .prov") || {}).textContent || ""
+        journeyProv: (document.querySelector(".m3-pane.journeys .prov") || {}).textContent || "",
+        promiseRows: document.querySelectorAll(".m3-pane.promises .m3-table").length >= 2
+          ? document.querySelectorAll(".m3-pane.promises .m3-table:first-of-type tbody tr").length : 0,
+        promiseBars: document.querySelectorAll(".m3-pane.promises .m3-promise-row").length,
+        promiseTopCause: (document.querySelector(".m3-pane.promises .m3-table:first-of-type tbody tr td") || {})
+          .textContent || "",
+        promiseHeadline: (document.querySelector(".m3-pane.promises .m3-headline") || {}).textContent || "",
+        promiseProv: (document.querySelector(".m3-pane.promises .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -89,7 +99,7 @@ try:
     shot = str(Path(__file__).resolve().parent.parent / "probe_mode3_shot.png")
     res = subprocess.run(
         ["chromium", "--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
-         "--virtual-time-budget=25000", "--window-size=1400,900", f"--screenshot={shot}",
+         "--virtual-time-budget=25000", "--window-size=1400,3000", f"--screenshot={shot}",
          "--dump-dom", f"http://127.0.0.1:{PORT}/__probe_mode3.html"],
         capture_output=True, text=True, timeout=180)
     print("chromium rc:", res.returncode, (res.stderr or "").strip()[-400:])
@@ -112,6 +122,11 @@ try:
     assert out["journeyTopCause"].lower().strip() in PLANTED, out["journeyTopCause"]
     assert out["journeyTopCause"].lower().strip() in out["journeyHeadline"].lower()
     assert "plain code" in out["journeyProv"] and "journeys over the archive" in out["journeyProv"]
+    assert out["promiseRows"] >= 10, out["promiseRows"]
+    assert out["promiseBars"] >= 10, out["promiseBars"]
+    assert out["promiseTopCause"].strip() == "appeal status", out["promiseTopCause"]
+    assert "appeal status" in out["promiseHeadline"].lower()
+    assert "plain code" in out["promiseProv"] and "promises vs. the archive" in out["promiseProv"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()

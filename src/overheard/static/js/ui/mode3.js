@@ -129,3 +129,68 @@ export function renderJourneys(el, data) {
       </tbody>
     </table>`;
 }
+
+// Mode 3, view 4: promises vs. outcomes — the centre's callback promises, checked against what happened.
+export function renderPromises(el, data) {
+  const t = data.totals;
+  const pct = (x) => x == null ? "–" : `${(x * 100).toFixed(0)}%`;
+  const causes = data.causes.slice(0, 12);
+  const maxRate = Math.max(0.01, ...causes.map((c) => c.brokenRate));
+  const worst = data.worstOffender;
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Every promise, checked <span class="prov">plain code · promises vs. the archive</span></h2>
+      <p class="muted">${t.promises.toLocaleString()} callback promises (${(data.promiseShare * 100).toFixed(0)}% of
+        ${data.totalContacts.toLocaleString()} contacts), each with a due date. ${t.settled.toLocaleString()} have
+        come due inside the archive and can be checked; ${t.pending.toLocaleString()} are still open past its end.
+        Kept means the contact closed within the window; broken means it didn't:</p>
+      <div class="m3-stats">
+        <div class="stat"><b>${pct(t.brokenRate)}</b><span class="muted">of due promises broken, centre-wide</span></div>
+        <div class="stat"><b>${t.broken.toLocaleString()}</b><span class="muted">promises broken</span></div>
+        <div class="stat"><b>${t.pending.toLocaleString()}</b><span class="muted">still open, undatable</span></div>
+      </div>
+      ${worst ? `<p class="m3-headline"><b>${worst.cause.replace(/-/g, " ")}</b> breaks its promises more than any other
+        cause: ${pct(worst.brokenRate)} of its due promises went unkept (${worst.broken} of ${worst.settled}).
+        ${data.worstOffenderCause !== undefined ? "" : "If you promised a caller on that issue, this is the one to remember to keep."}</p>` : ""}
+    </div>
+    <h3 class="muted">Broken rate of due promises, by cause</h3>
+    <div class="m3-promises-bars" aria-label="Broken promise rates by cause"></div>
+    <table class="m3-table">
+      <thead><tr><th>cause</th><th class="num">promises</th><th class="num">due</th><th class="num">kept</th>
+        <th class="num">broken</th><th class="num">open</th><th class="num">broken rate</th></tr></thead>
+      <tbody>
+        ${causes.map((c) => `<tr${c.cause === worst && worst ? ' class="hot"' : ""}>
+          <td>${c.cause.replace(/-/g, " ")}</td>
+          <td class="num">${c.promises.toLocaleString()}</td>
+          <td class="num">${c.settled.toLocaleString()}</td>
+          <td class="num">${c.kept.toLocaleString()}</td>
+          <td class="num">${c.broken.toLocaleString()}</td>
+          <td class="num">${c.pending.toLocaleString()}</td>
+          <td class="num">${pct(c.brokenRate)}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+    <h3 class="muted">By team</h3>
+    <table class="m3-table">
+      <thead><tr><th>team</th><th class="num">promises</th><th class="num">kept</th><th class="num">broken</th>
+        <th class="num">open</th><th class="num">broken rate</th></tr></thead>
+      <tbody>
+        ${data.teams.map((tm) => `<tr>
+          <td>${tm.team}</td>
+          <td class="num">${tm.promises.toLocaleString()}</td>
+          <td class="num">${tm.kept.toLocaleString()}</td>
+          <td class="num">${tm.broken.toLocaleString()}</td>
+          <td class="num">${tm.pending.toLocaleString()}</td>
+          <td class="num">${pct(tm.brokenRate)}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+  const bars = el.querySelector(".m3-promises-bars");
+  bars.innerHTML = causes.map((c) => `
+    <div class="m3-promise-row" title="${c.cause.replace(/-/g, " ")}: ${c.broken}/${c.settled} broken">
+      <span class="m3-promise-label">${c.cause.replace(/-/g, " ")}</span>
+      <span class="m3-promise-track"><span class="m3-promise-fill"
+        style="width:${Math.max(1, (c.brokenRate / maxRate) * 100).toFixed(1)}%"></span></span>
+      <span class="m3-promise-num">${pct(c.brokenRate)}</span>
+    </div>`).join("");
+}

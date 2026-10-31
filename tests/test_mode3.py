@@ -10,6 +10,7 @@ import pytest
 
 from overheard.analytics.events import event_impact
 from overheard.analytics.journeys import repeat_callers
+from overheard.analytics.promises import promise_outcomes
 from overheard.analytics.root_causes import root_causes
 from overheard.app import create_app
 from overheard.config import Settings
@@ -170,3 +171,69 @@ async def test_api_journeys(client):
     assert body["loops"] > 900
     assert body["causes"][0]["cause"] in PLANTED_LOOP_CAUSES
     assert all(j["contacts"] >= body["loopMinimum"] for j in body["worst"])
+
+
+# --- view 4: promises vs. outcomes ---------------------------------------
+
+# the generator plants broken-promise rates on these causes (see generator.py BROKEN)
+PLANTED_BROKEN = {"appeal-status": 0.62, "claim-status": 0.35, "identity-check-hold": 0.45}
+DEFAULT_BROKEN = 0.08
+
+
+def test_promises_recover_the_planted_broken_rates(seeded):
+    _, con, _ = seeded
+    report = promise_outcomes(con)
+    by_cause = {c["cause"]: c for c in report["causes"]}
+    # each planted cause's broken rate must be within ~5 points of what was planted
+    for cause, planted in PLANTED_BROKEN.items():
+        c = by_cause[cause]
+        assert c["settled"] >= 200, (cause, c)  # enough due promises for the rate to be meaningful
+        assert abs(c["brokenRate"] - planted) < 0.05, (cause, c["brokenRate"], planted)
+    # the causes with no planted rate sit near the default, pooled (small causes jitter on their own)
+    default_causes = [c for c in by_cause.values() if c["cause"] not in PLANTED_BROKEN]
+    kept = sum(c["kept"] for c in default_causes)
+    settled = sum(c["settled"] for c in default_causes)
+    assert settled >= 5000
+    assert abs(kept / settled - (1 - DEFAULT_BROKEN)) < 0.02
+
+
+def test_promises_are_complete(seeded):
+    _, con, _ = seeded
+    report = promise_outcomes(con)
+    # the cause table accounts for every promise, and each cause partitions into kept/broken/pending
+    assert sum(c["promises"] for c in report["causes"]) == report["totals"]["promises"]
+    for c in report["causes"]:
+        assert c["kept"] + c["broken"] + c["pending"] == c["promises"], c
+    assert (
+        report["totals"]["kept"] + report["totals"]["broken"] + report["totals"]["pending"]
+        == report["totals"]["promises"]
+    )
+    # the team table covers the same promises as the cause table
+    assert sum(t["promises"] for t in report["teams"]) == report["totals"]["promises"]
+    # the raw archive really did plant promises on roughly 30% of contacts
+    n_promise = con.execute("SELECT COUNT(*) FROM contacts WHERE promise IS NOT NULL").fetchone()[0]
+    n_contacts = con.execute("SELECT COUNT(*) FROM contacts").fetchone()[0]
+    assert abs(report["promiseShare"] - n_promise / n_contacts) < 0.01
+    assert report["totals"]["promises"] == n_promise
+
+
+def test_promises_team_breakdown(seeded):
+    _, con, _ = seeded
+    report = promise_outcomes(con)
+    # the archive is one team; the report should say so and be internally consistent
+    teams = {t["team"] for t in report["teams"]}
+    assert teams == {"general"}, teams
+    g = report["teams"][0]
+    assert g["kept"] + g["broken"] + g["pending"] == g["promises"]
+    assert g["brokenRate"] == report["totals"]["brokenRate"]
+
+
+async def test_api_promises(client):
+    r = await client.get("/api/archive/promises")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["totals"]["promises"] > 10_000
+    assert 0 < body["promiseShare"] < 1
+    top = {c["cause"]: c["brokenRate"] for c in body["causes"]}
+    assert top["appeal-status"] == max(top.values())  # the worst offender is the planted worst cause
+    assert body["worstOffender"]["cause"] == "appeal-status"
