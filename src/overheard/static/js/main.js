@@ -14,7 +14,7 @@ document.addEventListener("keydown", (e) => {
 store.subscribe(({ mode }) => {
   buttons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.mode) === mode)));
   document.body.dataset.mode = mode;
-  document.querySelector(".later").hidden = mode === 0;
+  document.querySelector(".later").hidden = mode <= 1;
 }, ["mode"]);
 
 renderQueue(document.querySelector(".pane.queue"), store);
@@ -22,7 +22,9 @@ renderMessage(document.querySelector(".pane.message"), store);
 renderContext(document.querySelector(".pane.context"));
 renderScoreboard(document.querySelector(".scoreboard"), store);
 
-const refresh = async () => store.set({ queue: await api.queue() });
+const refresh = async () => store.set({ queue: await api.queue(store.get().mode) });
+// mode 1: the same day, re-ordered by the AI's urgency (so the re-sort animation can slide)
+store.subscribe(() => { api.queue(1).then((q) => { if (store.get().mode === 1) store.set({ queue: q }); }).catch(() => {}); }, ["mode"]);
 store.on("saved", async ({ seconds }) => {
   const times = (store.get()._times || []).concat(seconds);
   store.set({ _times: times, pace: times.reduce((a, b) => a + b, 0) / times.length });

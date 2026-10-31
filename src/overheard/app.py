@@ -1,6 +1,7 @@
 """The FastAPI app: the API under /api, and the front end (static files) at /."""
 
 import sqlite3
+import threading
 from importlib.resources import files
 
 from fastapi import FastAPI
@@ -22,6 +23,14 @@ def open_db(settings: Settings) -> sqlite3.Connection:
         seed(settings.db_path, settings.seed)
     con = db.connect(settings.db_path)
     con.execute("CREATE TABLE IF NOT EXISTS entries (id TEXT PRIMARY KEY, entry TEXT)")
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS analysis (voicemail TEXT NOT NULL, task TEXT NOT NULL, model TEXT, "
+        "data TEXT NOT NULL, provenance TEXT NOT NULL, PRIMARY KEY (voicemail, task))"
+    )
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS corrections (id INTEGER PRIMARY KEY AUTOINCREMENT, voicemail TEXT NOT NULL, "
+        "task TEXT NOT NULL, field TEXT NOT NULL, value TEXT, provenance TEXT NOT NULL, at TEXT)"
+    )
     con.commit()
     return con
 
@@ -33,6 +42,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.db = open_db(settings)
     app.state.today = app.state.db.execute("SELECT value FROM meta WHERE key='today'").fetchone()[0]
     app.state.assumptions = Assumptions()
+    # The analysis cache (message id -> bundle) and the lock that guards the shared
+    # connection while a bundle is (re)computed: sync routes run in worker threads,
+    # so a sqlite connection must never be touched by two of them at once.
+    app.state.analysis_cache = {}
+    app.state.analyze_lock = threading.Lock()
     app.state.store = ResponseStore(settings.llm_responses_path)
     app.state.provider = build_provider(settings, app.state.store)
 

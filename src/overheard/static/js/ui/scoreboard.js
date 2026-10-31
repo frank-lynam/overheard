@@ -8,6 +8,12 @@ export function renderScoreboard(root, store) {
   const handleInput = el("input", {
     type: "number", min: 0.5, step: 0.5, style: "width: 3.5rem", "aria-label": "Handling minutes per message",
   });
+  let acc = null; // mode 1: the AI's scoreboard, fetched when the mode is entered
+
+  store.subscribe((s) => {
+    if (s.mode === 1 && !acc) api.accuracy().then((a) => { acc = a; store.set({ _acc: a }); }).catch(() => {});
+    if (s.mode === 0) acc = null;
+  }, ["mode"]);
   handleInput.addEventListener("input", () => {
     const v = Math.max(0, Number(handleInput.value) || 0);
     const a = store.get().assumptions;
@@ -49,6 +55,16 @@ export function renderScoreboard(root, store) {
         el("span", { class: "note" }, ` min handling each, ${hm(a.callbackMin)} a callback`)));
     }
     if (s.pace) stats.push(stat("Your pace", `${hm(s.pace / 60)}`, "per message"));
+    if (s.mode === 1 && s._acc) {
+      const a = s._acc;
+      const pct = (x) => `${Math.round(x * 100)}%`;
+      stats.push(
+        el("div", { class: "stat acc", title: "Where the AI disagrees with the day's ground truth, after your corrections" },
+          el("span", { class: "label" }, "AI accuracy"),
+          el("b", {}, `${pct(a.intent_urgency)} intent · ${pct(a.routing)} routing · ${pct(a.extraction)} facts`),
+          el("span", { class: "note" }, `over ${a.messages} messages, ${a.corrections} correction${a.corrections === 1 ? "" : "s"} by humans`)),
+      );
+    }
     put(root, ...stats);
-  }, ["sim", "pace", "queue", "assumptions"]);
+  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc"]);
 }

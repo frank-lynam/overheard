@@ -19,6 +19,7 @@ INTENTS = [
 class IntentOut(BaseModel):
     intent: Literal[tuple(INTENTS)]
     urgency: int  # 1 (low) to 5 (act today)
+    rationale: str  # one sentence: what in the message says this
     obligations: list[str] = []  # congressional | records | legal | welfare | discrimination
 
 
@@ -34,8 +35,10 @@ class intent_urgency:
             system=("You classify voicemail messages for a benefits-service call center. "
                     "Reply with only a JSON object: "
                     "{\"intent\": one of " + json.dumps(INTENTS) + ", \"urgency\": integer 1-5, "
-                    "\"obligations\": array of any of [\"congressional\", \"records\", \"legal\", "
-                    "\"welfare\", \"discrimination\"]}. "
+                    "\"rationale\": string, \"obligations\": array of any of [\"congressional\", "
+                    "\"records\", \"legal\", \"welfare\", \"discrimination\"]}. "
+                    "rationale is one sentence quoting or naming what in the message makes it that intent "
+                    "and that urgency. "
                     "Urgency 5 means someone's day is at risk without same-day action. "
                     "obligations lists any statutory or legal obligation the message mentions, "
                     "even if it is not stated plainly (a mention of a member of Congress is congressional; "
@@ -46,12 +49,16 @@ class intent_urgency:
             examples=[
                 {"role": "user", "content": "Voicemail transcript (English):\nHello, this is Maria. I can't log in to the "
                                             "portal, it keeps saying my code has expired, and I've tried four times today."},
-                {"role": "assistant", "content": '{"intent": "portal_access", "urgency": 2, "obligations": []}'},
+                {"role": "assistant", "content": '{"intent": "portal_access", "urgency": 2, '
+                     '"rationale": "Cannot sign in to the portal; already tried four times today.", '
+                     '"obligations": []}'},
                 {"role": "user", "content": "Voicemail transcript (English):\nHi, my name is Dave, I'm the office "
                                             "manager for Sen. Whitmore's office, calling about a constituent's case "
                                             "FBS-900212. The senator expects a written answer within the usual window."},
                 {"role": "assistant",
-                 "content": '{"intent": "congressional", "urgency": 4, "obligations": ["congressional"]}'},
+                 "content": '{"intent": "congressional", "urgency": 4, '
+                             '"rationale": "A senator\'s office manager expects a written answer within the window.", '
+                             '"obligations": ["congressional"]}'},
             ],
             context=json.dumps(v.truth.model_dump(mode="json"), ensure_ascii=False),
         )

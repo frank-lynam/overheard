@@ -10,12 +10,16 @@ async function call(method, path, body) {
 }
 export const api = {
   day: () => call("GET", "/day"),
-  queue: () => call("GET", "/queue"),
-  message: (id) => call("GET", `/messages/${id}`),
+  queue: (mode = 0) => call("GET", `/queue?mode=${mode}`),
+  message: (id, mode = 0) => call("GET", `/messages/${id}?mode=${mode}`),
   lookup: (q) => call("GET", `/lookup?q=${encodeURIComponent(q)}`),
   entries: () => call("GET", "/entries"),
   saveEntry: (id, entry) => call("PUT", `/entries/${id}`, entry),
   simulation: (mode) => call("GET", `/simulation?mode=${mode}`),
   assumptions: () => call("GET", "/assumptions"),
   saveAssumptions: (a) => call("PUT", "/assumptions", a),
+  corrections: (voicemail) =>
+    voicemail ? call("GET", `/corrections?voicemail=${encodeURIComponent(voicemail)}`) : call("GET", "/corrections"),
+  postCorrection: (c) => call("POST", "/corrections", c),
+  accuracy: () => call("GET", "/accuracy"),
 };

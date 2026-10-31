@@ -81,7 +81,7 @@ def test_run_task_mock_provenance(tmp_path):
 def test_cache_hit_skips_provider(tmp_path):
     task = TASKS["summary"].build(_vm())
     store = ResponseStore(tmp_path)
-    store.put(task.name, input_hash(task, "mock"), "mock", '{"summary": "from the store"}')
+    store.put(task.name, input_hash(task, "mock"), "mock", '{"short": "from the store", "summary": "from the store"}')
 
     class NoCall:
         name = "nocall"
@@ -120,11 +120,12 @@ def test_retry_recoverable(tmp_path):
 
         async def complete(self, t, m):
             calls.append(1)
-            return '{"summary": ' if len(calls) == 1 else '{"summary": "second try"}'
+            return '{"short": ' if len(calls) == 1 else '{"short": "second try", "summary": "second try"}'
 
     result = asyncio.run(run_task(Recover(), task, "mock", store=ResponseStore(tmp_path)))
     assert result.provenance == "llm"
     assert result.data.summary == "second try"
+    assert result.data.short == "second try"
 
 
 def test_mock_offline_end_to_end(tmp_path):
@@ -158,8 +159,8 @@ def test_mock_extraction_accuracy_band(vms):
     correct = 0
     for v in vms:
         out = json.loads(asyncio.run(p.complete(TASKS["extraction"].build(v), "mock")))
-        if (out["callerName"] == v.truth.callerName and out["callbackNumber"] == v.truth.callbackNumber
-                and out["caseId"] == v.truth.caseId):
+        if (out["caller"]["value"] == v.truth.callerName and out["callbackNumber"]["value"] == v.truth.callbackNumber
+                and out["caseId"]["value"] == v.truth.caseId):
             correct += 1
     acc = correct / len(vms)
     assert acc >= 0.80, f"extraction accuracy {acc:.2%} too low"
@@ -175,7 +176,8 @@ def test_replay_reads_store_only(tmp_path):
     task = TASKS["summary"].build(v)
     # miss: logged, None, no exception
     assert asyncio.run(p.complete(task, "gpt-4o-mini")) is None
-    store.put(task.name, input_hash(task, "gpt-4o-mini"), "gpt-4o-mini", '{"summary": "replayed"}')
+    store.put(task.name, input_hash(task, "gpt-4o-mini"), "gpt-4o-mini",
+          '{"short": "replayed", "summary": "replayed"}')
     assert json.loads(asyncio.run(p.complete(task, "gpt-4o-mini")))["summary"] == "replayed"
 
 
@@ -187,4 +189,6 @@ def test_generic_mock_without_context():
     task = Task(name="summary", description="d", system="s",
                 user="Voicemail transcript:\nHello there, my payment is missing.", output_model=SummaryOut)
     a = asyncio.run(p.complete(task, "mock"))
-    assert json.loads(a)["summary"].startswith("Voicemail transcript:")
+    out = json.loads(a)
+    assert out["summary"].startswith("Hello there")
+    assert out["short"]

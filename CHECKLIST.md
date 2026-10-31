@@ -1,28 +1,28 @@
 # Goal
 
-Build the LLM layer for overheard per CLAUDE.md: provider Protocol + Mock/OpenAICompat/Replay providers, JSON response store, structured-output validation/retry/fallback, capability probe, task modules (summary, extraction, intent/urgency, translation, sentiment, draft reply) — mock mode fully offline, provenance on every AI field, tests green.
+Mode 1 "Obvious AI" UI works end-to-end offline: analysis bundle (all 7 tasks) per message with provenance + confidence + spans, mode-1 urgency queue with team routing and m37 re-sort animation, editable AI fields whose corrections feed the scoreboard accuracy.
 
 ## How it works
 
-Repo at ~/work/tickets/fancy-wombat/repo has Foundation + Mode 0 done: FastAPI app, sqlite data layer (models, generator with truth labels), pipeline/simulate.py, api/routes.py, config.py with OVERHEARD_* env. No src/overheard/llm/ exists yet. CLAUDE.md specifies: provider Protocol (MockProvider, OpenAICompatProvider, ReplayProvider), OVERHEARD_LLM_MODE=mock|live|record|replay (default mock, offline), mock outputs from ground truth with 90-95% seeded accuracy, one JSON response store keyed (task, input hash, model), json_schema response_format with lazy capability probe, retry-once-then-fallback with provenance 'fallback', each LLM task = module with system prompt, few-shot, pydantic output model, optional tools.
+LLM layer landed (commit fae4dd0): 7 task modules with build() -> Task, run_task() -> LLMResult{data,provenance,model,key} with cache/retry/fallback. Steps 1-2 done and green (ruff clean, 40 passed). No analyze.py, no analysis/corrections tables, no mode-1 routes, no mode-1 UI yet.
 
 ## Why it doesn't
 
--
+There is no pipeline that runs the tasks for a message, nothing persisted to query, and the frontend only has mode 0.
 
 ## What would
 
-Create src/overheard/llm/ (provider.py Protocol + factory, mock.py, openai_compat.py, replay.py, cache.py response store, tasks/ modules) and wire OVERHEARD_LLM_MODE into config; tests for store, validation/retry/fallback, and mock-from-truth accuracy band. Then Mode 1 UI uses tasks next phase.
+Backend: extend 3 task outputs + add routing task + mock updates (done); pipeline/analyze.py runs all tasks and persists to sqlite `analysis`; corrections table + endpoint; /queue?mode=1 and /accuracy. Frontend: mode-1 transcript with low-confidence words, panels for summary/extraction/confidence+spans/intent+urgency+rationale/routing/sentiment/translation, editable fields with provenance badges + why-popover logging corrections, urgency re-sort animation, scoreboard accuracy. Offline tests, ruff+pytest green, chromium smoke + screenshot, commit+push, board comment.
 
 ## Steps
 
-- [x] 1. Read data/models.py, config.py, pipeline/simulate.py, api/routes.py to see truth labels, schema, seams
-- [x] 2. Design llm module layout; write provider Protocol + config wiring
-- [x] 3. Implement cache.py (JSON response store keyed task/input-hash/model)
-- [x] 4. Implement mock.py (from truth, seeded 90-95% accuracy)
-- [x] 5. Implement openai_compat.py (capability probe, json_schema, retry, fallback) + replay.py
-- [x] 6. Implement tasks/ pydantic modules (summary, extraction, intent/urgency, translation, sentiment, draft reply)
-- [x] 7. Tests: store roundtrip, validation/retry/fallback, mock offline determinism, accuracy band
-- [x] 8. Run ruff + full pytest green
-- [ ] 9. Commit + push, board update
-- [ ] 10. Tidy up
+- [x] 1. Extend task outputs (summary.short, extraction envelopes+program+requestedAction, intent rationale) + routing task + prompt/example updates
+- [x] 2. Mock: confidence, spans found in script, program/action, rationale, routing team
+- [x] 3. pipeline/analyze.py: run all 7 tasks, persist analysis rows, return bundle with provenance
+- [x] 4. API: POST/GET analysis, corrections, /queue?mode=1, /accuracy; db tables in open_db
+- [x] 5. Frontend message pane mode 1: transcript + AI panels + confidence/spans + provenance badges + why-popover + editable fields + corrections
+- [x] 6. Frontend queue mode 1: urgency order, team badges, m37 re-sort animation; scoreboard mode 1: accuracy + corrections
+- [x] 7. CSS for panels/badges/transcript highlights
+- [x] 8. Tests (offline) for tasks/mock/analyze/queue/accuracy/corrections; ruff + full pytest green
+- [ ] 9. Chromium smoke test + screenshot
+- [ ] 10. Commit + push + board comment; tick Mode 1 item + PUT checklist; tidy up
