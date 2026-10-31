@@ -44,9 +44,15 @@ async def analyze(vm: Voicemail, deps: AnalysisDeps, force: bool = False) -> dic
         return await _analyze_locked(vm, deps, force)
 
 
+#: the tasks that run per message; the mode-2 cluster tasks (incident, resolution)
+#: have their own pipeline and are driven by the API, not per message here
+_PER_MESSAGE = ("summary", "extraction", "intent_urgency", "routing", "translation", "sentiment", "draft_reply")
+
+
 async def _analyze_locked(vm: Voicemail, deps: AnalysisDeps, force: bool = False) -> dict:
     bundle: dict = {"id": vm.id, "words": len(vm.script.split())}
-    for name, task_cls in TASKS.items():
+    for name in _PER_MESSAGE:
+        task_cls = TASKS[name]
         if not force:
             row = deps.con.execute(
                 "SELECT data, provenance, model FROM analysis WHERE voicemail = ? AND task = ?", (vm.id, name)

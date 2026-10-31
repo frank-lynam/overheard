@@ -1,11 +1,11 @@
 import { api } from "./core/api.js";
 import { createStore } from "./core/store.js";
-import { renderContext } from "./ui/context.js";
+import { renderContext, bindResolutionBump } from "./ui/context.js";
 import { renderMessage } from "./ui/message.js";
 import { renderQueue } from "./ui/queue.js";
 import { renderScoreboard } from "./ui/scoreboard.js";
 
-const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null });
+const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null, incidents: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
 buttons.forEach((b) => b.addEventListener("click", () => store.set({ mode: Number(b.dataset.mode) })));
 document.addEventListener("keydown", (e) => {
@@ -14,17 +14,24 @@ document.addEventListener("keydown", (e) => {
 store.subscribe(({ mode }) => {
   buttons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.mode) === mode)));
   document.body.dataset.mode = mode;
-  document.querySelector(".later").hidden = mode <= 1;
+  document.querySelector(".later").hidden = mode >= 1;
 }, ["mode"]);
 
 renderQueue(document.querySelector(".pane.queue"), store);
 renderMessage(document.querySelector(".pane.message"), store);
-renderContext(document.querySelector(".pane.context"));
+renderContext(document.querySelector(".pane.context"), store);
+bindResolutionBump(store);
 renderScoreboard(document.querySelector(".scoreboard"), store);
 
 const refresh = async () => store.set({ queue: await api.queue(store.get().mode) });
 // mode 1: the same day, re-ordered by the AI's urgency (so the re-sort animation can slide)
 store.subscribe(() => { api.queue(1).then((q) => { if (store.get().mode === 1) store.set({ queue: q }); }).catch(() => {}); }, ["mode"]);
+// mode 2: the day's cross-message reasoning (clusters, repeats, the incident) comes with the queue
+store.subscribe((s) => {
+  if (s.mode !== 2) return;
+  api.queue(2).then((q) => { if (store.get().mode === 2) store.set({ queue: q }); }).catch(() => {});
+  api.incidents().then((inc) => store.set({ incidents: inc })).catch(() => {});
+}, ["mode"]);
 store.on("saved", async ({ seconds }) => {
   const times = (store.get()._times || []).concat(seconds);
   store.set({ _times: times, pace: times.reduce((a, b) => a + b, 0) / times.length });

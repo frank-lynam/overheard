@@ -132,7 +132,7 @@ def test_mock_offline_end_to_end(tmp_path):
     """mock mode: every task over the day's first message, no network, valid output."""
     v = _vm()
     for _name, cls in TASKS.items():
-        task = cls.build(v)
+        task = (cls.build([v.script], v.receivedAt, 3) if cls is TASKS["incident"] else cls.build(v))
         result = asyncio.run(run_task(MockProvider(), task, "mock", store=ResponseStore(tmp_path)))
         assert result.model == "mock"
         assert result.key == input_hash(task, "mock")

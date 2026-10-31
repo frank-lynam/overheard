@@ -12,8 +12,9 @@ export function renderScoreboard(root, store) {
 
   store.subscribe((s) => {
     if (s.mode === 1 && !acc) api.accuracy().then((a) => { acc = a; store.set({ _acc: a }); }).catch(() => {});
+    if (s.mode === 2 && !s._sb2) api.scoreboard2().then((sb) => store.set({ _sb2: sb })).catch(() => {});
     if (s.mode === 0) acc = null;
-  }, ["mode"]);
+  }, ["mode", "_sb2"]);
   handleInput.addEventListener("input", () => {
     const v = Math.max(0, Number(handleInput.value) || 0);
     const a = store.get().assumptions;
@@ -65,6 +66,19 @@ export function renderScoreboard(root, store) {
           el("span", { class: "note" }, `over ${a.messages} messages, ${a.corrections} correction${a.corrections === 1 ? "" : "s"} by humans`)),
       );
     }
+    if (s.mode === 2 && s._sb2) {
+      const sb = s._sb2;
+      stats.push(
+        stat("Callbacks avoided", `${sb.callbacksAvoided.closedWithNoCall} of ${sb.callbacksAvoided.resolvable}`,
+          `${sb.callbacksAvoided.approved} approved by a human · ${Math.round(sb.callbacksAvoided.share * 100)}% of the resolvable`),
+        stat("Deadlines", `${sb.deadlines.caught} caught · ${sb.deadlines.missed} missed`,
+          sb.deadlines.extraFlags ? `${sb.deadlines.extraFlags} extra flags (backstop)` : "keyword backstop checked"),
+        sb.incident
+          ? stat("Incident lead", sb.incident.leadMin >= 60 ? `${Math.floor(sb.incident.leadMin / 60)}h ${sb.incident.leadMin % 60}m` : `${sb.incident.leadMin}m`,
+            `alerted ${sb.incident.title.toLowerCase().startsWith("a ") || sb.incident.title.toLowerCase().startsWith("an ") ? sb.incident.title : "“" + sb.incident.title + "”"}`)
+          : stat("Incident lead", "—", "no spike today"),
+      );
+    }
     put(root, ...stats);
-  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc"]);
+  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2"]);
 }

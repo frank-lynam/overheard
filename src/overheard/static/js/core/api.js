@@ -22,4 +22,9 @@ export const api = {
     voicemail ? call("GET", `/corrections?voicemail=${encodeURIComponent(voicemail)}`) : call("GET", "/corrections"),
   postCorrection: (c) => call("POST", "/corrections", c),
   accuracy: () => call("GET", "/accuracy"),
+  // mode 2: the day's spike incidents, a message's resolution (and its human state), the mode-2 scoreboard
+  incidents: () => call("GET", "/incidents"),
+  resolution: (id) => call("GET", `/resolutions/${id}`),
+  setResolution: (id, state, reply) => call("POST", `/resolutions/${id}`, { state, reply }),
+  scoreboard2: () => call("GET", "/scoreboard2"),
 };

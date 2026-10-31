@@ -33,7 +33,9 @@ def _register(cls: type) -> type:
 from overheard.llm.tasks import (  # noqa: E402,F401
     draft_reply,
     extraction,
+    incident,
     intent_urgency,
+    resolution,
     routing,
     sentiment,
     summary,

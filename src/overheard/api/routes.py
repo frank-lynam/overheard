@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from overheard.adapters.backend.mock import MockCaseBackend
 from overheard.data.models import Case, Voicemail
 from overheard.pipeline.analyze import AnalysisDeps, analyze, analyze_sync, team_of, urgency_of
+from overheard.pipeline.mode2 import Mode2Deps, _message_mode2, day_bundles, message_mode2, scoreboard2
 from overheard.pipeline.simulate import Assumptions, Simulation, work_the_queue
 
 router = APIRouter(prefix="/api")
@@ -53,6 +54,28 @@ class Mode1Item(QueueItem):
     team: str
 
 
+class Mode2Item(QueueItem):
+    urgency: int
+    team: str
+    clusterSize: int = 1
+    repeat: dict | None = None  # the collapse note when this leads a repeat-caller group
+    incident: str | None = None  # the incident title, when this message is in the spike
+    resolvable: bool | None = None
+    obligation: str | None = None  # the first obligation kind, for the badge
+    window: str | None = None  # the callback window the caller gave
+
+
+def mode2_day(request: Request) -> dict:
+    """The day's mode-2 computation, once: groups, repeats, missing-info, incidents."""
+    if request.app.state.mode2 is None:
+        d = deps(request)
+        vms = voicemails(request)
+        bundles = {v.id: analyze_sync(v, d) for v in vms}
+        backend = MockCaseBackend(con(request))
+        request.app.state.mode2 = day_bundles(vms, bundles, backend, Mode2Deps(d.con, d.store, d.provider, d.model))
+    return request.app.state.mode2
+
+
 class Message(BaseModel):
     id: str
     receivedAt: str
@@ -80,24 +103,61 @@ def day(request: Request) -> dict:
 
 
 @router.get("/queue")
-def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item]:
+def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item] | list[Mode2Item]:
     """Mode 0's inbox: when, who, how long; no content until it's played.
-    Mode 1: the same inbox ordered by the AI's urgency, with the routed team."""
+    Mode 1: the same inbox ordered by the AI's urgency, with the routed team.
+    Mode 2: the same, plus the day's cross-message reasoning: cluster size,
+    collapsed repeat callers, the incident, resolvable, obligations, windows."""
     if mode == 0:
         worked = {r[0] for r in con(request).execute("SELECT id FROM entries")}
         return [QueueItem(id=v.id, receivedAt=v.receivedAt, callerId=v.callerId, durationSec=v.durationSec,
                           worked=v.id in worked) for v in voicemails(request)]
     d = deps(request)
+    vms = voicemails(request)
+    bundles = {v.id: analyze_sync(v, d) for v in vms}
+    if mode == 1:
+        worked = {r[0] for r in d.con.execute("SELECT id FROM entries")}
+        items = [
+            Mode1Item(id=v.id, receivedAt=v.receivedAt, callerId=v.callerId, durationSec=v.durationSec,
+                      worked=v.id in worked, urgency=urgency_of(bundles[v.id]), team=team_of(bundles[v.id]))
+            for v in vms
+        ]
+        items.sort(key=lambda i: (-i.urgency, i.receivedAt, i.id))
+        return items
+    day = mode2_day(request)
+    backend = MockCaseBackend(con(request))
+    mdeps = Mode2Deps(d.con, d.store, d.provider, d.model)
+    cluster_of: dict[str, int] = {}
+    for members in day["clusters"].values():
+        for mid in members:
+            cluster_of[mid] = len(members)
+    incident_members: dict[str, str] = {}
+    for inc in day["incidents"]:
+        for mid in inc["members"]:
+            incident_members[mid] = inc["card"]["title"]
     worked = {r[0] for r in d.con.execute("SELECT id FROM entries")}
     items = []
-    for v in voicemails(request):
-        bundle = analyze_sync(v, d)
+    for v in vms:
+        m2 = message_mode2(v, bundles[v.id], backend, mdeps)  # sync: the mock is local
+        o = m2["resolution"]
+        obligations = m2["obligations"]
         items.append(
-            Mode1Item(
+            Mode2Item(
                 id=v.id, receivedAt=v.receivedAt, callerId=v.callerId, durationSec=v.durationSec,
-                worked=v.id in worked, urgency=urgency_of(bundle), team=team_of(bundle),
+                worked=v.id in worked, urgency=urgency_of(bundles[v.id]), team=team_of(bundles[v.id]),
+                clusterSize=cluster_of.get(v.id, 1),
+                repeat=day["repeats"].get(v.id),
+                incident=incident_members.get(v.id),
+                resolvable=o["resolvable"],
+                obligation=obligations[0]["kind"] if obligations else None,
+                window=o["callbackWindow"]["when"],
             )
         )
+    # repeats collapse to their earliest message: the rest hide behind it
+    hidden = set()
+    for r in day["repeats"].values():
+        hidden.update(r["members"][1:])
+    items = [i for i in items if i.id not in hidden]
     items.sort(key=lambda i: (-i.urgency, i.receivedAt, i.id))
     return items
 
@@ -109,10 +169,15 @@ async def message(mid: str, request: Request, mode: int = 0) -> dict:
         raise HTTPException(404, f"no message {mid}")
     m = Message(id=v.id, receivedAt=v.receivedAt, callerId=v.callerId, durationSec=v.durationSec, lang=v.lang,
                 script=v.script, words=len(v.script.split()))
-    if mode != 0:
-        bundle = await analyze(v, deps(request))
-        return {**m.model_dump(), "analysis": bundle}
-    return m.model_dump()
+    if mode == 0:
+        return m.model_dump()
+    d = deps(request)
+    bundle = await analyze(v, d)
+    if mode == 2:
+        section = await _message_mode2(v, bundle, MockCaseBackend(con(request)),
+                                       Mode2Deps(d.con, d.store, d.provider, d.model))
+        return {**m.model_dump(), "analysis": bundle, "mode2": section}
+    return {**m.model_dump(), "analysis": bundle}
 
 
 @router.post("/analysis/{mid}")
@@ -259,3 +324,65 @@ def simulation(request: Request, mode: int = 0) -> Simulation:
     vms = voicemails(request)
     order = [v.id for v in vms]
     return work_the_queue(vms, order, request.app.state.assumptions, request.app.state.today)
+
+
+@router.get("/incidents")
+def incidents(request: Request) -> list[dict]:
+    """The day's spike incidents: the alert time, the lead time and the card
+    (the probable cause, the banner, the suggested actions)."""
+    return mode2_day(request)["incidents"]
+
+
+class ResolutionState(BaseModel):
+    state: str  # approved | rejected
+    reply: str | None = None  # what a human edits before sending, if anything
+
+
+@router.get("/resolutions/{mid}")
+def get_resolution(mid: str, request: Request) -> dict:
+    """The mode-2 resolution of a message: the draft reply, the lookups the AI made,
+    and the state a human has given it (draft | approved | rejected)."""
+    v = next((v for v in voicemails(request) if v.id == mid), None)
+    if not v:
+        raise HTTPException(404, f"no message {mid}")
+    d = deps(request)
+    bundle = analyze_sync(v, d)
+    section = message_mode2(v, bundle, MockCaseBackend(con(request)),
+                            Mode2Deps(d.con, d.store, d.provider, d.model))
+    row = con(request).execute("SELECT state, reply, provenance, at FROM resolutions WHERE voicemail = ?", (mid,)).fetchone()
+    state = dict(row) if row else {"state": "draft", "reply": None, "provenance": None, "at": None}
+    return {"voicemail": mid, **state, **section}
+
+
+@router.post("/resolutions/{mid}")
+def set_resolution_state(mid: str, body: ResolutionState, request: Request) -> dict:
+    """The one-click approve: the AI only drafts, a human approves before anything goes out.
+    The state is persisted so the scoreboard can count the callbacks avoided."""
+    v = next((v for v in voicemails(request) if v.id == mid), None)
+    if not v:
+        raise HTTPException(404, f"no message {mid}")
+    if body.state not in ("approved", "rejected"):
+        raise HTTPException(400, f"state must be approved or rejected, got {body.state}")
+    d = deps(request)
+    bundle = analyze_sync(v, d)
+    section = message_mode2(v, bundle, MockCaseBackend(con(request)),
+                            Mode2Deps(d.con, d.store, d.provider, d.model))
+    reply = body.reply if body.reply is not None else section["resolution"].get("reply")
+    c = con(request)
+    c.execute(
+        "INSERT OR REPLACE INTO resolutions (voicemail, state, reply, provenance, at) "
+        "VALUES (?, ?, ?, 'human', datetime('now'))",
+        (mid, body.state, reply),
+    )
+    c.commit()
+    request.app.state.mode2 = None  # the day's numbers change with the resolutions
+    return {"ok": True, "state": body.state, "reply": reply}
+
+
+@router.get("/scoreboard2")
+def get_scoreboard2(request: Request) -> dict:
+    """The mode-2 scoreboard: callbacks avoided, deadlines caught vs missed, the incident's lead time."""
+    d = deps(request)
+    vms = voicemails(request)
+    bundles = {v.id: analyze_sync(v, d) for v in vms}
+    return scoreboard2(vms, bundles, Mode2Deps(d.con, d.store, d.provider, d.model))

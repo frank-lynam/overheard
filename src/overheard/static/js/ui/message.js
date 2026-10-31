@@ -254,7 +254,7 @@ export function renderMessage(root, store) {
     const panels = mode ? el("div", { class: "ai-panels" },
       PANELS.map(([t, title]) => panel(t, title, analysis?.[t])).filter(Boolean)) : null;
     put(root,
-      el("div", { class: "pane-head" }, el("h2", {}, mode ? "Message · Mode 1" : "Message"),
+      el("div", { class: "pane-head" }, el("h2", {}, mode === 2 ? "Message · Mode 2" : mode ? "Message · Mode 1" : "Message"),
         el("span", { class: "muted" }, `${clock(current.receivedAt)} · ${phone(current.callerId)} · ${mmss(current.durationSec)}`)),
       el("p", { class: "workload muted" },
         `Costs the agent ${hm(workloadMin)}: ${hm(listenMin)} listening, ${hm(a.handleMin)} handling, ${hm(a.callbackMin)} on a callback.`),

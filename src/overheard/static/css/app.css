@@ -99,3 +99,27 @@ body[data-mode="1"] .queue-row { grid-template-columns: 4.4rem 1fr 2.5rem 1.2rem
 .team { font-size: .75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
 .queue-new { opacity: 0; animation: queue-in .5s ease-out forwards; }
 @keyframes queue-in { to { opacity: 1; } }
+
+/* --- Mode 2: the day's cross-message reasoning --- */
+body[data-mode="2"] .queue-row { grid-template-columns: 4.4rem 1fr 2.5rem 1.2rem 5.2rem minmax(5.5rem, max-content) 4.6rem; }
+.badge { font-size: .7rem; font-weight: 700; padding: .05rem .35rem; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+.badge.cluster { background: #e8eef5; color: var(--accent); border-color: var(--accent); }
+@media (prefers-color-scheme: dark) { .badge.cluster { background: #23303d; } }
+.badge.incident { background: var(--late); color: #fff; border-color: var(--late); }
+.badge.resolvable { background: var(--ok); color: #fff; border-color: var(--ok); }
+.badge.obligation { background: #d8a32a; color: #1d232b; border-color: #d8a32a; }
+.badge.window { background: transparent; color: var(--muted); }
+.queue-legend { font-size: .72rem; margin: .25rem 0 .5rem; }
+.repeat-note { font-size: .72rem; color: var(--accent); }
+.queue-row.repeat-leader .q-caller { font-weight: 700; }
+.incident-banner { border: 1px solid var(--late); border-left: 4px solid var(--late); border-radius: var(--radius); background: var(--panel); padding: .5rem .7rem; margin: .5rem 0; font-size: .85rem; }
+.incident-banner .banner-line { margin: .3rem 0; font-weight: 700; }
+.incident-banner .banner-cause { margin: .2rem 0; }
+.incident-banner .banner-actions { margin: .3rem 0 0; padding-left: 1.1rem; }
+.mode2-panels { display: flex; flex-direction: column; gap: .6rem; margin-bottom: .75rem; }
+.mode2-panels .ai-panel { background: var(--panel); }
+.mode2-panels textarea.draft-reply { width: 100%; font: inherit; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); resize: vertical; }
+.mode2-panels .approve-form { display: flex; flex-direction: column; gap: .5rem; }
+.mode2-panels .state.approved { color: var(--ok); font-weight: 700; margin: .3rem 0 0; }
+.mode2-panels .mismatch { border-left: 3px solid #d8a32a; padding-left: .5rem; }
+.mode2-panels .ai-line.clock { font-variant-numeric: tabular-nums; }

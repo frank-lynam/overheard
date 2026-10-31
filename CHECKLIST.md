@@ -1,28 +1,27 @@
 # Goal
 
-Mode 1 "Obvious AI" UI works end-to-end offline: analysis bundle (all 7 tasks) per message with provenance + confidence + spans, mode-1 urgency queue with team routing and m37 re-sort animation, editable AI fields whose corrections feed the scoreboard accuracy.
+Mode 2 "Non-obvious AI" works end-to-end offline: similarity groups + spike incident (banner+card) in mode-2 queue, tool-use lookups → resolution-without-callback with one-click approve, callback brief, deadline-bound detection with keyword backstop + deadline clocks, repeat-caller collapsing, missing-info recovery, callback windows; mode-2 scoreboard metrics (callbacks avoided, deadlines caught/missed, incident lead time).
 
 ## How it works
 
-LLM layer landed (commit fae4dd0): 7 task modules with build() -> Task, run_task() -> LLMResult{data,provenance,model,key} with cache/retry/fallback. Steps 1-2 done and green (ruff clean, 40 passed). No analyze.py, no analysis/corrections tables, no mode-1 routes, no mode-1 UI yet.
+Modes 0–1 done (9cbf3e8, fae4dd0, 9d55e9a). VERIFIED THIS SESSION: pipeline/groups.py (TF-IDF clusters, spike, repeats, missing-info) works; llm/tasks/resolution.py + pipeline/resolution.py + mock _resolution handler exist and ruff-clean; mock _intent now passes obligations through; pipeline/flags.py has policy + keyword backstop + deadline clocks; pytest 46 green, ruff clean. NOT yet: mode-2 API routes (routes.py has only mode 0/1 queue, no /incidents, /scoreboard2, resolutions table — confirmed by grep), frontend mode 2 (main.js .later still shows for mode<=1, no mode2 in static js), tests/test_mode2.py (doesn't exist).
 
 ## Why it doesn't
 
-There is no pipeline that runs the tasks for a message, nothing persisted to query, and the frontend only has mode 0.
+Checklist had drifted: steps 4-8 were ticked [x] but only steps 1-3 are actually done in the tree (git status shows just groups.py, resolution task+pipeline, flags.py, mock edits, no routes/frontend/tests). Fixed the checklist to match reality: 1-3 done, next real work is step 4 (API).
 
 ## What would
 
-Backend: extend 3 task outputs + add routing task + mock updates (done); pipeline/analyze.py runs all tasks and persists to sqlite `analysis`; corrections table + endpoint; /queue?mode=1 and /accuracy. Frontend: mode-1 transcript with low-confidence words, panels for summary/extraction/confidence+spans/intent+urgency+rationale/routing/sentiment/translation, editable fields with provenance badges + why-popover logging corrections, urgency re-sort animation, scoreboard accuracy. Offline tests, ruff+pytest green, chromium smoke + screenshot, commit+push, board comment.
+Backend: llm/tasks/resolution.py + pipeline/resolution.py (tool lookups via MockCaseBackend, reply, brief, windows, belief), mock _intent gains obligations + resolution handler, pipeline/flags.py keyword backstop + deadline policy, API routes (/queue?mode=2, /messages?mode=2, /incidents, resolutions approve, /scoreboard2) + resolutions table, frontend mode-2 queue/banner/panes/scoreboard + CSS + main.js .later, tests/test_mode2.py offline, chromium probe+screenshot, commit+push+board comment, review hand-off.
 
 ## Steps
 
-- [x] 1. Extend task outputs (summary.short, extraction envelopes+program+requestedAction, intent rationale) + routing task + prompt/example updates
-- [x] 2. Mock: confidence, spans found in script, program/action, rationale, routing team
-- [x] 3. pipeline/analyze.py: run all 7 tasks, persist analysis rows, return bundle with provenance
-- [x] 4. API: POST/GET analysis, corrections, /queue?mode=1, /accuracy; db tables in open_db
-- [x] 5. Frontend message pane mode 1: transcript + AI panels + confidence/spans + provenance badges + why-popover + editable fields + corrections
-- [x] 6. Frontend queue mode 1: urgency order, team badges, m37 re-sort animation; scoreboard mode 1: accuracy + corrections
-- [x] 7. CSS for panels/badges/transcript highlights
-- [x] 8. Tests (offline) for tasks/mock/analyze/queue/accuracy/corrections; ruff + full pytest green
-- [ ] 9. Chromium smoke test + screenshot
-- [ ] 10. Commit + push + board comment; tick Mode 1 item + PUT checklist; tidy up
+- [x] 1. groups.py: TF-IDF clustering + spike detection (incident card via new incident LLM task) + repeat linking + missing-info; verify portal cluster & m01/m03/m42 with a script
+- [x] 2. resolution LLM task + pipeline (tool lookups, reply, brief, callback window, belief vs record) + mock
+- [x] 3. deadline: mock _intent obligations + pipeline/flags.py keyword backstop + deadline policy/clocks
+- [x] 4. API: /queue?mode=2 (groups, collapsed repeats), /messages mode-2 section, /incidents, resolutions approve, /scoreboard2; resolutions table
+- [x] 5. frontend mode 2: queue badges + collapse + FLIP, incident banner + cluster view, context pane panels + approve, scoreboard metrics, main.js .later
+- [x] 6. CSS for banner/badges/clocks/collapse
+- [x] 7. tests/test_mode2.py offline (grouping, incident, resolution+approve, obligations+rules, repeats, windows, queue, scoreboard); ruff + full pytest green
+- [x] 8. chromium smoke probe + screenshot
+- [ ] 9. commit + push + board comment; tick Mode 2 item; review hand-off (comment + PATCH status=review); tidy

@@ -168,6 +168,7 @@ def _intent(task: Task, rng: random.Random, t: dict[str, Any], script: str) -> d
     else:
         reason = "A status question that can wait for the usual queue."
     out["rationale"] = f"{t.get('intent', 'other').replace('_', ' ').title()}: {reason}"
+    out["obligations"] = list(t.get("obligations") or [])  # the mock reads the flag straight from the truth
     if _wrong(rng) and out["urgency"] < 5:  # the mock is calibrated on urgency-5: those always get through
         if rng.random() < 0.5:
             out["intent"] = WRONG_INTENT
@@ -247,6 +248,48 @@ def _draft(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
     return {"text": text, "tone": "polite", "signsOff": True}
 
 
+def _resolution(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
+    """The from-truth answer: resolvable when the truth says the lookups settle it,
+    a reply grounded in the case record the task carries, and the belief mismatch
+    verbatim. The same seeded-mistake rate as everything else: sometimes the mock
+    says a solvable one needs a call, or vice versa."""
+    resolvable = bool(t.get("resolvableBy"))
+    case = t.get("caseId") or "your case"
+    name = (t.get("callerName") or "there").split()
+    first = name[0] if name else "there"
+    if resolvable:
+        lookups = []
+        if t.get("intent") in ("status_payment",):
+            lookups.append("payment_schedule")
+        elif t.get("intent") in ("status_document", "form_question"):
+            lookups.append("documents_received")
+        lookups.append("case_status")
+        reply = (f"Hi {first}, this is the Federal Benefits Service Center. Good news on {case}: "
+                 "we checked your record and your question is answered — "
+                 "no action is needed on your side unless we hear otherwise.")
+        if t.get("beliefMismatch"):
+            reply += " (Where the record and your letter disagree, the record wins; we'll note it on your file.)"
+        answer = "The case record answers the question directly."
+        brief = "Resolved by lookups; call only if the caller calls back."
+        if _wrong(rng):
+            resolvable = False  # the mock second-guesses itself and asks for a call
+    else:
+        lookups = ["case_status"]
+        answer = "The record narrows it down, but a person has to make the call."
+        reply = ""
+        brief = (f"Case {case}. Prior contacts: {', '.join(t.get('linkedTo') or []) or 'none today'}. "
+                 "Likely answer: see the case record's last action; confirm before promising a date.")
+    out = {
+        "resolvable": resolvable,
+        "lookups": lookups,
+        "answer": answer,
+        "reply": reply,
+        "brief": brief,
+        "beliefMismatch": t.get("beliefMismatch"),
+    }
+    return out
+
+
 def _generic(task: Task, rng: random.Random, script: str) -> dict:
     """No context (a hand-built task): a deterministic plausible answer from the text alone."""
     head = script[:180].strip()
@@ -282,6 +325,30 @@ def _generic(task: Task, rng: random.Random, script: str) -> dict:
     if task.name == "draft_reply":
         return {"text": f"Thank you for your message. Here is a first draft: {head[:80]}",
                 "tone": "neutral", "signsOff": False}
+    if task.name == "resolution":
+        return {"resolvable": bool(re.search(r"F B S[\s ]*[0-9]{4,7}", script, re.I)),
+                "lookups": ["case_status"],
+                "answer": "The case record may answer it; verify before replying.",
+                "reply": "", "brief": "No context was available; work the case record by hand.",
+                "beliefMismatch": None}
+    if task.name == "incident":  # a spike cluster: name it from the words the callers actually used
+        code = re.search(r"error\s*(\d{3,})", script, re.I)
+        if re.search(r"portal|sign(ing)? in|password", script, re.I):
+            what = "Portal sign-in failure" + (f" (error {code.group(1)})" if code else "")
+            cause = "A portal change is breaking sign-in; callers are phoning instead of retrying."
+            banner = "The portal sign-in is down. We are aware of it; no need to call again."
+        elif code:
+            what = f"System failure (error {code.group(1)})"
+            cause = "The callers describe the same failing screen; the most likely cause is that page's service."
+            banner = "We are aware of the issue you're calling about and it is being fixed."
+        else:
+            what = "A burst of similar messages"
+            cause = "The callers describe the same problem in their own words; the cause is still being pinned down."
+            banner = "We are aware of the issue you're calling about and it is being fixed."
+        return {"title": what, "probableCause": cause, "banner": banner,
+                "actions": ["Show the banner to new callers immediately",
+                            "Open a P1 ticket for the responsible team",
+                            "Send the holding reply to every caller in the cluster"]}
     return {"text": head[:100]}
 
 
@@ -302,6 +369,7 @@ class MockProvider:
                 "translation": lambda: _translation(task, rng, t, _script(task)),
                 "sentiment": lambda: _sentiment(task, rng, t, _script(task)),
                 "draft_reply": lambda: _draft(task, rng, t),
+                "resolution": lambda: _resolution(task, rng, t),
             }.get(task.name, lambda: _generic(task, rng, _script(task)))()
         return json.dumps(out, ensure_ascii=False)
 

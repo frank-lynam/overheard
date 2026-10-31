@@ -31,6 +31,10 @@ def open_db(settings: Settings) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS corrections (id INTEGER PRIMARY KEY AUTOINCREMENT, voicemail TEXT NOT NULL, "
         "task TEXT NOT NULL, field TEXT NOT NULL, value TEXT, provenance TEXT NOT NULL, at TEXT)"
     )
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS resolutions (voicemail TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT, "
+        "provenance TEXT, at TEXT)"
+    )
     con.commit()
     return con
 
@@ -47,6 +51,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # so a sqlite connection must never be touched by two of them at once.
     app.state.analysis_cache = {}
     app.state.analyze_lock = threading.Lock()
+    app.state.mode2 = None  # the day-2 computation, computed up front on first request
     app.state.store = ResponseStore(settings.llm_responses_path)
     app.state.provider = build_provider(settings, app.state.store)
 
