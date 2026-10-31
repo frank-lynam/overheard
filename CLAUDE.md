@@ -49,7 +49,7 @@ src/overheard/
   static/       index.html, css/, js/core/, js/ui/, js/charts/
 fixtures/
 tests/
-.github/workflows/  ci.yml, release.yml
+.github/workflows/  ci.yml, publish.yml
 docs/DESIGN.md
 ```
 
@@ -60,13 +60,13 @@ docs/DESIGN.md
 3. **Mode 1 + LLM layer** — provider Protocol and three providers, task modules, validation/retry/fallback, cache, record mode, capability probe; summary, extraction, intent/urgency, translation, sentiment, draft reply; priority sort, routing, provenance badges, edits scored against truth.
 4. **Mode 2** — similarity grouping (TF-IDF or host embeddings), spike detection + incident card, tool-use lookups for resolution without callback, callback brief, deadline-bound detection with keyword backstop and deadline clocks, repeat-caller linking, missing-info recovery, callback windows. **MVP gate: Modes 0–2 run end to end.**
 5. **Mode 3** — root-cause Pareto with cost model first, then event impact, journeys, promises, equity, letter lab, ask-the-archive, knowledge gaps.
-6. **Release and rehearsal** — presenter mode, release workflow (TestPyPI → PyPI via trusted publishing), record fixtures against the live host, offline dry run in replay mode.
+6. **Release and rehearsal** — presenter mode, publish workflow (TestPyPI → PyPI via trusted publishing), record fixtures against the live host, offline dry run in replay mode.
 
 ## Packaging and release
 
 - Plain 0.x versions on public PyPI (`0.1.0`, `0.2.0`...; `pip install overheard`, no `--pre`). Single source of version in `src/overheard/__init__.py`.
 - Static files and `seed_today.json` must be included in the wheel; add a test that builds the wheel and checks they are present.
-- `release.yml` publishes on tag `v*` to TestPyPI, then PyPI, using trusted publishing (no stored tokens). Don't publish anything without asking first.
+- `publish.yml` publishes on tag `v*` to TestPyPI, then PyPI, using trusted publishing (no stored tokens). Don't publish anything without asking first.
 - Check the package name is available on PyPI before the first upload; ask if it isn't.
 
 ## Working agreements

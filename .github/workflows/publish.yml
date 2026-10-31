@@ -1,7 +1,7 @@
 # Publishing on a version tag (vX.Y.Z, matching overheard.__version__): TestPyPI first, then PyPI.
 # Trusted publishing (OIDC), so no API tokens are stored. Both indexes need a (pending) publisher for
-# project "overheard", repository frank-lynam/overheard, workflow release.yml, environment testpypi / pypi.
-name: Release
+# project "overheard", repository frank-lynam/overheard, workflow publish.yml, environment testpypi / pypi.
+name: Publish
 
 on:
   push:
