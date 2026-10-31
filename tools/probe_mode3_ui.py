@@ -141,7 +141,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         sfHeadline: (document.querySelector(".m3-pane.staffing-forecast .m3-headline") || {}).textContent || "",
         sfDays: document.querySelectorAll(".m3-pane.staffing-forecast .m3-sf-table tbody tr").length,
         sfEventCards: document.querySelectorAll(".m3-pane.staffing-forecast .m3-sf-card").length,
-        sfEventTitle: (document.querySelector(".m3-pane.staffing-forecast .m3-sf-card .m3-sf-title b") || {}).textContent || "",
+        sfEventTitle: (document.querySelector(
+          ".m3-pane.staffing-forecast .m3-sf-card .m3-sf-title b") || {}).textContent || "",
         sfProv: (document.querySelector(".m3-pane.staffing-forecast .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
