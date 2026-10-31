@@ -22,5 +22,5 @@ analytics/staffing.py: per-day projection for the next 14 days from today: weekd
 - [x] 4. 4. pytest: day counts, payment-date tail excess ~19 contacts, steady baseline after, weekends zero-baseline, API 200
 - [x] 5. 5. ruff --no-fix + full pytest green
 - [x] 6. 6. extend chromium probe + screenshot (repo path)
-- [ ] 7. 7. commit + push (announce)
-- [ ] 8. 8. board comment + screenshot + PUT checklist 8/8
+- [x] 7. 7. commit + push (announce)
+- [x] 8. 8. board comment + screenshot + PUT checklist 8/8
