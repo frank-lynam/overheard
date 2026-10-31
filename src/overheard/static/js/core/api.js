@@ -33,4 +33,5 @@ export const api = {
   journeys: () => call("GET", "/archive/journeys"),
   promises: () => call("GET", "/archive/promises"),
   equity: () => call("GET", "/archive/equity"),
+  letterLab: (text) => call("POST", "/archive/letter-lab", { text }),
 };

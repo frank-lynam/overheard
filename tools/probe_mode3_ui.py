@@ -27,7 +27,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
     <section class="m3-pane event-impact"></section>
     <section class="m3-pane journeys"></section>
     <section class="m3-pane promises"></section>
-    <section class="m3-pane equity"></section></main>
+    <section class="m3-pane equity"></section>
+    <section class="m3-pane letter-lab"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -43,7 +44,12 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.journeys .m3-table tbody tr"); i++) await sleep(200);
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.promises .m3-table tbody tr"); i++) await sleep(200);
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.equity .m3-table tbody tr"); i++) await sleep(200);
-      document.querySelector(".m3-pane.equity").scrollIntoView();
+      // the letter lab: wait for its form, run a pre-test, wait for the results
+      for (let i = 0; i < 100 && !document.querySelector(".m3-pane.letter-lab #ll-run"); i++) await sleep(200);
+      const ll = document.querySelector(".m3-pane.letter-lab");
+      document.querySelector(".m3-pane.letter-lab #ll-run").click();
+      for (let i = 0; i < 150 && (ll.querySelector(".m3-letterlab-results") || {}).hidden; i++) await sleep(200);
+      document.querySelector(".m3-pane.letter-lab").scrollIntoView();
       await sleep(1500);
       const out = {
         errs,
@@ -78,7 +84,13 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         equityTop: (document.querySelector(".m3-pane.equity .m3-table:first-of-type tbody tr td") || {})
           .textContent || "",
         equityHeadline: (document.querySelector(".m3-pane.equity .m3-headline") || {}).textContent || "",
-        equityProv: (document.querySelector(".m3-pane.equity .prov") || {}).textContent || ""
+        equityProv: (document.querySelector(".m3-pane.equity .prov") || {}).textContent || "",
+        letterLabPane: !!document.querySelector(".m3-pane.letter-lab"),
+        letterLabHeadline: (document.querySelector(".m3-pane.letter-lab .m3-letterlab-results .m3-headline") || {})
+          .textContent || "",
+        letterLabRewrite: (document.querySelector(".m3-pane.letter-lab .m3-letterlab-rewrite") || {}).textContent || "",
+        letterLabQuestions: document.querySelectorAll(".m3-pane.letter-lab .m3-letterlab-questions li").length,
+        letterLabProv: (document.querySelector(".m3-pane.letter-lab .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -140,6 +152,11 @@ try:
     assert out["equityTop"].strip() == "vi", out["equityTop"]
     assert "vi" in out["equityHeadline"].lower(), out["equityHeadline"]
     assert "plain code" in out["equityProv"] and "contacts by language and channel" in out["equityProv"]
+    assert out["letterLabPane"]
+    assert "form 22-b" in out["letterLabHeadline"].lower(), out["letterLabHeadline"]
+    assert "what to do" in out["letterLabRewrite"].lower()
+    assert out["letterLabQuestions"] == 6
+    assert "plain code" in out["letterLabProv"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()

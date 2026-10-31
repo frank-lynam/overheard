@@ -1,4 +1,5 @@
 // Mode 3, view 1: the archive dashboard — cost by root cause, the Pareto.
+import { api } from "../core/api.js";
 import { renderPareto, fmtHours, fmtUsd } from "../charts/pareto.js";
 
 export function renderRootCauses(el, data) {
@@ -241,4 +242,95 @@ export function renderEquity(el, data) {
         style="width:${Math.max(1, (r.avgWaitMin / maxWait) * 100).toFixed(1)}%"></span></span>
       <span class="m3-equity-num">${r.avgWaitMin.toFixed(1)} min</span>
     </div>`).join("");
+}
+
+// Mode 3, view 6: the letter lab — pre-test a draft notice against the archive.
+const LETTER_SAMPLE =
+  "Dear Claimant, we have made a determination that your records require re-verification of your " +
+  "address and income. Pursuant to our prescribed regulations, subject to further review, your benefits " +
+  "will be stopped if the re-verification documentation is not returned to us within 30 days. If you fail " +
+  "to return the documentation, your payment may be suspended and you may owe back benefits for the months " +
+  "in which no re-verification was on file at all.";
+
+export function renderLetterLab(el) {
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Pre-test a letter before you mail it <span class="prov">plain code · archive patterns</span></h2>
+      <p class="muted">Paste a draft notice and the lab checks it against three years of the archive: which
+        past mailing it sounds like, the calls that mailing actually drove, the questions its readers asked,
+        and a clearer rewrite with a before/after prediction. "Sounds like" is word overlap with that
+        driver's real phrasings and its events; volume is the similar past mailings' measured excess above
+        that driver's own baseline, scaled by a readability score of the draft (vague letters cost more).</p>
+    </div>
+    <div class="m3-letterlab-form">
+      <label for="ll-draft" class="muted">Your draft notice</label>
+      <textarea id="ll-draft" class="m3-letterlab-draft" rows="7">${LETTER_SAMPLE}</textarea>
+      <button id="ll-run" class="m3-letterlab-run">Pre-test this letter</button>
+    </div>
+    <div class="m3-letterlab-results" hidden></div>`;
+  const results = el.querySelector(".m3-letterlab-results");
+  el.querySelector("#ll-run").addEventListener("click", async () => {
+    const text = el.querySelector("#ll-draft").value.trim();
+    if (!text) return;
+    const btn = el.querySelector("#ll-run");
+    btn.disabled = true;
+    btn.textContent = "Checking the archive…";
+    try {
+      const data = await api.letterLab(text);
+      renderLetterLabResults(results, data);
+      results.hidden = false;
+      results.scrollIntoView({ block: "nearest" });
+    } catch (e) {
+      results.innerHTML = `<p class="muted">Could not run the letter lab: ${e.message}</p>`;
+      results.hidden = false;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Pre-test this letter";
+    }
+  });
+}
+
+function renderLetterLabResults(el, data) {
+  const det = data.detected;
+  const p = data.predicted;
+  const r = data.rewrite;
+  const q = data.archiveQuestions;
+  const windowRows = p.perMailing.map((w) => `<tr>
+      <td>${w.name}</td><td class="num">${w.date}</td>
+      <td class="num">${w.count.toLocaleString()}</td><td class="num">${w.excess.toLocaleString()}</td>
+    </tr>`).join("");
+  el.innerHTML = `
+    <h3 class="muted">What the lab found</h3>
+    <p class="m3-headline">This draft sounds like <b>${det.label}</b>
+      (matched on ${det.matchedWords.length} words: ${det.matchedWords.join(", ")}).
+      The archive's similar past mailings each drove <b>${p.low.toLocaleString()}-${p.high.toLocaleString()}</b>
+      contacts above that cause's own baseline, and this wording predicts
+      <b>${p.low.toLocaleString()}-${p.high.toLocaleString()}</b> per mailing
+      (mid <b>${p.mid.toLocaleString()}</b>).
+      The centre already answered this letter's questions <b>${q.count.toLocaleString()}</b> times.</p>
+    <div class="m3-stats">
+      <div class="stat"><b>${p.mid.toLocaleString()}</b><span class="muted">predicted contacts per mailing</span></div>
+      <div class="stat"><b>${r.questionsBefore} → ${r.questionsAfter}</b><span class="muted">expected questions, draft vs. rewrite</span></div>
+      <div class="stat"><b>-${(r.reductionPct * 100).toFixed(0)}%</b><span class="muted">predicted volume after the rewrite</span></div>
+    </div>
+    <h3 class="muted">Clarity of this draft</h3>
+    <p>${data.clarity.issues.length ? data.clarity.issues.join(" · ") : "No clarity issues found."}</p>
+    ${q.sample.length ? `
+    <h3 class="muted">What readers actually asked about this notice</h3>
+    <ul class="m3-letterlab-questions">
+      ${q.sample.map((s) => `<li>"${s.text}" <span class="muted">— ${s.channel}, ${s.at.slice(0, 10)}</span></li>`).join("")}
+    </ul>` : ""}
+    <h3 class="muted">The suggested rewrite</h3>
+    <pre class="m3-letterlab-rewrite">${r.text}</pre>
+    <p class="m3-headline">After the rewrite: clarity <b>${data.clarity.score.toFixed(2)} →
+      ${r.clarityScore.toFixed(2)}</b>, predicted volume <b>${r.volumeBefore.toLocaleString()} →
+      ${r.volumeAfter.toLocaleString()}</b> per mailing, expected questions <b>${r.questionsBefore} →
+      ${r.questionsAfter}</b>.</p>
+    ${p.perMailing.length ? `
+    <h3 class="muted">The past mailings this was measured against</h3>
+    <table class="m3-table">
+      <thead><tr><th>mailing</th><th class="num">date</th><th class="num">window contacts</th>
+        <th class="num">excess over baseline</th></tr></thead>
+      <tbody>${windowRows}</tbody>
+    </table>` : ""}`;
 }

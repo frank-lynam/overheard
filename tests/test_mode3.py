@@ -286,3 +286,96 @@ async def test_api_equity(client):
     assert body["totalContacts"] > 50_000
     assert body["worstLanguage"]["slow"] == PLANTED_SLOW_LANG
     assert body["worstLanguage"]["waitRatio"] > 1.2
+
+
+# --- Mode 3, view 6: the letter lab -------------------------------------------
+
+from overheard.analytics.letter_lab import (  # noqa: E402
+    clarity_report,
+    detect_notice,
+    letter_lab,
+    mailing_windows,
+    rewrite_letter,
+)
+
+LL_22B_DRAFT = (
+    "Dear Claimant, we have made a determination that your records require re-verification of your "
+    "address and income. Pursuant to our prescribed regulations, subject to further review, your "
+    "benefits will be stopped if the re-verification documentation is not returned to us within 30 days. "
+    "If you fail to return the documentation, your payment may be suspended and you may owe back "
+    "benefits for the months in which no re-verification was on file at all."
+)
+
+LL_COLA_DRAFT = (
+    "Dear Claimant, your payment has changed because of the annual cost-of-living adjustment. "
+    "Here is your new amount for this year."
+)
+
+
+def test_letterlab_detects_the_planted_22b_letter(seeded):
+    _, con, _ = seeded
+    det = detect_notice(LL_22B_DRAFT)
+    assert det["driver"] == PLANTED_TOP  # the 22-B re-verification draft sounds like the 22-B
+    assert "re-verify" in " ".join(det["matchedWords"]) or len(det["matchedWords"]) >= 3
+    det_cola = detect_notice(LL_COLA_DRAFT)
+    assert det_cola["driver"] == "cola-letter"
+
+
+def test_letterlab_predicts_the_planted_22b_volume(seeded):
+    _, con, _ = seeded
+    result = letter_lab(con, LL_22B_DRAFT)
+    windows = result["predicted"]["perMailing"]
+    assert len(windows) == 4  # the archive holds four 22-B mailings
+    excesses = [w["excess"] for w in windows]
+    assert all(e > 0 for e in excesses)  # each mailing really did spike over baseline
+    low, mid, high = (result["predicted"][k] for k in ("low", "mid", "high"))
+    assert low <= mid <= high
+    # the mid sits within ~25% of the archive's measured excesses (the clarity scale nudges it)
+    assert max(excesses) * 0.75 <= mid <= max(excesses) * 1.25
+    assert low > 0
+
+
+def test_letterlab_rewrite_is_clearer_and_cheaper(seeded):
+    _, con, _ = seeded
+    before = clarity_report(LL_22B_DRAFT)
+    after = clarity_report(rewrite_letter(LL_22B_DRAFT))
+    assert after["score"] > before["score"]
+    assert after["hasDeadline"] and after["hasAction"]
+    result = letter_lab(con, LL_22B_DRAFT)
+    r = result["rewrite"]
+    assert r["clarityScore"] > result["clarity"]["score"]
+    assert r["questionsBefore"] > 0
+    assert r["questionsAfter"] < r["questionsBefore"]
+    assert 0 < r["reductionPct"] < 1
+    # the rewrite kept the point: the 22-B is still detectable in it
+    assert detect_notice(r["text"])["driver"] == PLANTED_TOP
+
+
+def test_letterlab_shows_real_archive_questions(seeded):
+    _, con, _ = seeded
+    result = letter_lab(con, LL_22B_DRAFT)
+    q = result["archiveQuestions"]
+    assert q["count"] > 100  # a year of 22-B mailings means plenty of real contacts
+    assert len(q["sample"]) == 6
+    for s in q["sample"]:
+        assert s["channel"] in {"voicemail", "phone", "web"}
+        assert " " in s["text"]
+
+
+def test_letterlab_windows_match_event_impact(seeded):
+    _, con, _ = seeded
+    windows = mailing_windows(con, PLANTED_TOP)
+    impact = {e["id"]: e for e in event_impact(con)}
+    for w in windows:
+        assert impact[w["event"]]["count"] == w["count"]
+        assert impact[w["event"]]["excess"] == w["excess"]
+
+
+async def test_api_letterlab(client):
+    r = await client.post("/api/archive/letter-lab", json={"text": LL_22B_DRAFT})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["detected"]["driver"] == PLANTED_TOP
+    assert len(body["predicted"]["perMailing"]) == 4
+    assert body["rewrite"]["clarityScore"] > body["clarity"]["score"]
+    assert "what to do" in body["rewrite"]["text"].lower()

@@ -426,3 +426,16 @@ def get_archive_equity(request: Request) -> dict:
     from overheard.analytics.equity import equity_report
 
     return equity_report(con(request))
+
+
+class LetterDraft(BaseModel):
+    text: str
+
+
+@router.post("/archive/letter-lab")
+def letter_lab(request: Request, draft: LetterDraft) -> dict:
+    """Mode 3, view 6: the letter lab — pre-test a draft notice against the archive:
+    which call-driver it sounds like, the predicted volume, the readers' questions, a rewrite."""
+    from overheard.analytics.letter_lab import letter_lab as lab
+
+    return lab(con(request), draft.text.strip())
