@@ -10,6 +10,7 @@ from overheard import __version__
 from overheard.api.routes import router
 from overheard.config import Settings
 from overheard.data import db
+from overheard.llm import ResponseStore, build_provider
 from overheard.pipeline.simulate import Assumptions
 
 
@@ -32,6 +33,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.db = open_db(settings)
     app.state.today = app.state.db.execute("SELECT value FROM meta WHERE key='today'").fetchone()[0]
     app.state.assumptions = Assumptions()
+    app.state.store = ResponseStore(settings.llm_responses_path)
+    app.state.provider = build_provider(settings, app.state.store)
 
     @app.get("/api/health")
     async def health() -> dict:

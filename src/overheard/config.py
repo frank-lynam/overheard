@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr | None = None
     llm_model: str | None = None
     llm_timeout: float = 60.0
+    llm_responses_path: Path = Path("overheard_responses")  # the JSON response store (one per (task, input, model))
     db_path: Path = Path("overheard.db")
     seed: int = 2026
     host: str = "127.0.0.1"

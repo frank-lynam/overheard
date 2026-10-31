@@ -1,23 +1,28 @@
 # Goal
 
-Mode 0 complete end-to-end per the build order: UI pieces verified working in a real browser, workload-clock extrapolation visible and editable, tests green, pushed to ticket/fancy-wombat, reported on the board.
+Build the LLM layer for overheard per CLAUDE.md: provider Protocol + Mock/OpenAICompat/Replay providers, JSON response store, structured-output validation/retry/fallback, capability probe, task modules (summary, extraction, intent/urgency, translation, sentiment, draft reply) — mock mode fully offline, provenance on every AI field, tests green.
 
 ## How it works
 
-Read ui/queue.js, ui/message.js, ui/context.js, ui/scoreboard.js, core/store.js, core/api.js, format.js, simulate.py, cli.py, tests/test_mode0.py, app.py. All Mode 0 design pieces exist: arrival-ordered inbox, speaking-pace (~150 wpm) transcript reveal, manual entry form (all design fields), effort timer, case lookup, "work the queue" simulation, scoreboard v1. Simulation math: listen at speed + handleMin (3.5, editable via API) + callbackMin (6) per message.
+Repo at ~/work/tickets/fancy-wombat/repo has Foundation + Mode 0 done: FastAPI app, sqlite data layer (models, generator with truth labels), pipeline/simulate.py, api/routes.py, config.py with OVERHEARD_* env. No src/overheard/llm/ exists yet. CLAUDE.md specifies: provider Protocol (MockProvider, OpenAICompatProvider, ReplayProvider), OVERHEARD_LLM_MODE=mock|live|record|replay (default mock, offline), mock outputs from ground truth with 90-95% seeded accuracy, one JSON response store keyed (task, input hash, model), json_schema response_format with lazy capability probe, retry-once-then-fallback with provenance 'fallback', each LLM task = module with system prompt, few-shot, pydantic output model, optional tools.
 
 ## Why it doesn't
 
-Gaps: (1) DESIGN says "measured effort: real time per message, plus configurable handling time (3.5 min default) that extrapolates the workload clock" — handleMin is editable via API but nothing in the UI exposes it, and the workload clock only appears after clicking "work the queue"; (2) no end-to-end test that the browser UI renders and works at all.
+-
 
 ## What would
 
-(1) message.js: show per-message workload clock (listen + handling + callback, from /api/assumptions). (2) scoreboard.js: always-visible extrapolated workload-clock stat with an editable handling time. (3) tests/test_mode0_ui.py: structural tests (index.html/JS contain the required Mode 0 pieces) + real headless-Chromium smoke test against a live server (queue renders, work-the-queue fills the scoreboard). (4) ruff+pytest green, screenshots of the modes, push, board comment + checklist upload.
+Create src/overheard/llm/ (provider.py Protocol + factory, mock.py, openai_compat.py, replay.py, cache.py response store, tasks/ modules) and wire OVERHEARD_LLM_MODE into config; tests for store, validation/retry/fallback, and mock-from-truth accuracy band. Then Mode 1 UI uses tasks next phase.
 
 ## Steps
 
-- [x] 1. Edit ui/message.js: per-message workload clock from assumptions
-- [x] 2. Edit ui/scoreboard.js: always-visible extrapolation + editable handling time
-- [x] 3. Add tests/test_mode0_ui.py (structural + Chromium smoke)
-- [ ] 4. Run ruff + pytest, serve + screenshots (mode 0 before/after sim)
-- [ ] 5. Push to deploy; tick steps 1-2, post comment, upload checklist, update MEMORY
+- [x] 1. Read data/models.py, config.py, pipeline/simulate.py, api/routes.py to see truth labels, schema, seams
+- [x] 2. Design llm module layout; write provider Protocol + config wiring
+- [x] 3. Implement cache.py (JSON response store keyed task/input-hash/model)
+- [x] 4. Implement mock.py (from truth, seeded 90-95% accuracy)
+- [x] 5. Implement openai_compat.py (capability probe, json_schema, retry, fallback) + replay.py
+- [x] 6. Implement tasks/ pydantic modules (summary, extraction, intent/urgency, translation, sentiment, draft reply)
+- [x] 7. Tests: store roundtrip, validation/retry/fallback, mock offline determinism, accuracy band
+- [x] 8. Run ruff + full pytest green
+- [ ] 9. Commit + push, board update
+- [ ] 10. Tidy up
