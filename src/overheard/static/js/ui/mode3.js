@@ -334,3 +334,66 @@ function renderLetterLabResults(el, data) {
       <tbody>${windowRows}</tbody>
     </table>` : ""}`;
 }
+
+// Mode 3, view 7: ask the archive — plain-English questions over pre-computed totals.
+const ASK_SAMPLE = "Why did contacts about the 22-B letter spike in June 2025?";
+
+export function renderAsk(el) {
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Ask the archive <span class="prov">plain code · totals over the archive</span></h2>
+      <p class="muted">Ask in plain English — an issue, a state, a language, a month or year. The answer is
+        plain code counting the archive's pre-computed totals: how many, how it compares with the equal
+        period before, which calendar events overlap, and real messages from the archive cited as evidence.
+        A question it can't scope gets an honest "I don't know", not a guess.</p>
+    </div>
+    <div class="m3-ask-form">
+      <label for="ask-q" class="muted">Your question</label>
+      <div class="m3-ask-row">
+        <input id="ask-q" class="m3-ask-input" type="text" placeholder="${ASK_SAMPLE}">
+        <button id="ask-sample" class="m3-ask-sample" type="button">Try a sample</button>
+        <button id="ask-run" class="m3-ask-run" type="button">Ask</button>
+      </div>
+    </div>
+    <div class="m3-ask-results" hidden></div>`;
+  const results = el.querySelector(".m3-ask-results");
+  const run = () => {
+    const text = el.querySelector("#ask-q").value.trim();
+    if (!text) return;
+    const btn = el.querySelector("#ask-run");
+    btn.disabled = true;
+    btn.textContent = "Counting…";
+    api.askArchive(text)
+      .then((data) => {
+        renderAskResults(results, data);
+        results.hidden = false;
+        results.scrollIntoView({ block: "nearest" });
+      })
+      .catch((e) => {
+        results.innerHTML = `<p class="muted">Could not ask the archive: ${e.message}</p>`;
+        results.hidden = false;
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = "Ask";
+      });
+  };
+  el.querySelector("#ask-run").addEventListener("click", run);
+  el.querySelector("#ask-q").addEventListener("keydown", (ev) => { if (ev.key === "Enter") run(); });
+  el.querySelector("#ask-sample").addEventListener("click", () => {
+    el.querySelector("#ask-q").value = ASK_SAMPLE;
+    run();
+  });
+}
+
+function renderAskResults(el, data) {
+  const t = data.totals || {};
+  const events = (t.events || []).map((e) => `<li>
+      ${e.name} <span class="muted">— ${e.type}, ${e.window}</span>${e.sameCause ? " <b>(same issue)</b>" : ""}
+    </li>`).join("");
+  const evidence = (t.evidence || []).map((s) => `<li>"${s}"</li>`).join("");
+  el.innerHTML = `
+    <p class="m3-headline ${data.understood ? "" : "muted"}">${data.understood ? "" : "(I could not scope this) "}${data.answer}</p>
+    ${t.events?.length ? `<h3 class="muted">Calendar events overlapping the period</h3><ul class="m3-ask-events">${events}</ul>` : ""}
+    ${t.evidence?.length ? `<h3 class="muted">Evidence: real messages from the archive</h3><ul class="m3-ask-evidence">${evidence}</ul>` : ""}`;
+}

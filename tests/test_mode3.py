@@ -379,3 +379,59 @@ async def test_api_letterlab(client):
     assert len(body["predicted"]["perMailing"]) == 4
     assert body["rewrite"]["clarityScore"] > body["clarity"]["score"]
     assert "what to do" in body["rewrite"]["text"].lower()
+
+
+# --- Mode 3, view 7: ask the archive -------------------------------------------
+
+from overheard.analytics.ask import ask  # noqa: E402
+
+
+def test_ask_flags_the_planted_22b_spike(seeded):
+    _, con, _ = seeded
+    result = ask(con, "Why did contacts about the 22-B letter spike in June 2025?")
+    assert result["understood"]
+    assert result["matchedCause"] == PLANTED_TOP
+    assert result["totals"]["count"] >= 100  # the 3rd mailing's decayed window is large
+    # ev-22b-3 (2025-06-02, 50-day window) must be the first coincident event
+    assert result["totals"]["events"][0]["id"] == "ev-22b-3"
+    assert result["totals"]["events"][0]["sameCause"] is True
+    # real evidence, not invented text
+    assert len(result["totals"]["evidence"]) >= 1
+    assert all(" " in e for e in result["totals"]["evidence"])
+    assert result["totals"]["count"] > result["totals"]["priorCount"]
+
+
+def test_ask_flags_the_planted_portal_spike(seeded):
+    _, con, _ = seeded
+    result = ask(con, "Why did portal sign-in failures spike in May 2025?")
+    assert result["understood"]
+    assert result["matchedCause"] == "portal-sign-in-failure"
+    assert result["totals"]["count"] >= 50
+    assert result["totals"]["events"][0]["id"] == "ev-portal-42"
+    assert result["totals"]["changePct"] >= 100  # the planted 30x peak means a real surge
+
+
+def test_ask_regions_and_years_are_real_counts(seeded):
+    _, con, _ = seeded
+    result = ask(con, "How many 22-B letter contacts were there in June 2025 in Ohio?")
+    assert result["understood"] and result["region"] == "oh"
+    truth = con.execute(
+        "SELECT COUNT(*) FROM contacts WHERE root_cause = ? AND region = 'OH'"
+        " AND at >= '2025-06-01' AND at < '2025-07-01'", (PLANTED_TOP,)).fetchone()[0]
+    assert result["totals"]["count"] == truth
+
+
+def test_ask_answers_unknown_honestly(seeded):
+    _, con, _ = seeded
+    result = ask(con, "blorp blorp")
+    assert result["understood"] is False
+    assert "couldn't tell" in result["answer"]
+
+
+async def test_api_ask(client):
+    r = await client.post("/api/archive/ask", json={"question": "Why did the 22-B letter spike in June 2025?"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["matchedCause"] == PLANTED_TOP
+    assert body["totals"]["count"] >= 100
+    assert body["totals"]["events"][0]["id"] == "ev-22b-3"

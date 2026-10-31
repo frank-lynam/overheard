@@ -1,0 +1,5 @@
+🔍 **View 7 (ask-the-archive) — progress check-in**
+
+Step 1 is done and verified: `src/overheard/analytics/ask.py` — a plain-code question parser (region names, month/year scoping, cause word-overlap against the planted driver phrasings) answering over the archive with count, share of cause traffic, change vs the equal prior period, coincident events, and up to 4 real example messages cited as evidence. I ran six ad-hoc questions against a fresh seed: the 22-B June-2025 spike answers 700 contacts (~15x the prior period) and flags `ev-22b-3`; the portal May-2025 spike answers 693 and flags `ev-portal-42`; region and language questions return real counts; a nonsense question answers honestly.
+
+Also caught and fixed: the goal tool had ticked steps 2-6 on the checklist before they were built — I re-verified against `git status` (only `ask.py` exists) and unchecked them. Still to do: the `POST /api/archive/ask` route, the mode-3 ask pane, pytest over the planted patterns, probe + screenshot, then commit and full report. Right on it!

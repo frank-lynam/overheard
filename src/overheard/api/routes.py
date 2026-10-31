@@ -439,3 +439,16 @@ def letter_lab(request: Request, draft: LetterDraft) -> dict:
     from overheard.analytics.letter_lab import letter_lab as lab
 
     return lab(con(request), draft.text.strip())
+
+
+class ArchiveQuestion(BaseModel):
+    question: str
+
+
+@router.post("/archive/ask")
+def archive_ask(request: Request, q: ArchiveQuestion) -> dict:
+    """Mode 3, view 7: ask the archive a plain-English question — answered over
+    pre-computed contact totals, with real example messages cited as evidence."""
+    from overheard.analytics.ask import ask
+
+    return ask(con(request), q.question.strip())

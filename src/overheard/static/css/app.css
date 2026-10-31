@@ -159,3 +159,12 @@ body[data-mode="2"] .queue-row { grid-template-columns: 4.4rem 1fr 2.5rem 1.2rem
 .m3-letterlab-results { margin-top: 1rem; }
 .m3-letterlab-questions { padding-left: 1.2rem; font-size: .9rem; line-height: 1.5; }
 .m3-letterlab-rewrite { white-space: pre-wrap; font-size: .9rem; line-height: 1.45; background: var(--line); border-radius: 4px; padding: .6rem .8rem; overflow-wrap: anywhere; }
+.m3-ask-form { margin: .75rem 0; }
+.m3-ask-form label { display: block; font-size: .85rem; margin-bottom: .25rem; }
+.m3-ask-row { display: flex; gap: .5rem; align-items: center; }
+.m3-ask-input { flex: 1; font: inherit; font-size: .9rem; padding: .45rem .6rem; border: 1px solid var(--line); border-radius: 4px; }
+.m3-ask-sample, .m3-ask-run { font: inherit; font-size: .9rem; padding: .4rem .9rem; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.m3-ask-run { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.m3-ask-sample[disabled], .m3-ask-run[disabled] { opacity: .6; cursor: default; }
+.m3-ask-results { margin-top: 1rem; }
+.m3-ask-events, .m3-ask-evidence { padding-left: 1.2rem; font-size: .9rem; line-height: 1.5; }

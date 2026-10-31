@@ -28,7 +28,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
     <section class="m3-pane journeys"></section>
     <section class="m3-pane promises"></section>
     <section class="m3-pane equity"></section>
-    <section class="m3-pane letter-lab"></section></main>
+    <section class="m3-pane letter-lab"></section>
+    <section class="m3-pane ask"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -51,6 +52,13 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       for (let i = 0; i < 150 && (ll.querySelector(".m3-letterlab-results") || {}).hidden; i++) await sleep(200);
       document.querySelector(".m3-pane.letter-lab").scrollIntoView();
       await sleep(1500);
+      // the ask pane: wait for its form, run the sample question, wait for the answer
+      for (let i = 0; i < 100 && !document.querySelector(".m3-pane.ask #ask-run"); i++) await sleep(200);
+      const askp = document.querySelector(".m3-pane.ask");
+      document.querySelector(".m3-pane.ask #ask-sample").click();
+      for (let i = 0; i < 150 && (askp.querySelector(".m3-ask-results") || {}).hidden; i++) await sleep(200);
+      askp.scrollIntoView();
+      await sleep(1000);
       const out = {
         errs,
         mode3Visible: !document.querySelector(".mode3").hidden,
@@ -90,7 +98,12 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
           .textContent || "",
         letterLabRewrite: (document.querySelector(".m3-pane.letter-lab .m3-letterlab-rewrite") || {}).textContent || "",
         letterLabQuestions: document.querySelectorAll(".m3-pane.letter-lab .m3-letterlab-questions li").length,
-        letterLabProv: (document.querySelector(".m3-pane.letter-lab .prov") || {}).textContent || ""
+        letterLabProv: (document.querySelector(".m3-pane.letter-lab .prov") || {}).textContent || "",
+        askPane: !!document.querySelector(".m3-pane.ask"),
+        askHeadline: (document.querySelector(".m3-pane.ask .m3-ask-results .m3-headline") || {}).textContent || "",
+        askEvents: [...document.querySelectorAll(".m3-pane.ask .m3-ask-events li")].map(li => li.textContent),
+        askEvidence: document.querySelectorAll(".m3-pane.ask .m3-ask-evidence li").length,
+        askProv: (document.querySelector(".m3-pane.ask .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -157,6 +170,11 @@ try:
     assert "what to do" in out["letterLabRewrite"].lower()
     assert out["letterLabQuestions"] == 6
     assert "plain code" in out["letterLabProv"]
+    assert out["askPane"]
+    assert "22-b" in out["askHeadline"].lower(), out["askHeadline"]
+    assert "ev-22b-3" not in out["askHeadline"] and any("3rd mailing" in e for e in out["askEvents"]), out["askEvents"]
+    assert out["askEvidence"] >= 1
+    assert "plain code" in out["askProv"] and "totals over the archive" in out["askProv"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()
