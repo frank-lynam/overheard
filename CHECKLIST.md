@@ -21,6 +21,6 @@ New src/overheard/analytics/journeys.py: group contacts by (case_id, root_cause)
 - [x] 3. Mode-3 journeys pane: index.html section + js/ui/mode3.js render + css
 - [x] 4. pytest: planted loops recovered (band vs meta.loop_contacts, top cause in planted set, API 200)
 - [x] 5. ruff + full pytest green
-- [ ] 6. chromium probe: assert journeys pane + screenshot
-- [ ] 7. commit + push
-- [ ] 8. board comment with report + screenshot
+- [x] 6. chromium probe: assert journeys pane + screenshot
+- [x] 7. commit + push
+- [x] 8. board comment with report + screenshot (comment 148, attachment 72)
