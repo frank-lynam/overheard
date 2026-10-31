@@ -66,6 +66,7 @@ PROBE = r"""<!doctype html>
   </nav>
   <div class="scoreboard" aria-live="polite"><span class="muted">scoreboard</span></div></header>
   <p class="later" hidden>later</p>
+  <main class="mode3" hidden><section class="m3-pane root-causes"></section></main>
   <main class="workbench">
     <section class="pane queue"></section>
     <section class="pane message"></section>

@@ -4,6 +4,7 @@ import { renderContext, bindResolutionBump } from "./ui/context.js";
 import { renderMessage } from "./ui/message.js";
 import { renderQueue } from "./ui/queue.js";
 import { renderScoreboard } from "./ui/scoreboard.js";
+import { renderRootCauses } from "./ui/mode3.js";
 
 const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null, incidents: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
@@ -15,6 +16,19 @@ store.subscribe(({ mode }) => {
   buttons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.mode) === mode)));
   document.body.dataset.mode = mode;
   document.querySelector(".later").hidden = mode >= 1;
+  const m3 = document.querySelector(".mode3");
+  const wb = document.querySelector(".workbench");
+  if (m3) m3.hidden = mode !== 3;
+  wb.hidden = mode === 3 && !!m3;
+  if (mode === 3 && m3) {
+    const pane = m3.querySelector(".m3-pane.root-causes");
+    if (pane.dataset.loaded !== "1") {
+      api.rootCauses().then((data) => {
+        pane.dataset.loaded = "1";
+        renderRootCauses(pane, data);
+      }).catch(() => {});
+    }
+  }
 }, ["mode"]);
 
 renderQueue(document.querySelector(".pane.queue"), store);

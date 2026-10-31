@@ -20,3 +20,4 @@ class Settings(BaseSettings):
     seed: int = 2026
     host: str = "127.0.0.1"
     port: int = 8000
+    labor_rate: float = 55.0  # fully-loaded dollars per agent-hour (Mode 3 cost model)

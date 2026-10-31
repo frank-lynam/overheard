@@ -123,3 +123,16 @@ body[data-mode="2"] .queue-row { grid-template-columns: 4.4rem 1fr 2.5rem 1.2rem
 .mode2-panels .state.approved { color: var(--ok); font-weight: 700; margin: .3rem 0 0; }
 .mode2-panels .mismatch { border-left: 3px solid #d8a32a; padding-left: .5rem; }
 .mode2-panels .ai-line.clock { font-variant-numeric: tabular-nums; }
+
+/* --- Mode 3: the archive dashboard --- */
+.mode3 { padding: 1rem; max-width: 70rem; margin: 0 auto; }
+.m3-pane { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; }
+.m3-head h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
+.m3-head h2 .prov { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: .1rem .35rem; margin-left: .5rem; vertical-align: middle; }
+.m3-stats { display: flex; gap: 2rem; margin: .75rem 0; flex-wrap: wrap; }
+.m3-headline { font-size: .95rem; line-height: 1.5; }
+.m3-chart svg { width: 100%; height: auto; display: block; margin: 1rem 0; }
+.m3-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.m3-table th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: .3rem .5rem; border-bottom: 2px solid var(--line); }
+.m3-table td { padding: .3rem .5rem; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.m3-table .num { text-align: right; }

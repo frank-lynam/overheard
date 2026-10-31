@@ -27,4 +27,6 @@ export const api = {
   resolution: (id) => call("GET", `/resolutions/${id}`),
   setResolution: (id, state, reply) => call("POST", `/resolutions/${id}`, { state, reply }),
   scoreboard2: () => call("GET", "/scoreboard2"),
+  // mode 3: the archive analytics
+  rootCauses: () => call("GET", "/archive/root-causes"),
 };

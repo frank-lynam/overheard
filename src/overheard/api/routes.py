@@ -386,3 +386,11 @@ def get_scoreboard2(request: Request) -> dict:
     vms = voicemails(request)
     bundles = {v.id: analyze_sync(v, d) for v in vms}
     return scoreboard2(vms, bundles, Mode2Deps(d.con, d.store, d.provider, d.model))
+
+
+@router.get("/archive/root-causes")
+def get_archive_root_causes(request: Request) -> dict:
+    """Mode 3, view 1: the archive's cost by root cause (Pareto), at the configured labor rate."""
+    from overheard.analytics.root_causes import root_causes
+
+    return root_causes(con(request), request.app.state.settings.labor_rate)
