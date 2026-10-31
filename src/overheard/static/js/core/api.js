@@ -30,4 +30,5 @@ export const api = {
   // mode 3: the archive analytics
   rootCauses: () => call("GET", "/archive/root-causes"),
   eventImpact: () => call("GET", "/archive/event-impact"),
+  journeys: () => call("GET", "/archive/journeys"),
 };

@@ -1,26 +1,26 @@
 # Goal
 
-Mode 3 view 2 (event impact) is live end to end: analytics/events.py, /api/archive/event-impact, mode-3 event pane, tests on the planted signals, chromium probe, pushed, reported on the board.
+Mode 3 view 3 (caller journeys / repeat callers) is live end to end: analytics/journeys.py, GET /api/archive/journeys, mode-3 journeys pane, tests on the planted loops, chromium probe, pushed, reported on the board.
 
 ## How it works
 
-Seeded archive plants signals in data/events.py: each event adds Poisson excess contacts for one root_cause (driver), peaking at start and fading over `days` (lam += peak*exp(-3*age/days), scaled by VOLUME=6.75). DB events table has id/date/type/name/description; driver/peak/days live in the EVENTS tuples (calendar metadata) — analytics can join by id. Expected recoveries: 22-B mailings top the excess list (~1000 each), ev-portal-42 release ~600, ev-1099-quiet vendor change a sliver.
+Archive is pre-labeled: contacts(id, case_id, at, channel, root_cause, lang, region, handle_min, resolved, days_to_resolve, text, promise) — 71,788 rows across 25,000 case pools. The generator PLANTs loops: LOOP_SHARE=0.04 of callers get 3-6 'phone' contacts on one unresolved root cause (identity-check-hold, appeal-status, overpayment-notice, form-22b-confusion), never resolved; meta.loop_contacts records the planted count. Mode 3 already has view 1 (root-cause Pareto) and view 2 (event impact) panes.
 
 ## Why it doesn't
 
-Only view 1 exists: no analytics/events.py, no /api/archive/event-impact route, no event pane in index.html/mode3.js, no tests for it.
+There is no journeys/repeat-caller view: analytics/ has only root_causes.py and events.py, no /api/archive/journeys route, and the mode-3 section of the UI has no journeys pane. The design (docs/DESIGN.md §Mode 3.3) asks for: callers stuck in loops (3+ contacts about one issue with no resolution) and the process steps where loops start.
 
 ## What would
 
-New src/overheard/analytics/events.py (per-event window contacts/hours vs own-cause weekday baseline, excess, share), GET /api/archive/event-impact, mode-3 event-impact pane (hand-written HTML/CSS sorted by excess), pytest asserting planted signals (22-B mailing rank 1, portal-42 top-3, 1099-quiet near bottom, completeness), chromium probe asserts the new pane, commit+push, board comment. Check: pytest green, ruff clean, probe OK, screenshot shows the pane.
+New src/overheard/analytics/journeys.py: group contacts by (case_id, root_cause); a loop = 3+ contacts, latest contact unresolved; report loop count, loop contacts, hours, loops by starting cause, worst offenders (most contacts, longest duration), and compare loop detection against planted meta.loop_contacts. GET /api/archive/journeys in routes.py. Mode-3 journeys pane (hand-written HTML/CSS, no libs) with headline, loops-by-cause table, worst-loops list, provenance badge. Tests: planted loops recovered (detected loop contacts within a sane band of meta.loop_contacts, top starting cause in the planted set, completeness, API 200). Chromium probe asserts the pane; commit+push; board comment. Check: pytest green, ruff clean, probe OK, screenshot shows the pane.
 
 ## Steps
 
-- [x] 1. analytics/events.py: event_impact(con) — window stats, baseline, excess, hours, shares
-- [x] 2. API route GET /api/archive/event-impact
-- [x] 3. Mode-3 event-impact pane: index.html section + js/ui/mode3.js render + css
-- [x] 4. pytest: planted signals recovered (22-B top, portal-42 top-3, 1099-quiet bottom, all 14 events present)
+- [x] 1. analytics/journeys.py: repeat_callers(con) — loop detection, per-cause breakdown, worst loops, planted-band check
+- [x] 2. API route GET /api/archive/journeys
+- [x] 3. Mode-3 journeys pane: index.html section + js/ui/mode3.js render + css
+- [x] 4. pytest: planted loops recovered (band vs meta.loop_contacts, top cause in planted set, API 200)
 - [x] 5. ruff + full pytest green
-- [x] 6. chromium probe: assert event pane + screenshot
+- [ ] 6. chromium probe: assert journeys pane + screenshot
 - [ ] 7. commit + push
 - [ ] 8. board comment with report + screenshot

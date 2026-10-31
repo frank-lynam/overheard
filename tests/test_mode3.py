@@ -9,6 +9,7 @@ import httpx
 import pytest
 
 from overheard.analytics.events import event_impact
+from overheard.analytics.journeys import repeat_callers
 from overheard.analytics.root_causes import root_causes
 from overheard.app import create_app
 from overheard.config import Settings
@@ -114,3 +115,58 @@ async def test_api_event_impact(client):
     assert len(body["events"]) == len(EVENTS)
     assert body["events"][0]["id"] == PLANTED_TOP_EVENT
     assert body["events"][0]["excess"] > 0
+
+
+# --- view 3: caller journeys (repeat callers, loops) ----------------------
+
+# the generator plants loops on exactly these four issues (see generator.py LOOP_SHARE)
+PLANTED_LOOP_CAUSES = {"identity-check-hold", "appeal-status", "overpayment-notice", "form-22b-confusion"}
+
+
+def test_journeys_recovers_the_planted_loops(seeded):
+    _, con, counts = seeded
+    report = repeat_callers(con)
+    # the planted loop contacts are recovered within a sane band:
+    # detection needs 3+ contacts per (caller, issue), so we should find the
+    # bulk of the planted volume, no more than 10% extra
+    planted = counts["loop_contacts"]
+    assert planted > 1000  # the seed really planted loops
+    assert report["loopContacts"] > 0.90 * planted
+    assert report["loopContacts"] < 1.10 * planted
+    # the top causes where loops start are exactly the planted four
+    top4 = {c["cause"] for c in report["causes"][:4]}
+    assert top4 == PLANTED_LOOP_CAUSES
+    # planted loops never resolve, so every reported loop is stuck
+    assert all(j["stuck"] for j in report["worst"])
+
+
+def test_journeys_are_complete_and_ordered(seeded):
+    _, con, _ = seeded
+    report = repeat_callers(con)
+    # every (case, issue) pair with 3+ contacts shows up exactly once
+    raw = con.execute(
+        "SELECT COUNT(*) FROM (SELECT case_id, root_cause FROM contacts GROUP BY case_id, root_cause "
+        "HAVING COUNT(*) >= 3)"
+    ).fetchone()[0]
+    assert report["repeatJourneys"] == raw
+    # the cause table covers every loop, in order of loop contacts
+    assert sum(c["loops"] for c in report["causes"]) == report["loops"]
+    contacts = [c["contacts"] for c in report["causes"]]
+    assert contacts == sorted(contacts, reverse=True)
+    assert sum(c["contacts"] for c in report["causes"]) == report["loopContacts"]
+    # worst list is the ten biggest loops, and each really is a 3+ contact loop
+    worst = report["worst"]
+    assert len(worst) == 10
+    assert worst[0]["contacts"] >= 3
+    n = [j["contacts"] for j in worst]
+    assert n == sorted(n, reverse=True)
+    assert report["totalContacts"] > 60_000
+
+
+async def test_api_journeys(client):
+    r = await client.get("/api/archive/journeys")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["loops"] > 900
+    assert body["causes"][0]["cause"] in PLANTED_LOOP_CAUSES
+    assert all(j["contacts"] >= body["loopMinimum"] for j in body["worst"])

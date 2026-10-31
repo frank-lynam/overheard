@@ -4,7 +4,7 @@ import { renderContext, bindResolutionBump } from "./ui/context.js";
 import { renderMessage } from "./ui/message.js";
 import { renderQueue } from "./ui/queue.js";
 import { renderScoreboard } from "./ui/scoreboard.js";
-import { renderRootCauses, renderEventImpact } from "./ui/mode3.js";
+import { renderRootCauses, renderEventImpact, renderJourneys } from "./ui/mode3.js";
 
 const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null, incidents: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
@@ -33,6 +33,13 @@ store.subscribe(({ mode }) => {
       api.eventImpact().then((data) => {
         epane.dataset.loaded = "1";
         renderEventImpact(epane, data);
+      }).catch(() => {});
+    }
+    const jpane = m3.querySelector(".m3-pane.journeys");
+    if (jpane.dataset.loaded !== "1") {
+      api.journeys().then((data) => {
+        jpane.dataset.loaded = "1";
+        renderJourneys(jpane, data);
       }).catch(() => {});
     }
   }

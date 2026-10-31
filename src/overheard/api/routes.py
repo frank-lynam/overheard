@@ -402,3 +402,11 @@ def get_archive_event_impact(request: Request) -> dict:
     from overheard.analytics.events import event_impact
 
     return {"events": event_impact(con(request))}
+
+
+@router.get("/archive/journeys")
+def get_archive_journeys(request: Request) -> dict:
+    """Mode 3, view 3: caller journeys — repeat callers, who is stuck in a loop, and where loops start."""
+    from overheard.analytics.journeys import repeat_callers
+
+    return repeat_callers(con(request))

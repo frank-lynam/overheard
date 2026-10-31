@@ -79,3 +79,53 @@ export function renderEventImpact(el, data) {
       </tbody>
     </table>`;
 }
+// Mode 3, view 3: caller journeys — who is stuck in a loop, and where the loops start.
+export function renderJourneys(el, data) {
+  const top = data.causes[0];
+  const loopShare = (data.loopContacts / data.totalContacts) * 100;
+  const worst = data.worst[0];
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>The callers who keep calling <span class="prov">plain code · journeys over the archive</span></h2>
+      <p class="muted">Every contact from the same caller about the same issue is one journey, linked across the whole
+        archive. A loop is ${data.loopMinimum} or more contacts on one issue whose last contact is still unresolved —
+        the caller keeps calling and nobody has closed it. Where they start tells you which process step leaks:</p>
+      <div class="m3-stats">
+        <div class="stat"><b>${data.loops.toLocaleString()}</b><span class="muted">callers stuck in a loop</span></div>
+        <div class="stat"><b>${data.loopContacts.toLocaleString()}</b>
+          <span class="muted">loop contacts (${loopShare.toFixed(1)}% of all contacts)</span></div>
+        <div class="stat"><b>${fmtHours(data.loopHours)}</b><span class="muted">agent-hours spent in loops</span></div>
+      </div>
+      <p class="m3-headline"><b>${top.cause.replace(/-/g, " ")}</b> is where the loops start:
+        ${top.loops} stuck callers with ${top.contacts.toLocaleString()} contacts on that one issue
+        (${fmtHours(top.hours)} agent-hours). The worst single journey so far:
+        <b>${worst.contacts} contacts</b> from ${worst.caseId} about ${worst.cause.replace(/-/g, " ")} over
+        ${Math.round(worst.days / 30)} months, still unresolved.</p>
+    </div>
+    <table class="m3-table">
+      <thead><tr><th>loops start at</th><th class="num">stuck callers</th><th class="num">loop contacts</th>
+        <th class="num">agent-hours</th></tr></thead>
+      <tbody>
+        ${data.causes.map((c, i) => `<tr${i === 0 ? ' class="hot"' : ""}>
+          <td>${c.cause.replace(/-/g, " ")}</td>
+          <td class="num">${c.loops.toLocaleString()}</td>
+          <td class="num">${c.contacts.toLocaleString()}</td>
+          <td class="num">${fmtHours(c.hours)}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+    <h3 class="muted">The worst loops — most contacts, longest stuck</h3>
+    <table class="m3-table">
+      <thead><tr><th>caller</th><th>issue</th><th class="num">contacts</th><th class="num">stuck for</th>
+        <th class="num">last contact</th></tr></thead>
+      <tbody>
+        ${data.worst.map((w) => `<tr class="hot">
+          <td>${w.caseId}</td>
+          <td>${w.cause.replace(/-/g, " ")}</td>
+          <td class="num">${w.contacts}</td>
+          <td class="num">${Math.round(w.days / 30)} mo</td>
+          <td class="num">${w.last.slice(0, 10)}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+}

@@ -24,7 +24,8 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
   <div class="scoreboard"></div></header>
   <p class="later" hidden></p>
   <main class="mode3" hidden><section class="m3-pane root-causes"></section>
-    <section class="m3-pane event-impact"></section></main>
+    <section class="m3-pane event-impact"></section>
+    <section class="m3-pane journeys"></section></main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -37,6 +38,7 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
       for (let i = 0; i < 100 && document.querySelectorAll(".queue-row").length < 60; i++) await sleep(100);
       document.querySelector('button[data-mode="3"]').click();
       for (let i = 0; i < 150 && !document.querySelector(".m3-pane.event-impact .m3-table tbody tr"); i++) await sleep(200);
+      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.journeys .m3-table tbody tr"); i++) await sleep(200);
       await sleep(1500);
       const out = {
         errs,
@@ -51,7 +53,14 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
         eventRows: document.querySelectorAll(".m3-pane.event-impact .m3-table tbody tr").length,
         topEvent: (document.querySelector(".m3-pane.event-impact .m3-table tbody tr td:nth-child(2)") || {})
           .textContent || "",
-        quietTags: document.querySelectorAll(".m3-pane.event-impact .quiet").length
+        quietTags: document.querySelectorAll(".m3-pane.event-impact .quiet").length,
+        journeyRows: document.querySelectorAll(".m3-pane.journeys .m3-table").length >= 2
+          ? document.querySelectorAll(".m3-pane.journeys .m3-table:last-of-type tbody tr").length : 0,
+        journeyCauseRows: document.querySelectorAll(".m3-pane.journeys .m3-table tbody tr").length,
+        loopsStat: (document.querySelector(".m3-pane.journeys .m3-stats .stat b") || {}).textContent || "",
+        journeyTopCause: (document.querySelector(".m3-pane.journeys .m3-table tbody tr td") || {}).textContent || "",
+        journeyHeadline: (document.querySelector(".m3-pane.journeys .m3-headline") || {}).textContent || "",
+        journeyProv: (document.querySelector(".m3-pane.journeys .prov") || {}).textContent || ""
       };
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
@@ -96,6 +105,13 @@ try:
     assert out["eventRows"] == 14, out["eventRows"]
     assert "22-B" in out["topEvent"] and "1st mailing" in out["topEvent"], out["topEvent"]
     assert out["quietTags"] >= 1
+    PLANTED = {"identity check hold", "appeal status", "overpayment notice", "form 22b confusion"}
+    assert out["journeyRows"] == 10, out["journeyRows"]
+    assert out["journeyCauseRows"] >= 4, out["journeyCauseRows"]
+    assert int(out["loopsStat"].replace(",", "")) > 900, out["loopsStat"]
+    assert out["journeyTopCause"].lower().strip() in PLANTED, out["journeyTopCause"]
+    assert out["journeyTopCause"].lower().strip() in out["journeyHeadline"].lower()
+    assert "plain code" in out["journeyProv"] and "journeys over the archive" in out["journeyProv"]
     print("PROBE_MODE3 OK, screenshot at", shot)
 finally:
     proc.kill()
