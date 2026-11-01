@@ -29,7 +29,17 @@ export function renderScoreboard(root, store) {
   store.subscribe((s) => {
     const sim = s.sim;
     const base = s.mode ? s._base : null;  // Mode 0's day, to show what each later mode changes
-    const stat = (label, value, note, gain) => el("div", { class: "stat" }, el("span", { class: "label" }, label),
+    const TIPS = {
+      "Urgent caller reached": "When an agent first gets to the caller in real hardship, who needed help fastest",
+      "Deadline-bound requests": "Messages the agency must answer by a set date (congressional, legal, welfare, records): how many are handled in time",
+      "Callers reached today": "How many of today's callers an agent gets to before the shift ends",
+      "Agent time": "Hours of agent work it takes to handle the day's voicemail",
+      "The day": "Press “Work the queue” to play out the day",
+      "Your pace": "Your own average time per message, from the ones you've worked",
+      "No callback needed": "Messages the case record already answers: a person approves the AI's reply instead of calling back",
+      "Outage spotted": "How soon after the first caller the AI flagged that many people had the same problem",
+    };
+    const stat = (label, value, note, gain) => el("div", { class: "stat", "data-tip": TIPS[label] }, el("span", { class: "label" }, label),
       el("b", {}, value), note ? el("span", { class: "note" }, note) : null, gain ? el("span", { class: "note gain" }, gain) : null);
     if (!s.queue.length) { put(root, el("span", { class: "muted" }, "scoreboard")); return; }
     if (s.assumptions && handleInput.value !== String(s.assumptions.handleMin)) handleInput.value = String(s.assumptions.handleMin);
@@ -58,7 +68,8 @@ export function renderScoreboard(root, store) {
       // costs its listening plus the handling time, and most need a callback.
       const listen = s.queue.reduce((n, m) => n + m.durationSec / 60, 0);
       const minutes = listen + s.queue.length * (a.handleMin + a.callbackMin);
-      stats.push(el("div", { class: "stat" }, el("span", { class: "label" }, "Workload clock"),
+      stats.push(el("div", { class: "stat", "data-tip": "All of today's voicemail, worked by hand: listening, handling and calling back. Change the handling time to see the day move." },
+        el("span", { class: "label" }, "Workload clock"),
         el("b", {}, hm(minutes)),
         el("span", { class: "note" }, `${s.queue.length} messages · `), handleInput,
         el("span", { class: "note" }, ` min handling each, ${hm(a.callbackMin)} a callback`)));
@@ -68,7 +79,7 @@ export function renderScoreboard(root, store) {
       const a = s._acc;
       const pct = (x) => `${Math.round(x * 100)}%`;
       stats.push(
-        el("div", { class: "stat acc", title: "Where the AI disagrees with the day's ground truth, after your corrections" },
+        el("div", { class: "stat acc", "data-tip": "How often the AI gets it right, checked against the day's known answers (after any corrections people make)" },
           el("span", { class: "label" }, "AI accuracy"),
           el("b", {}, `${pct(a.intent_urgency)} intent · ${pct(a.routing)} routing · ${pct(a.extraction)} facts`),
           el("span", { class: "note" }, `over ${a.messages} messages, ${a.corrections} correction${a.corrections === 1 ? "" : "s"} by humans`)),

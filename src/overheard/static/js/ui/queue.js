@@ -4,16 +4,18 @@
 // Mode 2: same order, plus the day's cross-message reasoning: the cluster size, the incident
 // flag, the resolvable/obligation/window badges — and repeat callers collapsed to their first message.
 import { clock, dayOf, el, mmss, phone, put } from "../core/format.js";
+import { DEADLINES, TEAMS, URGENCY, plain, word } from "../core/words.js";
 
 function incidentBanner(incidents) {
   const inc = incidents?.[0];
   if (!inc) return null;
   const card = inc.card || {};
   return el("div", { class: "incident-banner", role: "alert" },
-    el("div", {}, el("b", {}, `Incident · ${inc.count} similar callers since ${clock(inc.firstAt)}`),
-      el("span", { class: "muted" }, ` · alerted ${clock(inc.alertAt)}`)),
+    el("div", { "data-tip": "Several callers describing the same problem at once: the AI flags it as one outage, not separate messages" },
+      el("b", {}, `Likely outage · ${inc.count} callers with the same problem since ${clock(inc.firstAt)}`),
+      el("span", { class: "muted" }, ` · flagged at ${clock(inc.alertAt)}`)),
     el("p", { class: "banner-line" }, card.banner || ""),
-    el("p", { class: "banner-cause" }, el("span", { class: "muted" }, "Probable cause: "), card.probableCause || ""),
+    el("p", { class: "banner-cause" }, el("span", { class: "muted" }, "Likely cause: "), card.probableCause || ""),
     card.actions?.length ? el("ol", { class: "banner-actions" }, card.actions.map((a) => el("li", {}, a))) : null,
   );
 }
@@ -32,14 +34,16 @@ export function renderQueue(root, store) {
         list.append(el("li", { class: "day-break" }, lastDay === s.today ? "Today" : "Yesterday, after hours"));
       }
       const touch = s.touches?.[m.id];
+      const urg = mode >= 1 ? el("span", { class: `urg u${m.urgency}`, "data-tip": `How urgent, in the AI's view: ${URGENCY[m.urgency] ?? m.urgency} (of 5)` }, m.urgency) : null;
       const badges = mode >= 1 ? [
-        el("span", { class: `urg u${m.urgency}`, title: `AI urgency ${m.urgency} of 5` }, m.urgency),
-        el("span", { class: "team", title: `The AI routes this to ${m.team}` }, m.team),
-        mode === 2 && m.clusterSize > 1 ? el("span", { class: "badge cluster", title: `${m.clusterSize} similar messages today (a spike)` }, m.clusterSize + "×") : null,
-        mode === 2 && m.incident ? el("span", { class: "badge incident", title: `In the spike: ${m.incident}` }, "incident") : null,
-        mode === 2 && m.resolvable ? el("span", { class: "badge resolvable", title: "The AI thinks the case record alone answers it — no callback needed" }, "resolvable") : null,
-        mode === 2 && m.obligation ? el("span", { class: "badge obligation", title: `Deadline-bound: a ${m.obligation} is promised in the message` }, m.obligation) : null,
-        mode === 2 && m.window ? el("span", { class: "badge window", title: `The caller asked to be reached ${m.window}` }, m.window) : null,
+        mode === 2 && m.repeat ? el("span", { class: "repeat-note", "data-tip": `The same caller left ${m.repeat.members.length} messages; they're handled together, once` },
+          `${m.repeat.members.length} messages · ${m.repeat.note}`) : null,
+        el("span", { class: "team", "data-tip": `The AI would send this to ${word(TEAMS, m.team)}` }, word(TEAMS, m.team)),
+        mode === 2 && m.clusterSize > 1 ? el("span", { class: "badge cluster", "data-tip": `${m.clusterSize} messages today are about the same thing` }, `${m.clusterSize} alike`) : null,
+        mode === 2 && m.incident ? el("span", { class: "badge incident", "data-tip": `Part of a likely outage: ${m.incident}. One holding reply covers every caller.` }, "outage") : null,
+        mode === 2 && m.resolvable ? el("span", { class: "badge resolvable", "data-tip": "The case record answers this: a person approves the AI's reply, no callback needed" }, "answer ready") : null,
+        mode === 2 && m.obligation ? el("span", { class: "badge obligation", "data-tip": DEADLINES[m.obligation] ? `Has a deadline: ${DEADLINES[m.obligation][1]}` : `Has a deadline: ${plain(m.obligation)}` }, "deadline") : null,
+        mode === 2 && m.window ? el("span", { class: "badge window", "data-tip": `Best time to call them back: ${m.window}` }, m.window) : null,
       ].filter(Boolean) : [];
       list.append(el("li", {
         class: ["queue-row", m.id === s.selected && "selected", m.worked && "worked", touch && "touched",
@@ -49,23 +53,23 @@ export function renderQueue(root, store) {
         onkeydown: (e) => e.key === "Enter" && store.set({ selected: m.id }),
       },
         el("span", { class: "q-time" }, clock(m.receivedAt)),
-        el("span", { class: "q-caller" }, phone(m.callerId),
-          mode === 2 && m.repeat ? el("span", { class: "repeat-note", title: `Members: ${m.repeat.members.join(", ")}` },
-            ` · ${m.repeat.members.length}× · ${m.repeat.note}`) : null),
+        el("span", { class: "q-caller" }, phone(m.callerId)),
         el("span", { class: "q-dur" }, mmss(m.durationSec)),
-        ...badges,
-        el("span", { class: "q-touch", title: "When the simulated agent first reached it" },
+        urg,
+        el("span", { class: "q-touch", "data-tip": touch ? "When the agent got to it in the played-out day" : "" },
           touch ? (touch.at ? clock(touch.at) : "not reached") : (m.worked ? "✓" : "")),
+        badges.length ? el("span", { class: "q-tags" }, badges) : null,  // a second line: the team, then the tags
       ));
     }
     put(root,
       el("div", { class: "pane-head" },
-        el("h2", {}, mode === 2 ? `Queue · mode 2 · ${s.queue.length}` : mode === 1 ? `Queue · AI urgency · ${s.queue.length}` : `Queue · ${s.queue.length}`),
-        el("button", { class: "small", onclick: () => store.emit("simulate") }, "Work the queue ▸")),
-      mode === 2 ? el("div", { class: "queue-legend muted" },
-        "cluster  = similar messages today · resolvable = the case record may answer it · the rest of the day's links are on each message") : null,
+        el("h2", { "data-tip": mode ? "Most urgent first, as the AI judges it" : "In the order the messages arrived, oldest first" },
+          `Voicemail · ${s.queue.length} · ${mode === 2 ? "most urgent first, repeat callers combined" : mode === 1 ? "most urgent first" : "oldest first"}`),
+        el("button", { class: "small", onclick: () => store.emit("simulate"),
+          "data-tip": "Play out the day: one agent works through these, and the board shows who gets reached when" }, "Work the queue ▸")),
+      mode === 2 ? el("div", { class: "queue-legend muted" }, "Hover a tag to see what it means.") : null,
       mode === 2 ? incidentBanner(s.incidents) : null,
-      s.simClock ? el("div", { class: "sim-clock" }, `Simulated agent: ${clock(s.simClock)}`) : null,
+      s.simClock ? el("div", { class: "sim-clock" }, `Playing the day: ${clock(s.simClock)}`) : null,
       list,
     );
     // slide the rows that moved, fade in the ones that are new to this order

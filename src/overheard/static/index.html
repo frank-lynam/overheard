@@ -12,25 +12,25 @@
   <header class="topbar">
     <div class="brand">Overheard <span class="agency">Federal Benefits Service Center · voicemail</span></div>
     <nav class="stepper" aria-label="AI mode">
-      <button data-mode="0"><b>0</b> No AI</button>
-      <button data-mode="1"><b>1</b> Obvious AI</button>
-      <button data-mode="2"><b>2</b> Non-obvious AI</button>
-      <button data-mode="3"><b>3</b> Impossible without AI</button>
+      <button data-mode="0" data-tip="Today's way: an agent listens to every voicemail, oldest first, and types it up by hand"><b>0</b> No AI</button>
+      <button data-mode="1" data-tip="The AI reads each message: a summary, the details, how urgent it is, who should handle it, a translation and a suggested reply. People check its work."><b>1</b> Obvious AI</button>
+      <button data-mode="2" data-tip="The AI connects messages across the day: it spots an outage, answers from the case record, catches deadlines and combines repeat callers"><b>2</b> Non-obvious AI</button>
+      <button data-mode="3" data-tip="The AI reads three years of calls, which no team could, to show why people call and what would stop the calls"><b>3</b> Impossible without AI</button>
     </nav>
     <div class="scoreboard" aria-live="polite"><span class="muted">scoreboard</span></div>
   </header>
   <main class="mode3" hidden>
     <nav class="m3-tabs" role="tablist" aria-label="Archive views">
-      <button class="m3-tab" role="tab" data-pane="root-causes" aria-selected="true">Root causes</button>
-      <button class="m3-tab" role="tab" data-pane="event-impact" aria-selected="false">Events</button>
-      <button class="m3-tab" role="tab" data-pane="journeys" aria-selected="false">Journeys</button>
-      <button class="m3-tab" role="tab" data-pane="promises" aria-selected="false">Promises</button>
-      <button class="m3-tab" role="tab" data-pane="equity" aria-selected="false">Equity</button>
-      <button class="m3-tab" role="tab" data-pane="letter-lab" aria-selected="false">Letter lab</button>
-      <button class="m3-tab" role="tab" data-pane="ask" aria-selected="false">Ask</button>
-      <button class="m3-tab" role="tab" data-pane="knowledge-gaps" aria-selected="false">Knowledge gaps</button>
-      <button class="m3-tab" role="tab" data-pane="weak-signals" aria-selected="false">Weak signals</button>
-      <button class="m3-tab" role="tab" data-pane="staffing-forecast" aria-selected="false">Staffing</button>
+      <button class="m3-tab" role="tab" data-pane="root-causes" data-tip="Why people call, and which reasons take the most time" aria-selected="true">Root causes</button>
+      <button class="m3-tab" role="tab" data-pane="event-impact" data-tip="Which letters, payment changes and releases set the phones ringing" aria-selected="false">Events</button>
+      <button class="m3-tab" role="tab" data-pane="journeys" data-tip="Callers stuck calling again and again, and where those loops start" aria-selected="false">Journeys</button>
+      <button class="m3-tab" role="tab" data-pane="promises" data-tip="Callbacks the centre promised, and which ones were kept" aria-selected="false">Promises</button>
+      <button class="m3-tab" role="tab" data-pane="equity" data-tip="Who waits longest for an answer, by language and region" aria-selected="false">Equity</button>
+      <button class="m3-tab" role="tab" data-pane="letter-lab" data-tip="Test a letter before it's mailed: how many calls will it cause?" aria-selected="false">Letter lab</button>
+      <button class="m3-tab" role="tab" data-pane="ask" data-tip="Ask the archive a question in plain English" aria-selected="false">Ask</button>
+      <button class="m3-tab" role="tab" data-pane="knowledge-gaps" data-tip="Questions callers ask that no help article answers" aria-selected="false">Knowledge gaps</button>
+      <button class="m3-tab" role="tab" data-pane="weak-signals" data-tip="Problems that started as a trickle, weeks before they became a flood" aria-selected="false">Weak signals</button>
+      <button class="m3-tab" role="tab" data-pane="staffing-forecast" data-tip="How many calls and agent-hours to expect over the next two weeks" aria-selected="false">Staffing</button>
     </nav>
     <section class="m3-pane root-causes" role="tabpanel" data-pane="root-causes" aria-label="Root causes"><p class="muted">Reading the archive…</p></section>
     <section class="m3-pane event-impact" role="tabpanel" data-pane="event-impact" aria-label="Events" hidden><p class="muted">Checking the calendar against the phone…</p></section>

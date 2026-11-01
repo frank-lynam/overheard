@@ -1,6 +1,7 @@
 // Presenter mode: a full-screen slide deck over the Mode 3 archive views.
 // The same renderers as the workbench (js/ui/mode3.js), one view per slide,
 // with keyboard navigation, staggered reveal, and an assumptions panel.
+import "./core/tip.js";
 import { api } from "./core/api.js";
 import {
   renderRootCauses, renderEventImpact, renderJourneys, renderPromises,

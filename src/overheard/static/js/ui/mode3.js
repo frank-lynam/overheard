@@ -9,7 +9,7 @@ export function renderRootCauses(el, data) {
   const unres = top.resolutionRate < 0.5;
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Why people call <span class="prov">plain code · pre-labeled</span></h2>
+      <h2>Why people call <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">Every one of ${data.totalContacts.toLocaleString()} contacts over three years, labelled with the reason
         behind it — something no one could read by hand. Where the centre's time actually goes:</p>
       <div class="m3-stats">
@@ -49,7 +49,7 @@ export function renderEventImpact(el, data) {
   const quietRatio = (e) => e.excess / Math.max(1, e.expected) < 3; // "quiet" = less than 3x its own baseline
   el.innerHTML = `
     <div class="m3-head">
-      <h2>What the calendar did to the phone <span class="prov">plain code · window vs. baseline</span></h2>
+      <h2>What the calendar did to the phone <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">Each event on the archive's calendar (mailings, releases, policy changes) gets a window of
         days after it, compared against its own cause's weekday rate in the 90 weekdays before. Excess is the calls
         the event caused, above business as usual:</p>
@@ -85,7 +85,7 @@ export function renderJourneys(el, data) {
   const worst = data.worst[0];
   el.innerHTML = `
     <div class="m3-head">
-      <h2>The callers who keep calling <span class="prov">plain code · journeys over the archive</span></h2>
+      <h2>The callers who keep calling <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">Every contact from the same caller about the same issue is one journey, linked across the whole
         archive. A loop is ${data.loopMinimum} or more contacts on one issue whose last contact is still unresolved —
         the caller keeps calling and nobody has closed it. Where they start tells you which process step leaks:</p>
@@ -138,7 +138,7 @@ export function renderPromises(el, data) {
   const worst = data.worstOffender;
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Every promise, checked <span class="prov">plain code · promises vs. the archive</span></h2>
+      <h2>Every promise, checked <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">${t.promises.toLocaleString()} callback promises (${(data.promiseShare * 100).toFixed(0)}% of
         ${data.totalContacts.toLocaleString()} contacts), each with a due date. ${t.settled.toLocaleString()} have
         come due inside the archive and can be checked; ${t.pending.toLocaleString()} are still open past its end.
@@ -213,7 +213,7 @@ export function renderEquity(el, data) {
   const worst = data.worstLanguage;
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Who waits how long <span class="prov">plain code · contacts by language and channel</span></h2>
+      <h2>Who waits how long <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">${data.totalContacts.toLocaleString()} contacts, grouped by the caller's language and
         channel. "Wait" is the centre's handle time per contact; "days to resolve" is how long the issue stayed
         open on the ones that did close:</p>
@@ -253,7 +253,7 @@ const LETTER_SAMPLE =
 export function renderLetterLab(el) {
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Pre-test a letter before you mail it <span class="prov">plain code · archive patterns</span></h2>
+      <h2>Pre-test a letter before you mail it <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">Paste a draft notice and the lab checks it against three years of the archive: which
         past mailing it sounds like, the calls that mailing actually drove, the questions its readers asked,
         and a clearer rewrite with a before/after prediction. "Sounds like" is word overlap with that
@@ -339,7 +339,7 @@ const ASK_SAMPLE = "Why did contacts about the 22-B letter spike in June 2025?";
 export function renderAsk(el) {
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Ask the archive <span class="prov">plain code · totals over the archive</span></h2>
+      <h2>Ask the archive <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">Ask in plain English — an issue, a state, a language, a month or year. The answer is
         plain code counting the archive's pre-computed totals: how many, how it compares with the equal
         period before, which calendar events overlap, and real messages from the archive cited as evidence.
@@ -402,8 +402,8 @@ export function renderKnowledgeGaps(el, data) {
         <b class="m3-kg-rank">#${i + 1}</b> <b>${g.name}</b>
         <span class="muted">${g.count.toLocaleString()} contacts · ${g.sharePct}% of archive · ${g.hours}h · ${Math.round(g.resolveRate * 100)}% resolved</span>
       </div>
-      <div class="m3-kg-faq"><span class="prov">FAQ draft</span><b>${g.faq.title}</b><p>${g.faq.body}</p></div>
-      <div class="m3-kg-ivr"><span class="prov">IVR line</span> ${g.ivr}</div>
+      <div class="m3-kg-faq"><span class="prov" data-tip="A help article the AI drafted to fill the gap">help article draft</span><b>${g.faq.title}</b><p>${g.faq.body}</p></div>
+      <div class="m3-kg-ivr"><span class="prov" data-tip="What the phone menu could say, so callers get the answer before they reach a person">phone menu line</span> ${g.ivr}</div>
     </div>`).join("");
   const weak = (data.weakCoverage || []).map((w) => {
     const words = Object.entries(w.uncovered || {}).slice(0, 8).map(([word, phr]) =>
@@ -413,7 +413,7 @@ export function renderKnowledgeGaps(el, data) {
   }).join("");
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Knowledge gaps <span class="prov">plain code · kb_articles against the archive</span></h2>
+      <h2>Knowledge gaps <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">What callers ask about that no knowledge-base article answers, ranked by archive
         volume, with a drafted FAQ entry and IVR line for each — plain code, from the driver's measured
         data. Under that: articles that claim a topic but whose body never uses the words callers actually
@@ -441,7 +441,7 @@ export function renderWeakSignals(el, data) {
   }).join("");
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Missed weak signals <span class="prov">${data.prov}</span></h2>
+      <h2>Missed weak signals <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">Spikes look sudden in the week they happen. This looks at the weeks <i>before</i>
         each spike and asks: how early could we have caught it? Baseline is each driver's own median
         week outside event windows, so a slow cause is judged against itself.</p>
@@ -464,7 +464,7 @@ export function renderStaffingForecast(el, data) {
     </div>`).join("");
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Staffing forecast <span class="prov">${data.prov}</span></h2>
+      <h2>Staffing forecast <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
       <p class="muted">The next ${data.horizonDays} days, projected from the archive's trailing
         90-weekday average (${data.weekdayBaseline} contacts a weekday) plus the events calendar's own
         decay curve, with the agent-hours each day needs at the archive's measured handling times.</p>

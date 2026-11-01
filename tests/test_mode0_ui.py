@@ -27,7 +27,7 @@ def test_the_mode_0_pieces_are_in_the_front_end():
     scoreboard = read("js/ui/scoreboard.js")
     main = read("js/main.js")
     # Mode 0: arrival-ordered inbox, no content visible until a message is played.
-    assert "arrival order" in queue and "Queue ·" in queue
+    assert "arrival order" in queue and "Voicemail ·" in queue
     assert 'store.emit("simulate")' in queue and "simClock" in main
     # Speaking-pace transcript reveal (~150 wpm), so listening still costs what it would.
     assert re.search(r"WPM\s*=\s*150", message) and "transcript" in message

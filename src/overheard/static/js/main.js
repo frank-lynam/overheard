@@ -1,3 +1,4 @@
+import "./core/tip.js";
 import { api } from "./core/api.js";
 import { createStore } from "./core/store.js";
 import { renderContext, bindResolutionBump } from "./ui/context.js";
