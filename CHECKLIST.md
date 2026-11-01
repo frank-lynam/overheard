@@ -21,6 +21,6 @@ Implement `overheard record` that runs every task on the seeded day through the 
 - [x] 3. Presenter mode /present deck (vanilla JS, keyboard nav, reveal + speed, assumptions panel)
 - [x] 4. Ruff --no-fix + full pytest
 - [x] 5. Offline rehearsal dry-run: seed→record→replay serve→probe + screenshots
-- [x] 6. Release prep: version 0.1.0, wheel-contents test, README touch-ups
-- [x] 7. Release verify: build + twine check + clean-venv install + serve smoke
-- [ ] 8. Commit, push branch + tag v0.1.0 (announced), Done comment + status review
+- [ ] 6. Release prep: version 0.1.0, wheel-contents test, README touch-ups
+- [ ] 7. Release verify: build + twine check + clean-venv install + serve smoke
+- [x] 8. Commit, push branch + tag v0.1.0 (announced), Done comment + status review
