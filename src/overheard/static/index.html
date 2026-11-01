@@ -21,16 +21,28 @@
   </header>
   <p class="later" hidden>This mode arrives in a later build. For now the workbench shows Mode 0.</p>
   <main class="mode3" hidden>
-    <section class="m3-pane root-causes"><p class="muted">Reading the archive…</p></section>
-    <section class="m3-pane event-impact"><p class="muted">Checking the calendar against the phone…</p></section>
-    <section class="m3-pane journeys"><p class="muted">Tracing the repeat callers…</p></section>
-    <section class="m3-pane promises"><p class="muted">Checking the promises…</p></section>
-    <section class="m3-pane equity"><p class="muted">Comparing who waits how long…</p></section>
-    <section class="m3-pane letter-lab"><p class="muted">Pre-testing the letters…</p></section>
-    <section class="m3-pane ask"><p class="muted">Packing the totals…</p></section>
-    <section class="m3-pane knowledge-gaps"><p class="muted">Reading the knowledge base…</p></section>
-    <section class="m3-pane weak-signals"><p class="muted">Looking for the trickle…</p></section>
-    <section class="m3-pane staffing-forecast"><p class="muted">Projecting the next two weeks…</p></section>
+    <nav class="m3-tabs" role="tablist" aria-label="Archive views">
+      <button class="m3-tab" role="tab" data-pane="root-causes" aria-selected="true">Root causes</button>
+      <button class="m3-tab" role="tab" data-pane="event-impact" aria-selected="false">Events</button>
+      <button class="m3-tab" role="tab" data-pane="journeys" aria-selected="false">Journeys</button>
+      <button class="m3-tab" role="tab" data-pane="promises" aria-selected="false">Promises</button>
+      <button class="m3-tab" role="tab" data-pane="equity" aria-selected="false">Equity</button>
+      <button class="m3-tab" role="tab" data-pane="letter-lab" aria-selected="false">Letter lab</button>
+      <button class="m3-tab" role="tab" data-pane="ask" aria-selected="false">Ask</button>
+      <button class="m3-tab" role="tab" data-pane="knowledge-gaps" aria-selected="false">Knowledge gaps</button>
+      <button class="m3-tab" role="tab" data-pane="weak-signals" aria-selected="false">Weak signals</button>
+      <button class="m3-tab" role="tab" data-pane="staffing-forecast" aria-selected="false">Staffing</button>
+    </nav>
+    <section class="m3-pane root-causes" role="tabpanel" data-pane="root-causes" aria-label="Root causes"><p class="muted">Reading the archive…</p></section>
+    <section class="m3-pane event-impact" role="tabpanel" data-pane="event-impact" aria-label="Events" hidden><p class="muted">Checking the calendar against the phone…</p></section>
+    <section class="m3-pane journeys" role="tabpanel" data-pane="journeys" aria-label="Journeys" hidden><p class="muted">Tracing the repeat callers…</p></section>
+    <section class="m3-pane promises" role="tabpanel" data-pane="promises" aria-label="Promises" hidden><p class="muted">Checking the promises…</p></section>
+    <section class="m3-pane equity" role="tabpanel" data-pane="equity" aria-label="Equity" hidden><p class="muted">Comparing who waits how long…</p></section>
+    <section class="m3-pane letter-lab" role="tabpanel" data-pane="letter-lab" aria-label="Letter lab" hidden><p class="muted">Pre-testing the letters…</p></section>
+    <section class="m3-pane ask" role="tabpanel" data-pane="ask" aria-label="Ask the archive" hidden><p class="muted">Packing the totals…</p></section>
+    <section class="m3-pane knowledge-gaps" role="tabpanel" data-pane="knowledge-gaps" aria-label="Knowledge gaps" hidden><p class="muted">Reading the knowledge base…</p></section>
+    <section class="m3-pane weak-signals" role="tabpanel" data-pane="weak-signals" aria-label="Weak signals" hidden><p class="muted">Looking for the trickle…</p></section>
+    <section class="m3-pane staffing-forecast" role="tabpanel" data-pane="staffing-forecast" aria-label="Staffing forecast" hidden><p class="muted">Projecting the next two weeks…</p></section>
   </main>
   <main class="workbench">
     <section class="pane queue"></section>

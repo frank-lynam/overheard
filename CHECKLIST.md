@@ -1,25 +1,26 @@
 # Goal
 
-fancy-wombat handed back to review: frank's "ready to close?" answered, E501 fixed, branch pushed, status set to review, phase-6 work proposed as a ticket.
+Rework the Mode-3 dashboard: tab navigation across the 10 panes, lazy pane loading, and a single harmonized bar-row visual language.
 
 ## How it works
 
-Ticket fancy-wombat is in_progress, mine. All 3 modes built; last commit 47e650f + checklist note ba32d66 on ticket/fancy-wombat. Frank's comment 162 asks if it's ready to close. ruff currently shows exactly one error: E501 line 144 of tools/probe_mode3_ui.py (an over-long querySelector line from view 10).
+Mode 3 stacks 10 m3-pane sections in one scroll (index.html 23-34); main.js loads all 10 eagerly on mode entry; app.css has duplicated .m3-promise-* / .m3-equity-* bar-row blocks with mismatched fills (#c9573f vs #5773c9); docs/DESIGN.md specifies "Analytics (Mode 3) tabs".
 
 ## Why it doesn't
 
-It's not in review yet (status still in_progress, no hand-back comment), and ruff check . — which both CI and publish.yml run — would fail on that one long line.
+No tab nav exists in the HTML, main.js has no per-pane gating, and the bar rows are per-pane ad-hoc CSS instead of one shared component.
 
 ## What would
 
-Wrap the selector so ruff --no-fix is clean and the probe still passes; commit+push to deploy ticket/fancy-wombat; post a "Done" hand-back comment answering frank's question; PATCH status to review; POST a proposal ticket for phase 6 (release & rehearsal); update MEMORY.md; verify each with real outputs.
+Add a .m3-tabs tablist to index.html with panes as role=tabpanel (inactive hidden); gate loading in main.js via a pane registry that fetches/renders only the active tab; collapse the promise/equity bar CSS into one shared style with a single accent fill. Update tools/probe_mode3_ui.py to click through tabs, assert nav + hidden panes, and point the server at its own repo. Verify: ruff --no-fix, full pytest, probe PROBE_MODE3 OK, screenshots of multiple panes. Then commit, push to deploy (announced), upload checklist (PUT), comment "Done", PATCH status review.
 
 ## Steps
 
-- [x] 1. Fix E501 in tools/probe_mode3_ui.py:144, ruff check --no-fix clean
-- [x] 2. Re-run probe_mode3_ui.py, PROBE_MODE3 OK
-- [x] 3. Commit and push to deploy ticket/fancy-wombat (announce first)
-- [ ] 4. Reply to frank (comment 162) with Done hand-back on the ticket
-- [ ] 5. PATCH fancy-wombat status to review
-- [ ] 6. Propose phase-6 release/rehearsal ticket
-- [ ] 7. Update MEMORY.md, verify board state
+- [x] 1. Add .m3-tabs tab bar + tabpanel roles/hidden to panes in index.html
+- [x] 2. CSS: tab bar styling, hidden panes, unify promise/equity bar rows on one shared fill
+- [x] 3. main.js: pane registry, lazy-load only the active tab, default to root-causes
+- [x] 4. Update probe: tab bar in probe HTML, click through tabs, assert nav + hidden inactive panes, server from own repo
+- [x] 5. Verify: ruff --no-fix, full pytest, run probe, inspect JSON + screenshots of several panes
+- [x] 6. Commit + push to deploy ticket/mammoth-goblet (announced)
+- [x] 7. Upload checklist (PUT) + 'Done' comment + PATCH status review
+- [ ] 8. Tidy: update MEMORY.md, clean scratch files

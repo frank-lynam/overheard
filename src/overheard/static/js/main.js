@@ -12,6 +12,44 @@ buttons.forEach((b) => b.addEventListener("click", () => store.set({ mode: Numbe
 document.addEventListener("keydown", (e) => {
   if (["1", "2", "3", "4"].includes(e.key) && !e.target.closest("input, textarea, select")) store.set({ mode: Number(e.key) - 1 });
 });
+// Mode 3: the archive is a tabbed dashboard. Each pane loads only when its tab
+// is opened, and stays rendered (cached) for the rest of the session.
+const M3_PANES = {
+  "root-causes": { api: api.rootCauses, render: renderRootCauses },
+  "event-impact": { api: api.eventImpact, render: renderEventImpact },
+  journeys: { api: api.journeys, render: renderJourneys },
+  promises: { api: api.promises, render: renderPromises },
+  equity: { api: api.equity, render: renderEquity },
+  "letter-lab": { render: renderLetterLab },
+  ask: { render: renderAsk },
+  "knowledge-gaps": { api: api.knowledgeGaps, render: renderKnowledgeGaps },
+  "weak-signals": { api: api.weakSignals, render: renderWeakSignals },
+  "staffing-forecast": { api: api.staffingForecast, render: renderStaffingForecast },
+};
+let m3Active = "root-causes";
+function loadM3Pane(pane) {
+  if (pane.dataset.loaded === "1") return;
+  const spec = M3_PANES[pane.dataset.pane];
+  if (!spec) return;
+  const done = (data) => {
+    if (pane.dataset.loaded !== "1") {
+      pane.dataset.loaded = "1";
+      spec.render(pane, data);
+    }
+  };
+  if (spec.api) spec.api().then(done).catch(() => {});
+  else done();
+}
+function selectM3Pane(m3, name) {
+  if (!M3_PANES[name]) name = "root-causes";
+  m3Active = name;
+  m3.querySelectorAll(".m3-tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pane === name)));
+  m3.querySelectorAll(".m3-pane").forEach((p) => {
+    p.hidden = p.dataset.pane !== name;
+  });
+  loadM3Pane(m3.querySelector(`.m3-pane[data-pane="${name}"]`));
+  m3.querySelector(`.m3-tab[data-pane="${name}"]`)?.focus();
+}
 store.subscribe(({ mode }) => {
   buttons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.mode) === mode)));
   document.body.dataset.mode = mode;
@@ -20,73 +58,18 @@ store.subscribe(({ mode }) => {
   const wb = document.querySelector(".workbench");
   if (m3) m3.hidden = mode !== 3;
   wb.hidden = mode === 3 && !!m3;
-  if (mode === 3 && m3) {
-    const pane = m3.querySelector(".m3-pane.root-causes");
-    if (pane.dataset.loaded !== "1") {
-      api.rootCauses().then((data) => {
-        pane.dataset.loaded = "1";
-        renderRootCauses(pane, data);
-      }).catch(() => {});
-    }
-    const epane = m3.querySelector(".m3-pane.event-impact");
-    if (epane.dataset.loaded !== "1") {
-      api.eventImpact().then((data) => {
-        epane.dataset.loaded = "1";
-        renderEventImpact(epane, data);
-      }).catch(() => {});
-    }
-    const jpane = m3.querySelector(".m3-pane.journeys");
-    if (jpane.dataset.loaded !== "1") {
-      api.journeys().then((data) => {
-        jpane.dataset.loaded = "1";
-        renderJourneys(jpane, data);
-      }).catch(() => {});
-    }
-    const ppane = m3.querySelector(".m3-pane.promises");
-    if (ppane.dataset.loaded !== "1") {
-      api.promises().then((data) => {
-        ppane.dataset.loaded = "1";
-        renderPromises(ppane, data);
-      }).catch(() => {});
-    }
-    const qpane = m3.querySelector(".m3-pane.equity");
-    if (qpane.dataset.loaded !== "1") {
-      api.equity().then((data) => {
-        qpane.dataset.loaded = "1";
-        renderEquity(qpane, data);
-      }).catch(() => {});
-    }
-    const lpane = m3.querySelector(".m3-pane.letter-lab");
-    if (lpane.dataset.loaded !== "1") {
-      lpane.dataset.loaded = "1";
-      renderLetterLab(lpane);
-    }
-    const ap = m3.querySelector(".m3-pane.ask");
-    if (ap.dataset.loaded !== "1") {
-      ap.dataset.loaded = "1";
-      renderAsk(ap);
-    }
-    const gpane = m3.querySelector(".m3-pane.knowledge-gaps");
-    if (gpane.dataset.loaded !== "1") {
-      api.knowledgeGaps().then((data) => {
-        gpane.dataset.loaded = "1";
-        renderKnowledgeGaps(gpane, data);
-      }).catch(() => {});
-    }
-    const wpane = m3.querySelector(".m3-pane.weak-signals");
-    if (wpane.dataset.loaded !== "1") {
-      api.weakSignals().then((data) => {
-        wpane.dataset.loaded = "1";
-        renderWeakSignals(wpane, data);
-      }).catch(() => {});
-    }
-    const sp = m3.querySelector(".m3-pane.staffing-forecast");
-    if (sp.dataset.loaded !== "1") {
-      api.staffingForecast().then((data) => {
-        sp.dataset.loaded = "1";
-        renderStaffingForecast(sp, data);
-      }).catch(() => {});
-    }
+  if (mode === 3 && m3 && m3.querySelectorAll(".m3-tab").length) {
+    const tabs = [...m3.querySelectorAll(".m3-tab")];
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => selectM3Pane(m3, t.dataset.pane));
+      t.addEventListener("keydown", (e) => {
+        const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        tabs[(i + d + tabs.length) % tabs.length].click();
+      });
+    });
+    selectM3Pane(m3, m3Active);
   }
 }, ["mode"]);
 

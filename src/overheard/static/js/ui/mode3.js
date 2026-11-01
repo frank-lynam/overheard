@@ -155,7 +155,7 @@ export function renderPromises(el, data) {
         ${data.worstOffenderCause !== undefined ? "" : "If you promised a caller on that issue, this is the one to remember to keep."}</p>` : ""}
     </div>
     <h3 class="muted">Broken rate of due promises, by cause</h3>
-    <div class="m3-promises-bars" aria-label="Broken promise rates by cause"></div>
+    <div class="m3-bars" aria-label="Broken promise rates by cause"></div>
     <table class="m3-table">
       <thead><tr><th>cause</th><th class="num">promises</th><th class="num">due</th><th class="num">kept</th>
         <th class="num">broken</th><th class="num">open</th><th class="num">broken rate</th></tr></thead>
@@ -186,13 +186,13 @@ export function renderPromises(el, data) {
         </tr>`).join("")}
       </tbody>
     </table>`;
-  const bars = el.querySelector(".m3-promises-bars");
+  const bars = el.querySelector(".m3-bars");
   bars.innerHTML = causes.map((c) => `
-    <div class="m3-promise-row" title="${c.cause.replace(/-/g, " ")}: ${c.broken}/${c.settled} broken">
-      <span class="m3-promise-label">${c.cause.replace(/-/g, " ")}</span>
-      <span class="m3-promise-track"><span class="m3-promise-fill"
+    <div class="m3-bar-row" title="${c.cause.replace(/-/g, " ")}: ${c.broken}/${c.settled} broken">
+      <span class="m3-bar-label">${c.cause.replace(/-/g, " ")}</span>
+      <span class="m3-bar-track"><span class="m3-bar-fill"
         style="width:${Math.max(1, (c.brokenRate / maxRate) * 100).toFixed(1)}%"></span></span>
-      <span class="m3-promise-num">${pct(c.brokenRate)}</span>
+      <span class="m3-bar-num">${pct(c.brokenRate)}</span>
     </div>`).join("");
 }
 
@@ -230,17 +230,17 @@ export function renderEquity(el, data) {
       </div>
     </div>
     <h3 class="muted">Average wait per contact, by language</h3>
-    <div class="m3-equity-bars" aria-label="Average wait times by language"></div>
+    <div class="m3-bars" aria-label="Average wait times by language"></div>
     ${table(data.languages, "By language", " min")}
     ${table(data.channels, "By channel", " min")}`;
-  const bars = el.querySelector(".m3-equity-bars");
+  const bars = el.querySelector(".m3-bars");
   const maxWait = Math.max(0.01, ...data.languages.map((r) => r.avgWaitMin));
   bars.innerHTML = data.languages.map((r) => `
-    <div class="m3-equity-row" title="${r.name}: ${r.avgWaitMin.toFixed(1)} min average">
-      <span class="m3-equity-label">${r.name}</span>
-      <span class="m3-equity-track"><span class="m3-equity-fill"
+    <div class="m3-bar-row" title="${r.name}: ${r.avgWaitMin.toFixed(1)} min average">
+      <span class="m3-bar-label">${r.name}</span>
+      <span class="m3-bar-track"><span class="m3-bar-fill"
         style="width:${Math.max(1, (r.avgWaitMin / maxWait) * 100).toFixed(1)}%"></span></span>
-      <span class="m3-equity-num">${r.avgWaitMin.toFixed(1)} min</span>
+      <span class="m3-bar-num">${r.avgWaitMin.toFixed(1)} min</span>
     </div>`).join("");
 }
 

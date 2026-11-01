@@ -1,6 +1,7 @@
 """Throwaway mode-3 browser probe: boots the real app on a throwaway port with a
 seeded throwaway db, loads the real js/css with a probe page, flips to mode 3,
-checks the archive headline / Pareto SVG / table in the DOM, and saves a screenshot."""
+clicks through the dashboard's ten archive-view tabs, checks the DOM of every
+pane and the tab navigation, and saves screenshots."""
 
 import json
 import os
@@ -17,22 +18,43 @@ db = Path("/tmp/probe-mode3.db")
 db.unlink(missing_ok=True)
 seed(db, 2026)  # seed BEFORE the server boots: it takes its date and rows from the file
 served = Path(files("overheard") / "static")
+PANE_ORDER = [
+    "root-causes", "event-impact", "journeys", "promises", "equity",
+    "letter-lab", "ask", "knowledge-gaps", "weak-signals", "staffing-forecast",
+]
 HTML = """<html><head><meta charset="utf-8"></head><body>
   <header class="topbar"><nav class="stepper">
   <button data-mode="0" aria-pressed="true">0</button><button data-mode="1">1</button>
   <button data-mode="2">2</button><button data-mode="3">3</button></nav>
   <div class="scoreboard"></div></header>
   <p class="later" hidden></p>
-  <main class="mode3" hidden><section class="m3-pane root-causes"></section>
-    <section class="m3-pane event-impact"></section>
-    <section class="m3-pane journeys"></section>
-    <section class="m3-pane promises"></section>
-    <section class="m3-pane equity"></section>
-    <section class="m3-pane letter-lab"></section>
-    <section class="m3-pane ask"></section>
-    <section class="m3-pane knowledge-gaps"></section>
-    <section class="m3-pane weak-signals"></section>
-    <section class="m3-pane staffing-forecast"></section></main>
+  <main class="mode3" hidden><nav class="m3-tabs" role="tablist" aria-label="Archive views">
+    <button class="m3-tab" role="tab" data-pane="root-causes" aria-selected="true">Root causes</button>
+    <button class="m3-tab" role="tab" data-pane="event-impact">Events</button>
+    <button class="m3-tab" role="tab" data-pane="journeys">Journeys</button>
+    <button class="m3-tab" role="tab" data-pane="promises">Promises</button>
+    <button class="m3-tab" role="tab" data-pane="equity">Equity</button>
+    <button class="m3-tab" role="tab" data-pane="letter-lab">Letter lab</button>
+    <button class="m3-tab" role="tab" data-pane="ask">Ask</button>
+    <button class="m3-tab" role="tab" data-pane="knowledge-gaps">Knowledge gaps</button>
+    <button class="m3-tab" role="tab" data-pane="weak-signals">Weak signals</button>
+    <button class="m3-tab" role="tab" data-pane="staffing-forecast">Staffing</button>
+  </nav>
+    <section class="m3-pane root-causes" role="tabpanel" data-pane="root-causes" aria-label="Root causes"></section>
+    <section class="m3-pane event-impact" role="tabpanel" data-pane="event-impact" aria-label="Events" hidden></section>
+    <section class="m3-pane journeys" role="tabpanel" data-pane="journeys" aria-label="Journeys" hidden></section>
+    <section class="m3-pane promises" role="tabpanel" data-pane="promises" aria-label="Promises" hidden></section>
+    <section class="m3-pane equity" role="tabpanel" data-pane="equity" aria-label="Equity" hidden></section>
+    <section class="m3-pane letter-lab" role="tabpanel" data-pane="letter-lab" aria-label="Letter lab" hidden></section>
+    <section class="m3-pane ask" role="tabpanel" data-pane="ask" aria-label="Ask the archive"
+      hidden></section>
+    <section class="m3-pane knowledge-gaps" role="tabpanel" data-pane="knowledge-gaps"
+      aria-label="Knowledge gaps" hidden></section>
+    <section class="m3-pane weak-signals" role="tabpanel" data-pane="weak-signals"
+      aria-label="Weak signals" hidden></section>
+    <section class="m3-pane staffing-forecast" role="tabpanel" data-pane="staffing-forecast"
+      aria-label="Staffing forecast" hidden></section>
+  </main>
   <main class="workbench"><section class="pane queue"></section><section class="pane message"
     ></section><section class="pane context"></section></main>
   <script type="module" src="js/main.js"></script>
@@ -41,110 +63,123 @@ HTML = """<html><head><meta charset="utf-8"></head><body>
     addEventListener("error", e => errs.push("ERR " + e.message));
     addEventListener("unhandledrejection", e => errs.push("REJ " + String(e.reason && e.reason.stack || e.reason)));
     const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const sel = s => document.querySelector(s);
+    const all = s => [...document.querySelectorAll(s)];
+    const wait = async (cond, n = 150) => {
+      for (let i = 0; i < n; i++) { if (cond()) return; await sleep(200); }
+    };
     (async () => {
-      for (let i = 0; i < 100 && document.querySelectorAll(".queue-row").length < 60; i++) await sleep(100);
-      document.querySelector('button[data-mode="3"]').click();
-      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.event-impact .m3-table tbody tr"); i++) await sleep(200);
-      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.journeys .m3-table tbody tr"); i++) await sleep(200);
-      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.promises .m3-table tbody tr"); i++) await sleep(200);
-      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.equity .m3-table tbody tr"); i++) await sleep(200);
-      // the letter lab: wait for its form, run a pre-test, wait for the results
-      for (let i = 0; i < 100 && !document.querySelector(".m3-pane.letter-lab #ll-run"); i++) await sleep(200);
-      const ll = document.querySelector(".m3-pane.letter-lab");
-      document.querySelector(".m3-pane.letter-lab #ll-run").click();
-      for (let i = 0; i < 150 && (ll.querySelector(".m3-letterlab-results") || {}).hidden; i++) await sleep(200);
-      document.querySelector(".m3-pane.letter-lab").scrollIntoView();
-      await sleep(1500);
-      // the ask pane: wait for its form, run the sample question, wait for the answer
-      for (let i = 0; i < 100 && !document.querySelector(".m3-pane.ask #ask-run"); i++) await sleep(200);
-      const askp = document.querySelector(".m3-pane.ask");
-      document.querySelector(".m3-pane.ask #ask-sample").click();
-      for (let i = 0; i < 150 && (askp.querySelector(".m3-ask-results") || {}).hidden; i++) await sleep(200);
-      askp.scrollIntoView();
-      await sleep(1000);
-      // the knowledge-gaps pane: wait for its rows (fetched from /api/knowledge-gaps)
-      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.knowledge-gaps .m3-kg-row"); i++) await sleep(200);
-      document.querySelector(".m3-pane.knowledge-gaps").scrollIntoView();
-      await sleep(1000);
-      // the weak-signals pane: wait for its cards (fetched from /api/weak-signals)
-      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.weak-signals .m3-ws-card"); i++) await sleep(200);
-      document.querySelector(".m3-pane.weak-signals").scrollIntoView();
-      await sleep(1000);
-      // the staffing-forecast pane: wait for its day-by-day table (fetched from /api/staffing-forecast)
-      for (let i = 0; i < 150 && !document.querySelector(".m3-pane.staffing-forecast .m3-sf-table"); i++) await sleep(200);
-      document.querySelector(".m3-pane.staffing-forecast").scrollIntoView();
-      await sleep(1000);
+      for (let i = 0; i < 100 && all(".queue-row").length < 60; i++) await sleep(100);
+      sel('button[data-mode="3"]').click();
+      await wait(() => sel(".m3-pane.root-causes .m3-table tbody tr"));
+      // click through every tab, waiting for its content on the way
+      for (const name of ["event-impact", "journeys", "promises", "equity", "letter-lab",
+          "ask", "knowledge-gaps", "weak-signals", "staffing-forecast"]) {
+        sel(`.m3-tab[data-pane="${name}"]`).click();
+        if (name === "letter-lab") {
+          await wait(() => sel(".m3-pane.letter-lab #ll-run"));
+          sel(".m3-pane.letter-lab #ll-run").click();
+          await wait(() => !sel(".m3-pane.letter-lab .m3-letterlab-results").hidden);
+        }
+        if (name === "ask") {
+          await wait(() => sel(".m3-pane.ask #ask-run"));
+          sel(".m3-pane.ask #ask-sample").click();
+          await wait(() => !sel(".m3-pane.ask .m3-ask-results").hidden);
+        }
+        await wait(() => {
+          const pane = sel(`.m3-pane[data-pane="${name}"]`);
+          if (name === "event-impact") return pane.querySelector(".m3-table tbody tr");
+          if (name === "journeys") return pane.querySelector(".m3-table tbody tr");
+          if (name === "promises") return pane.querySelector(".m3-table tbody tr");
+          if (name === "equity") return pane.querySelector(".m3-table tbody tr");
+          if (name === "knowledge-gaps") return pane.querySelector(".m3-kg-row");
+          if (name === "weak-signals") return pane.querySelector(".m3-ws-card");
+          if (name === "staffing-forecast") return pane.querySelector(".m3-sf-table");
+          return pane.querySelector(".m3-head");
+        });
+      }
+      // nav bookkeeping: exactly one pane visible, its tab aria-selected, the rest hidden
+      const navAfter = {
+        visiblePanes: all(".m3-pane").filter(p => !p.hidden).map(p => p.dataset.pane),
+        selectedTabs: all(".m3-tab[aria-selected='true']").map(t => t.dataset.pane),
+        hiddenPanes: all(".m3-pane[hidden]").length,
+        tabCount: all(".m3-tab").length,
+        panelRoles: all("[role='tabpanel']").length
+      };
       const out = {
-        errs,
-        mode3Visible: !document.querySelector(".mode3").hidden,
-        workbenchHidden: document.querySelector(".workbench").hidden,
-        headline: (document.querySelector(".m3-headline") || {}).textContent || "",
-        stats: [...document.querySelectorAll(".m3-stats .stat b")].map(b => b.textContent),
+        errs, nav: navAfter,
+        mode3Visible: !sel(".mode3").hidden,
+        workbenchHidden: sel(".workbench").hidden,
+        headline: (sel(".m3-headline") || {}).textContent || "",
+        stats: all(".m3-stats .stat b").map(b => b.textContent),
         bars: document.querySelectorAll(".m3-chart rect").length,
-        cumLine: !!document.querySelector(".m3-chart polyline"),
+        cumLine: !!sel(".m3-chart polyline"),
         tableRows: document.querySelectorAll(".m3-pane.root-causes .m3-table tbody tr").length,
-        topCause: (document.querySelector(".m3-pane.root-causes .m3-table tbody tr td") || {}).textContent || "",
+        topCause: (sel(".m3-pane.root-causes .m3-table tbody tr td") || {}).textContent || "",
         eventRows: document.querySelectorAll(".m3-pane.event-impact .m3-table tbody tr").length,
-        topEvent: (document.querySelector(".m3-pane.event-impact .m3-table tbody tr td:nth-child(2)") || {})
+        topEvent: (sel(".m3-pane.event-impact .m3-table tbody tr td:nth-child(2)") || {})
           .textContent || "",
         quietTags: document.querySelectorAll(".m3-pane.event-impact .quiet").length,
         journeyRows: document.querySelectorAll(".m3-pane.journeys .m3-table").length >= 2
           ? document.querySelectorAll(".m3-pane.journeys .m3-table:last-of-type tbody tr").length : 0,
         journeyCauseRows: document.querySelectorAll(".m3-pane.journeys .m3-table tbody tr").length,
-        loopsStat: (document.querySelector(".m3-pane.journeys .m3-stats .stat b") || {}).textContent || "",
-        journeyTopCause: (document.querySelector(".m3-pane.journeys .m3-table tbody tr td") || {}).textContent || "",
-        journeyHeadline: (document.querySelector(".m3-pane.journeys .m3-headline") || {}).textContent || "",
-        journeyProv: (document.querySelector(".m3-pane.journeys .prov") || {}).textContent || "",
+        loopsStat: (sel(".m3-pane.journeys .m3-stats .stat b") || {}).textContent || "",
+        journeyTopCause: (sel(".m3-pane.journeys .m3-table tbody tr td") || {}).textContent || "",
+        journeyHeadline: (sel(".m3-pane.journeys .m3-headline") || {}).textContent || "",
+        journeyProv: (sel(".m3-pane.journeys .prov") || {}).textContent || "",
         promiseRows: document.querySelectorAll(".m3-pane.promises .m3-table").length >= 2
           ? document.querySelectorAll(".m3-pane.promises .m3-table:first-of-type tbody tr").length : 0,
-        promiseBars: document.querySelectorAll(".m3-pane.promises .m3-promise-row").length,
-        promiseTopCause: (document.querySelector(".m3-pane.promises .m3-table:first-of-type tbody tr td") || {})
+        promiseBars: document.querySelectorAll(".m3-pane.promises .m3-bar-row").length,
+        promiseTopCause: (sel(".m3-pane.promises .m3-table:first-of-type tbody tr td") || {})
           .textContent || "",
-        promiseHeadline: (document.querySelector(".m3-pane.promises .m3-headline") || {}).textContent || "",
-        promiseProv: (document.querySelector(".m3-pane.promises .prov") || {}).textContent || "",
+        promiseHeadline: (sel(".m3-pane.promises .m3-headline") || {}).textContent || "",
+        promiseProv: (sel(".m3-pane.promises .prov") || {}).textContent || "",
         equityRows: document.querySelectorAll(".m3-pane.equity .m3-table:first-of-type tbody tr").length,
-        equityBars: document.querySelectorAll(".m3-pane.equity .m3-equity-row").length,
-        equityTop: (document.querySelector(".m3-pane.equity .m3-table:first-of-type tbody tr td") || {})
+        equityBars: document.querySelectorAll(".m3-pane.equity .m3-bar-row").length,
+        equityTop: (sel(".m3-pane.equity .m3-table:first-of-type tbody tr td") || {})
           .textContent || "",
-        equityHeadline: (document.querySelector(".m3-pane.equity .m3-headline") || {}).textContent || "",
-        equityProv: (document.querySelector(".m3-pane.equity .prov") || {}).textContent || "",
-        letterLabPane: !!document.querySelector(".m3-pane.letter-lab"),
-        letterLabHeadline: (document.querySelector(".m3-pane.letter-lab .m3-letterlab-results .m3-headline") || {})
+        equityHeadline: (sel(".m3-pane.equity .m3-headline") || {}).textContent || "",
+        equityProv: (sel(".m3-pane.equity .prov") || {}).textContent || "",
+        letterLabPane: !!sel(".m3-pane.letter-lab"),
+        letterLabHeadline: (sel(".m3-pane.letter-lab .m3-letterlab-results .m3-headline") || {})
           .textContent || "",
-        letterLabRewrite: (document.querySelector(".m3-pane.letter-lab .m3-letterlab-rewrite") || {}).textContent || "",
+        letterLabRewrite: (sel(".m3-pane.letter-lab .m3-letterlab-rewrite") || {}).textContent || "",
         letterLabQuestions: document.querySelectorAll(".m3-pane.letter-lab .m3-letterlab-questions li").length,
-        letterLabProv: (document.querySelector(".m3-pane.letter-lab .prov") || {}).textContent || "",
-        askPane: !!document.querySelector(".m3-pane.ask"),
-        askHeadline: (document.querySelector(".m3-pane.ask .m3-ask-results .m3-headline") || {}).textContent || "",
-        askEvents: [...document.querySelectorAll(".m3-pane.ask .m3-ask-events li")].map(li => li.textContent),
+        letterLabProv: (sel(".m3-pane.letter-lab .prov") || {}).textContent || "",
+        askPane: !!sel(".m3-pane.ask"),
+        askHeadline: (sel(".m3-pane.ask .m3-ask-results .m3-headline") || {}).textContent || "",
+        askEvents: all(".m3-pane.ask .m3-ask-events li").map(li => li.textContent),
         askEvidence: document.querySelectorAll(".m3-pane.ask .m3-ask-evidence li").length,
-        askProv: (document.querySelector(".m3-pane.ask .prov") || {}).textContent || "",
-        kgPane: !!document.querySelector(".m3-pane.knowledge-gaps .m3-kg-gaps"),
-        kgHeadline: (document.querySelector(".m3-pane.knowledge-gaps .m3-headline") || {}).textContent || "",
+        askProv: (sel(".m3-pane.ask .prov") || {}).textContent || "",
+        kgPane: !!sel(".m3-pane.knowledge-gaps .m3-kg-gaps"),
+        kgHeadline: (sel(".m3-pane.knowledge-gaps .m3-headline") || {}).textContent || "",
         kgRows: document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-row").length,
-        kgTopGap: (document.querySelector(".m3-pane.knowledge-gaps .m3-kg-gap") || {}).textContent || "",
-        kgFaq: (document.querySelector(".m3-pane.knowledge-gaps .m3-kg-faq b") || {}).textContent || "",
-        kgIvr: (document.querySelector(".m3-pane.knowledge-gaps .m3-kg-ivr") || {}).textContent || "",
+        kgTopGap: (sel(".m3-pane.knowledge-gaps .m3-kg-gap") || {}).textContent || "",
+        kgFaq: (sel(".m3-pane.knowledge-gaps .m3-kg-faq b") || {}).textContent || "",
+        kgIvr: (sel(".m3-pane.knowledge-gaps .m3-kg-ivr") || {}).textContent || "",
         kgWeak: document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-weak").length,
-        kgFax: [...document.querySelectorAll(".m3-pane.knowledge-gaps .m3-kg-weak")]
+        kgFax: all(".m3-pane.knowledge-gaps .m3-kg-weak")
           .map(w => w.textContent).find(t => t.includes("Sending documents")) || "",
-        kgProv: (document.querySelector(".m3-pane.knowledge-gaps .prov") || {}).textContent || "",
-        wsPane: !!document.querySelector(".m3-pane.weak-signals .m3-ws-cards"),
-        wsHeadline: (document.querySelector(".m3-pane.weak-signals .m3-headline") || {}).textContent || "",
+        kgProv: (sel(".m3-pane.knowledge-gaps .prov") || {}).textContent || "",
+        wsPane: !!sel(".m3-pane.weak-signals .m3-ws-cards"),
+        wsHeadline: (sel(".m3-pane.weak-signals .m3-headline") || {}).textContent || "",
         wsCards: document.querySelectorAll(".m3-pane.weak-signals .m3-ws-card").length,
-        wsTopTitle: (document.querySelector(".m3-pane.weak-signals .m3-ws-card .m3-ws-title b") || {}).textContent || "",
-        wsEarly: [...document.querySelectorAll(".m3-pane.weak-signals .m3-ws-card b")]
+        wsTopTitle: (sel(".m3-pane.weak-signals .m3-ws-card .m3-ws-title b") || {}).textContent || "",
+        wsEarly: all(".m3-pane.weak-signals .m3-ws-card b")
           .map(b => b.textContent).find(t => /months early/.test(t)) || "",
-        wsTrig: (document.querySelector(".m3-pane.weak-signals .m3-ws-card p:last-of-type") || {}).textContent || "",
-        wsProv: (document.querySelector(".m3-pane.weak-signals .prov") || {}).textContent || "",
-        sfPane: !!document.querySelector(".m3-pane.staffing-forecast .m3-sf-table"),
-        sfHeadline: (document.querySelector(".m3-pane.staffing-forecast .m3-headline") || {}).textContent || "",
+        wsTrig: (sel(".m3-pane.weak-signals .m3-ws-card p:last-of-type") || {}).textContent || "",
+        wsProv: (sel(".m3-pane.weak-signals .prov") || {}).textContent || "",
+        sfPane: !!sel(".m3-pane.staffing-forecast .m3-sf-table"),
+        sfHeadline: (sel(".m3-pane.staffing-forecast .m3-headline") || {}).textContent || "",
         sfDays: document.querySelectorAll(".m3-pane.staffing-forecast .m3-sf-table tbody tr").length,
         sfEventCards: document.querySelectorAll(".m3-pane.staffing-forecast .m3-sf-card").length,
-        sfEventTitle: (document.querySelector(
+        sfEventTitle: (sel(
           ".m3-pane.staffing-forecast .m3-sf-card .m3-sf-title b") || {}).textContent || "",
-        sfProv: (document.querySelector(".m3-pane.staffing-forecast .prov") || {}).textContent || ""
+        sfProv: (sel(".m3-pane.staffing-forecast .prov") || {}).textContent || ""
       };
+      // back to root-causes for the screenshot
+      sel('.m3-tab[data-pane="root-causes"]').click();
+      await sleep(500);
       const pre = document.createElement("pre"); pre.id = "dbg";
       pre.textContent = JSON.stringify(out); pre.dataset.state = "done";
       document.body.appendChild(pre);
@@ -159,7 +194,7 @@ log = open("/tmp/probe_mode3.log", "w")
 proc = subprocess.Popen(
     ["./.venv/bin/python", "-m", "uvicorn", "overheard.app:create_app", "--factory",
      "--host", "127.0.0.1", "--port", str(PORT), "--log-level", "warning"],
-    stdout=log, stderr=subprocess.STDOUT, cwd="/home/bob/work/tickets/fancy-wombat/repo", env=env)
+    stdout=log, stderr=subprocess.STDOUT, cwd=str(Path(__file__).resolve().parent.parent), env=env)
 try:
     for _ in range(100):
         try:
@@ -169,19 +204,49 @@ try:
             time.sleep(0.2)
     # NOTE: snap chromium's --screenshot vanishes into its private /tmp (its
     # stdout claims "written", the file is never here); use a real path instead.
-    shot = str(Path(__file__).resolve().parent.parent / "probe_mode3_shot.png")
+    shots = {
+        "root-causes": str(Path(__file__).resolve().parent.parent / "probe_mode3_rootcauses.png"),
+        "promises": str(Path(__file__).resolve().parent.parent / "probe_mode3_promises.png"),
+    }
+    for name, shot in shots.items():
+        # the root-causes shot uses the full run (which ends back on root causes);
+        # the others use a page that jumps straight to the tab before settling
+        if name != "root-causes":
+            html = HTML.replace(
+                '      // click through every tab',
+                f'      sel(`.m3-tab[data-pane="{name}"]`).click();\n'
+                f'      await wait(() => sel(`.m3-pane[data-pane="{name}"] .m3-head`));\n'
+                "      return;\n      // click through every tab",
+                1,
+            )
+            probe.write_text(html)
+        res = subprocess.run(
+            ["chromium", "--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
+             "--virtual-time-budget=30000", "--window-size=1400,2000", f"--screenshot={shot}",
+             f"http://127.0.0.1:{PORT}/__probe_mode3.html"],
+            capture_output=True, text=True, timeout=180)
+        if name != "root-causes":
+            probe.write_text(HTML)
+    print("chromium rc:", res.returncode, (res.stderr or "").strip()[-400:])
+    # full DOM run for the assertions
+    probe.write_text(HTML)
     res = subprocess.run(
         ["chromium", "--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
-         "--virtual-time-budget=30000", "--window-size=1400,6200", f"--screenshot={shot}",
-         "--dump-dom", f"http://127.0.0.1:{PORT}/__probe_mode3.html"],
-        capture_output=True, text=True, timeout=180)
-    print("chromium rc:", res.returncode, (res.stderr or "").strip()[-400:])
+         "--virtual-time-budget=45000", "--window-size=1400,2000", "--dump-dom",
+         f"http://127.0.0.1:{PORT}/__probe_mode3.html"],
+        capture_output=True, text=True, timeout=240)
     m = re.search(r'<pre id="dbg"[^>]*>(.*?)</pre>', res.stdout, re.S)
     assert m, f"probe never finished; len(dom)={len(res.stdout)}"
     out = json.loads(m.group(1).replace("&amp;", "&"))
     print(json.dumps(out, indent=1))
     assert out["errs"] == [], out["errs"]
     assert out["mode3Visible"] and out["workbenchHidden"]
+    # the tab navigation itself
+    nav = out["nav"]
+    assert nav["tabCount"] == 10 and nav["panelRoles"] == 10, nav
+    assert nav["visiblePanes"] == ["staffing-forecast"], nav
+    assert nav["selectedTabs"] == ["staffing-forecast"], nav
+    assert nav["hiddenPanes"] == 9, nav
     assert out["topCause"].replace(" ", "").lower() == "form22bconfusion", out["topCause"]
     assert out["bars"] >= 12 and out["cumLine"]
     assert out["tableRows"] == 10
@@ -236,7 +301,9 @@ try:
     assert "Payment date" in out["sfEventTitle"], out["sfEventTitle"]
     assert "payment-date-shift" in out["sfHeadline"], out["sfHeadline"]
     assert "plain code" in out["sfProv"], out["sfProv"]
-    print("PROBE_MODE3 OK, screenshot at", shot)
+    for shot in shots.values():
+        assert Path(shot).stat().st_size > 5000, shot
+    print("PROBE_MODE3 OK, screenshots at", ", ".join(shots.values()))
 finally:
     proc.kill()
     proc.wait()
