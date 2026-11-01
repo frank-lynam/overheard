@@ -3,16 +3,16 @@
 import json
 import os
 import re
+import socket
 import subprocess
+import sys
 import time
 import urllib.request
-from importlib.resources import files
 from pathlib import Path
 
 import pytest
 
 STATIC = Path(__file__).resolve().parents[1] / "src" / "overheard" / "static"
-PORT = 8791
 
 
 def read(name: str) -> str:
@@ -65,7 +65,6 @@ PROBE = r"""<!doctype html>
     <button data-mode="2">2</button><button data-mode="3">3</button>
   </nav>
   <div class="scoreboard" aria-live="polite"><span class="muted">scoreboard</span></div></header>
-  <p class="later" hidden>later</p>
   <main class="mode3" hidden><section class="m3-pane root-causes"></section></main>
   <main class="workbench">
     <section class="pane queue"></section>
@@ -118,37 +117,47 @@ PROBE = r"""<!doctype html>
 </body></html>"""
 
 
+SERVE = """
+import sys, uvicorn
+from fastapi.responses import HTMLResponse
+from overheard.app import create_app
+
+app = create_app()
+probe = open(sys.argv[2], encoding="utf-8").read()
+app.get("/__probe.html")(lambda: HTMLResponse(probe))
+app.router.routes.insert(0, app.router.routes.pop())  # before the static mount at /
+uvicorn.run(app, host="127.0.0.1", port=int(sys.argv[1]), log_level="warning")
+"""
+
+
 @pytest.fixture(scope="module")
 def live_server(tmp_path_factory):
-    """The real console served by the real server, on a real port, with a probe page installed."""
-    db = tmp_path_factory.mktemp("db") / "overheard.db"
-    served = Path(files("overheard") / "static")
-    probe = served / "__probe.html"
-    probe.write_text(PROBE)
-    repo = Path(__file__).resolve().parents[1]
-    log = open("/tmp/overheard-ui-test.log", "w")
-    env = {**os.environ, "OVERHEARD_DB_PATH": str(db)}
-    proc = subprocess.Popen(
-        [str(repo / ".venv/bin/python"), "-m", "uvicorn", "overheard.app:create_app", "--factory",
-         "--host", "127.0.0.1", "--port", str(PORT), "--log-level", "warning"],
-        stdout=log, stderr=subprocess.STDOUT, cwd=repo, env=env,
-    )
+    """The real console served by the real server, on a free port, with a probe page added to it."""
+    tmp = tmp_path_factory.mktemp("ui")
+    probe = tmp / "probe.html"
+    probe.write_text(PROBE, encoding="utf-8")
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    log = open(tmp / "server.log", "w")
+    env = {**os.environ, "OVERHEARD_DB_PATH": str(tmp / "overheard.db")}
+    proc = subprocess.Popen([sys.executable, "-c", SERVE, str(port), str(probe)],
+                            stdout=log, stderr=subprocess.STDOUT, env=env)
     try:
         for _ in range(100):
             try:
-                urllib.request.urlopen(f"http://127.0.0.1:{PORT}/api/health", timeout=1)
+                urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1)
                 break
             except Exception:
                 if proc.poll() is not None:
-                    raise AssertionError("server died at startup: " + log.name) from None
+                    raise AssertionError("server died at startup: " + (tmp / "server.log").read_text()) from None
                 time.sleep(0.2)
         else:
             raise AssertionError("server never came up")
-        yield f"http://127.0.0.1:{PORT}"
+        yield f"http://127.0.0.1:{port}"
     finally:
         proc.terminate()
         proc.wait(timeout=10)
-        probe.unlink(missing_ok=True)
         log.close()
 
 

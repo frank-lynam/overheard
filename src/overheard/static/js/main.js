@@ -53,25 +53,24 @@ function selectM3Pane(m3, name) {
 store.subscribe(({ mode }) => {
   buttons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.mode) === mode)));
   document.body.dataset.mode = mode;
-  document.querySelector(".later").hidden = mode >= 1;
   const m3 = document.querySelector(".mode3");
-  const wb = document.querySelector(".workbench");
-  if (m3) m3.hidden = mode !== 3;
-  wb.hidden = mode === 3 && !!m3;
-  if (mode === 3 && m3 && m3.querySelectorAll(".m3-tab").length) {
-    const tabs = [...m3.querySelectorAll(".m3-tab")];
-    tabs.forEach((t, i) => {
-      t.addEventListener("click", () => selectM3Pane(m3, t.dataset.pane));
-      t.addEventListener("keydown", (e) => {
-        const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        tabs[(i + d + tabs.length) % tabs.length].click();
-      });
-    });
-    selectM3Pane(m3, m3Active);
-  }
+  m3.hidden = mode !== 3;
+  document.querySelector(".workbench").hidden = mode === 3;
+  if (mode === 3) selectM3Pane(m3, m3Active);
 }, ["mode"]);
+{
+  const m3 = document.querySelector(".mode3");
+  const tabs = [...m3.querySelectorAll(".m3-tab")];
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => selectM3Pane(m3, t.dataset.pane));
+    t.addEventListener("keydown", (e) => {
+      const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      tabs[(i + d + tabs.length) % tabs.length].click();
+    });
+  });
+}
 
 renderQueue(document.querySelector(".pane.queue"), store);
 renderMessage(document.querySelector(".pane.message"), store);

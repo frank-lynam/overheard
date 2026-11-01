@@ -19,12 +19,12 @@ _UNCORRECTED = object()
 
 
 def con(request: Request) -> sqlite3.Connection:
-    return request.app.state.db
+    return request.app.state.db.get()
 
 
 def deps(request: Request) -> AnalysisDeps:
-    # The db connection is shared by every thread (sync routes run in worker threads),
-    # so the analysis is serialized on a per-app lock; bundles are cached per message.
+    # Sync routes run in worker threads, each with its own connection; the analysis is
+    # serialized on a per-app lock, and bundles are cached per message.
     return AnalysisDeps(
         con=con(request),
         lock=request.app.state.analyze_lock,
@@ -68,12 +68,13 @@ class Mode2Item(QueueItem):
 
 def mode2_day(request: Request) -> dict:
     """The day's mode-2 computation, once: groups, repeats, missing-info, incidents."""
-    if request.app.state.mode2 is None:
-        d = deps(request)
-        vms = voicemails(request)
-        bundles = {v.id: analyze_sync(v, d) for v in vms}
-        backend = MockCaseBackend(con(request))
-        request.app.state.mode2 = day_bundles(vms, bundles, backend, Mode2Deps(d.con, d.store, d.provider, d.model))
+    with request.app.state.mode2_lock:
+        if request.app.state.mode2 is None:
+            d = deps(request)
+            vms = voicemails(request)
+            bundles = {v.id: analyze_sync(v, d) for v in vms}
+            backend = MockCaseBackend(con(request))
+            request.app.state.mode2 = day_bundles(vms, bundles, backend, Mode2Deps(d.con, d.store, d.provider, d.model))
     return request.app.state.mode2
 
 

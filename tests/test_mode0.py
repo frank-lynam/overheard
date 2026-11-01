@@ -58,3 +58,14 @@ async def test_assumptions_drive_the_numbers(client):
     faster = (await client.get("/api/simulation")).json()
     await client.put("/api/assumptions", json=a)
     assert faster["agentHours"] < base and faster["urgentFirstTouch"] < "14:00"
+
+
+async def test_requests_at_the_same_time_all_succeed(client):
+    # sync routes run in worker threads together; a shared sqlite connection garbled their rows
+    import asyncio
+
+    paths = ["/api/queue", "/api/incidents", "/api/simulation", "/api/accuracy", "/api/day", "/api/entries",
+             "/api/archive/journeys", "/api/lookup?q=555"] * 6
+    for _ in range(3):
+        codes = [r.status_code for r in await asyncio.gather(*(client.get(p) for p in paths))]
+        assert codes == [200] * len(paths)

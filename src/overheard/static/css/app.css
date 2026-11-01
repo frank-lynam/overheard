@@ -15,7 +15,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); }
 .stepper button { border: 1px solid var(--line); background: transparent; color: var(--ink); padding: .4rem .7rem; border-radius: var(--radius); cursor: pointer; font: inherit; }
 .stepper button b { margin-right: .3rem; }
 .stepper button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+[hidden] { display: none !important; }  /* the hidden attribute wins over any display rule */
 .scoreboard { margin-left: auto; }
+body[data-mode="3"] .scoreboard { display: none; }  /* the day's scoreboard; Mode 3 is the archive */
 .muted { color: var(--muted); }
 .workbench { display: grid; grid-template-columns: 1fr 2fr 1.2fr; gap: 1rem; padding: 1rem; min-height: calc(100vh - 4rem); }
 .pane { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
@@ -61,7 +63,6 @@ h3 { font-size: .9rem; margin: 1.25rem 0 .5rem; }
 .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .stat b { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
 .stat .note { font-size: .75rem; color: var(--muted); }
-.later { margin: .5rem 1rem 0; padding: .5rem .75rem; border-radius: var(--radius); background: var(--touched); }
 
 /* --- Mode 1: the AI's side of the workbench --- */
 :root { --watch: #f2d8a0; --edited: #d9e6cf; }
@@ -137,7 +138,6 @@ body[data-mode="2"] .queue-row { grid-template-columns: 4.4rem 1fr 2.5rem 1.2rem
 .m3-table td { padding: .3rem .5rem; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .m3-table .num { text-align: right; }
 .mode3 .m3-pane + .m3-pane { margin-top: 1rem; }
-.mode3 .m3-pane[hidden] { display: none; }
 .m3-tabs { display: flex; gap: .25rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .m3-tab { border: 1px solid var(--line); background: transparent; color: var(--ink); padding: .4rem .8rem; border-radius: var(--radius); cursor: pointer; font: inherit; font-size: .85rem; }
 .m3-tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

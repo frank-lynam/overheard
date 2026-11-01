@@ -31,7 +31,7 @@ class AnalysisDeps:
     store: ResponseStore
     provider: LLMProvider
     model: str
-    lock: threading.Lock = threading.Lock()  # the connection is shared; one analysis at a time
+    lock: threading.Lock = threading.Lock()  # one analysis at a time
     cache: dict[str, dict] | None = None  # message id -> bundle, so re-runs never touch the db
     write: bool = False  # `overheard record`: land the provider's answers in the response store
 

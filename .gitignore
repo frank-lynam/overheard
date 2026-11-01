@@ -11,3 +11,6 @@ build/
 overheard_responses/
 tools/.rehearsal/
 /rehearse_present_*.png
+/CHECKLIST.md
+/NOTES.md
+/*.png

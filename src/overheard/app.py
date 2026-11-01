@@ -1,8 +1,10 @@
 """The FastAPI app: the API under /api, and the front end (static files) at /."""
 
+import contextlib
 import sqlite3
 import threading
 from importlib.resources import files
+from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -36,23 +38,59 @@ def open_db(settings: Settings) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS resolutions (voicemail TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT, "
         "provenance TEXT, at TEXT)"
     )
+    con.execute("PRAGMA journal_mode=WAL")  # readers in other threads don't wait on a writer
     con.commit()
     return con
 
 
+class ThreadConnections:
+    """One sqlite connection per thread: requests run in worker threads at the same time, and a single
+    shared connection hands garbled rows to concurrent queries."""
+
+    def __init__(self, path) -> None:
+        self.path = path
+        self.local = threading.local()
+
+    def get(self) -> sqlite3.Connection:
+        c = getattr(self.local, "con", None)
+        if c is None:
+            c = self.local.con = db.connect(self.path)
+        return c
+
+
+@contextlib.asynccontextmanager
+async def warm_up(app: FastAPI):
+    """The day is computed up front: when the server starts (in mock or replay mode, where it costs nothing),
+    a background thread works out every message's analysis and the day's mode-2 reasoning, so the first click
+    on Mode 1 or 2 doesn't wait seconds for it. Live mode stays lazy: warming would call the model on every start."""
+    if app.state.settings.llm_mode in ("mock", "replay"):
+        from overheard.api.routes import mode2_day
+
+        def warm() -> None:
+            try:
+                mode2_day(SimpleNamespace(app=app))
+            except Exception:  # a failure here shows up again, properly, on the first real request
+                pass
+
+        threading.Thread(target=warm, name="warm-up", daemon=True).start()
+    yield
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
-    app = FastAPI(title="Overheard", version=__version__)
+    app = FastAPI(title="Overheard", version=__version__, lifespan=warm_up)
     app.state.settings = settings
-    app.state.db = open_db(settings)
-    app.state.today = app.state.db.execute("SELECT value FROM meta WHERE key='today'").fetchone()[0]
+    setup = open_db(settings)
+    app.state.today = setup.execute("SELECT value FROM meta WHERE key='today'").fetchone()[0]
+    setup.close()
+    app.state.db = ThreadConnections(settings.db_path)
     app.state.assumptions = Assumptions()
-    # The analysis cache (message id -> bundle) and the lock that guards the shared
-    # connection while a bundle is (re)computed: sync routes run in worker threads,
-    # so a sqlite connection must never be touched by two of them at once.
+    # The analysis cache (message id -> bundle) and the lock that keeps one bundle from
+    # being computed twice at once: sync routes run in worker threads.
     app.state.analysis_cache = {}
     app.state.analyze_lock = threading.Lock()
-    app.state.mode2 = None  # the day-2 computation, computed up front on first request
+    app.state.mode2 = None  # the day-2 computation (and with it every message's analysis); see warm()
+    app.state.mode2_lock = threading.Lock()
     app.state.store = ResponseStore(settings.llm_responses_path)
     app.state.provider = build_provider(settings, app.state.store)
 

@@ -14,7 +14,7 @@ export function renderRootCauses(el, data) {
         (${Math.round(data.totalHours / 3).toLocaleString()} agent-hours a year, at a labour rate of
         $${data.laborRate}/hr). What it costs, and where it goes:</p>
       <div class="m3-stats">
-        <div class="stat"><b>${fmtUsd(data.annualCostUsd)}</b><span class="muted">agent-hours a year</span></div>
+        <div class="stat"><b>${fmtUsd(data.annualCostUsd)}</b><span class="muted">a year in agent time</span></div>
         <div class="stat"><b>${fmtHours(data.annualHours)}</b><span class="muted">hours / year, all causes</span></div>
         <div class="stat"><b>${top80.length} of ${data.causes.length}</b>
           <span class="muted">causes hold ${(top80Share * 100).toFixed(0)}% of the cost</span></div>
