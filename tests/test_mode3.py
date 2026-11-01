@@ -610,5 +610,5 @@ async def test_api_staffing_forecast(client):
     assert r.status_code == 200
     body = r.json()
     assert len(body["days"]) == 14
-    assert "payment-date-shift" in body["headline"]
+    assert "payment date shift" in body["headline"]
     assert body["prov"].startswith("plain code")

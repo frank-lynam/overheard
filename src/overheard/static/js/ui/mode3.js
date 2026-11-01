@@ -46,32 +46,34 @@ export function renderEventImpact(el, data) {
   const top = events[0];
   const top3 = events.slice(0, 3);
   const top3Share = top3.reduce((a, b) => a + b.excess, 0);
-  const quietRatio = (e) => e.excess / Math.max(1, e.expected) < 3; // "quiet" = less than 3x its own baseline
+  const quietRatio = (e) => e.excess / Math.max(1, e.expected) < 3; // "quiet" = under 3x its usual level
   el.innerHTML = `
     <div class="m3-head">
       <h2>What the calendar did to the phone <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
-      <p class="muted">Each event on the archive's calendar (mailings, releases, policy changes) gets a window of
-        days after it, compared against its own cause's weekday rate in the 90 weekdays before. Excess is the calls
-        the event caused, above business as usual:</p>
-      <p class="m3-headline"><b>${top.name}</b> drove the loudest spike of the three years:
-        ${top.count.toLocaleString()} contacts in its window, ${top.excess.toLocaleString()} above what the cause's
-        own baseline predicted (${top.excessHours.toFixed(0)} excess agent-hours, ${top.excessShare.toFixed(1)}% of
-        all event-driven work). The three loudest events together account for
-        ${top3Share.toLocaleString()} excess contacts. The quiet ones tell you the release was boring — as planned.</p>
+      <p class="muted">Every letter mailed, system release and policy change in three years, set against the calls
+        that followed: how many came in the days after, how many that reason usually gets, and so how many extra
+        calls each one caused.</p>
+      <p class="m3-headline"><b>${top.name}</b> caused the biggest rush of the three years:
+        ${top.count.toLocaleString()} calls in the days after it, ${top.excess.toLocaleString()} more than usual
+        (${top.excessHours.toFixed(0)} extra agent-hours). The three biggest together caused
+        ${top3Share.toLocaleString()} extra calls. The quiet ones are what a smooth release looks like.</p>
     </div>
     <table class="m3-table">
-      <thead><tr><th>#</th><th>event</th><th>type</th><th class="num">date</th><th class="num">contacts</th>
-        <th class="num">expected</th><th class="num">excess</th><th class="num">excess hours</th>
-        <th class="num">share of excess</th></tr></thead>
+      <thead><tr><th>#</th><th>event</th><th>type</th><th class="num">date</th>
+        <th class="num" data-tip="Calls in the days after the event">calls</th>
+        <th class="num" data-tip="What that reason for calling usually gets in the same number of days">usually</th>
+        <th class="num" data-tip="Calls the event caused: calls minus usually">extra calls</th>
+        <th class="num" data-tip="Agent time the extra calls took">extra hours</th>
+        <th class="num" data-tip="This event's part of all the extra calls events caused">share</th></tr></thead>
       <tbody>
         ${events.map((e, i) => `<tr${i < 3 ? ' class="hot"' : ""}>
           <td class="num">${i + 1}</td>
           <td>${e.name}</td>
-          <td>${e.type}</td>
+          <td>${e.type.replace(/-/g, " ")}</td>
           <td class="num">${e.date}</td>
           <td class="num">${e.count.toLocaleString()}</td>
           <td class="num">${e.expected.toLocaleString()}</td>
-          <td class="num">${e.excess.toLocaleString()}${quietRatio(e) ? ` <b class="quiet">quiet</b>` : ""}</td>
+          <td class="num">${e.excess.toLocaleString()}${quietRatio(e) ? ` <b class="quiet" data-tip="Under three times its usual level: barely noticed">quiet</b>` : ""}</td>
           <td class="num">${e.excessHours.toFixed(1)}</td>
           <td class="num">${e.excessShare.toFixed(1)}%</td>
         </tr>`).join("")}
@@ -254,11 +256,9 @@ export function renderLetterLab(el) {
   el.innerHTML = `
     <div class="m3-head">
       <h2>Pre-test a letter before you mail it <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
-      <p class="muted">Paste a draft notice and the lab checks it against three years of the archive: which
-        past mailing it sounds like, the calls that mailing actually drove, the questions its readers asked,
-        and a clearer rewrite with a before/after prediction. "Sounds like" is word overlap with that
-        driver's real phrasings and its events; volume is the similar past mailings' measured excess above
-        that driver's own baseline, scaled by a readability score of the draft (vague letters cost more).</p>
+      <p class="muted">Paste a draft letter. The lab finds the past mailing it most resembles, shows how many
+        calls that mailing caused and what readers asked, and suggests a clearer version with how many calls
+        it would save. Vaguer letters cause more calls.</p>
     </div>
     <div class="m3-letterlab-form">
       <label for="ll-draft" class="muted">Your draft notice</label>
@@ -301,17 +301,15 @@ function renderLetterLabResults(el, data) {
     <h3 class="muted">What the lab found</h3>
     <p class="m3-headline">This draft sounds like <b>${det.label}</b>
       (matched on ${det.matchedWords.length} words: ${det.matchedWords.join(", ")}).
-      The archive's similar past mailings each drove <b>${p.low.toLocaleString()}-${p.high.toLocaleString()}</b>
-      contacts above that cause's own baseline, and this wording predicts
-      <b>${p.low.toLocaleString()}-${p.high.toLocaleString()}</b> per mailing
-      (mid <b>${p.mid.toLocaleString()}</b>).
+      Each of those mailings caused <b>${p.low.toLocaleString()}–${p.high.toLocaleString()}</b> extra calls,
+      and this wording should cause about <b>${p.mid.toLocaleString()}</b> per mailing.
       The centre already answered this letter's questions <b>${q.count.toLocaleString()}</b> times.</p>
     <div class="m3-stats">
-      <div class="stat"><b>${p.mid.toLocaleString()}</b><span class="muted">predicted contacts per mailing</span></div>
-      <div class="stat"><b>${r.questionsBefore} → ${r.questionsAfter}</b><span class="muted">expected questions, draft vs. rewrite</span></div>
-      <div class="stat"><b>-${(r.reductionPct * 100).toFixed(0)}%</b><span class="muted">predicted volume after the rewrite</span></div>
+      <div class="stat"><b>${p.mid.toLocaleString()}</b><span class="muted">extra calls expected per mailing</span></div>
+      <div class="stat"><b>${r.questionsBefore} → ${r.questionsAfter}</b><span class="muted">reader questions: this draft → the rewrite</span></div>
+      <div class="stat"><b>-${(r.reductionPct * 100).toFixed(0)}%</b><span class="muted">fewer calls with the rewrite</span></div>
     </div>
-    <h3 class="muted">Clarity of this draft</h3>
+    <h3 class="muted">What makes this draft hard to follow</h3>
     <p>${data.clarity.issues.length ? data.clarity.issues.join(" · ") : "No clarity issues found."}</p>
     ${q.sample.length ? `
     <h3 class="muted">What readers actually asked about this notice</h3>
@@ -320,15 +318,14 @@ function renderLetterLabResults(el, data) {
     </ul>` : ""}
     <h3 class="muted">The suggested rewrite</h3>
     <pre class="m3-letterlab-rewrite">${r.text}</pre>
-    <p class="m3-headline">After the rewrite: clarity <b>${data.clarity.score.toFixed(2)} →
-      ${r.clarityScore.toFixed(2)}</b>, predicted volume <b>${r.volumeBefore.toLocaleString()} →
-      ${r.volumeAfter.toLocaleString()}</b> per mailing, expected questions <b>${r.questionsBefore} →
-      ${r.questionsAfter}</b>.</p>
+    <p class="m3-headline">With the rewrite: clarity <b>${Math.round(data.clarity.score * 100)} →
+      ${Math.round(r.clarityScore * 100)}</b> out of 100, calls per mailing <b>${r.volumeBefore.toLocaleString()} →
+      ${r.volumeAfter.toLocaleString()}</b>, reader questions <b>${r.questionsBefore} → ${r.questionsAfter}</b>.</p>
     ${p.perMailing.length ? `
     <h3 class="muted">The past mailings this was measured against</h3>
     <table class="m3-table">
-      <thead><tr><th>mailing</th><th class="num">date</th><th class="num">window contacts</th>
-        <th class="num">excess over baseline</th></tr></thead>
+      <thead><tr><th>mailing</th><th class="num">date</th><th class="num">calls after it</th>
+        <th class="num">extra calls</th></tr></thead>
       <tbody>${windowRows}</tbody>
     </table>` : ""}`;
 }
@@ -340,10 +337,9 @@ export function renderAsk(el) {
   el.innerHTML = `
     <div class="m3-head">
       <h2>Ask the archive <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
-      <p class="muted">Ask in plain English — an issue, a state, a language, a month or year. The answer is
-        plain code counting the archive's pre-computed totals: how many, how it compares with the equal
-        period before, which calendar events overlap, and real messages from the archive cited as evidence.
-        A question it can't scope gets an honest "I don't know", not a guess.</p>
+      <p class="muted">Ask about an issue, a state, a language, a month or a year. You get how many calls there
+        were, how that compares with the period before, what was happening on the calendar, and real messages
+        as evidence. If it can't tell what you mean, it says so instead of guessing.</p>
     </div>
     <div class="m3-ask-form">
       <label for="ask-q" class="muted">Your question</label>
@@ -397,32 +393,36 @@ function renderAskResults(el, data) {
 }
 
 export function renderKnowledgeGaps(el, data) {
-  const gaps = (data.gaps || []).map((g, i) => `<div class="m3-kg-row">
+  const gapRow = (g, i) => `<div class="m3-kg-row">
       <div class="m3-kg-gap">
         <b class="m3-kg-rank">#${i + 1}</b> <b>${g.name}</b>
-        <span class="muted">${g.count.toLocaleString()} contacts · ${g.sharePct}% of archive · ${g.hours}h · ${Math.round(g.resolveRate * 100)}% resolved</span>
+        <span class="muted">${g.count.toLocaleString()} calls · ${g.sharePct}% of all calls · ${g.hours} agent-hours · ${Math.round(g.resolveRate * 100)}% resolved</span>
       </div>
       <div class="m3-kg-faq"><span class="prov" data-tip="A help article the AI drafted to fill the gap">help article draft</span><b>${g.faq.title}</b><p>${g.faq.body}</p></div>
       <div class="m3-kg-ivr"><span class="prov" data-tip="What the phone menu could say, so callers get the answer before they reach a person">phone menu line</span> ${g.ivr}</div>
-    </div>`).join("");
+    </div>`;
+  const all = data.gaps || [];
+  const gaps = all.slice(0, 6).map(gapRow).join("")
+    + (all.length > 6 ? `<details class="m3-more"><summary>Show the other ${all.length - 6}</summary>
+        <div class="m3-kg-gaps">${all.slice(6).map((g, i) => gapRow(g, i + 6)).join("")}</div></details>` : "");
   const weak = (data.weakCoverage || []).map((w) => {
     const words = Object.entries(w.uncovered || {}).slice(0, 8).map(([word, phr]) =>
       `<li><b>${word}</b> <span class="muted">— “${phr[0]}”</span></li>`).join("");
-    return `<div class="m3-kg-weak"><b>${w.articleTitle}</b> <span class="muted">claims to cover a topic but never says:</span>
+    return `<div class="m3-kg-weak"><b>${w.articleTitle}</b> <span class="muted">never uses the words callers use:</span>
       <ul>${words}</ul></div>`;
   }).join("");
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Knowledge gaps <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
-      <p class="muted">What callers ask about that no knowledge-base article answers, ranked by archive
-        volume, with a drafted FAQ entry and IVR line for each — plain code, from the driver's measured
-        data. Under that: articles that claim a topic but whose body never uses the words callers actually
-        use (weak coverage).</p>
+      <h2>Questions no article answers <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
+      <p class="muted">What callers keep asking that no help article answers, biggest first, each with a
+        drafted help article and phone menu line, so the next caller gets the answer without waiting for a
+        person.</p>
     </div>
-    <p class="m3-headline">${data.coveredDrivers} of ${data.drivers} topics covered · ${data.coveragePct}% of archive contacts on covered topics · ${data.articles} articles</p>
-    ${gaps ? `<h3 class="muted">Unanswered questions, ranked</h3><div class="m3-kg-gaps">${gaps}</div>` : ""}
-    <h3 class="muted">Weak coverage: claimed but not really explained</h3>
-    <div class="m3-kg-weaks">${weak}</div>`;
+    <p class="m3-headline">The help articles cover <b>${data.coveredDrivers} of ${data.drivers}</b> reasons people
+      call: <b>${data.coveragePct}%</b> of calls. ${all.length} reasons have no article at all.</p>
+    ${gaps ? `<h3 class="muted">Unanswered, biggest first</h3><div class="m3-kg-gaps">${gaps}</div>` : ""}
+    ${weak ? `<details class="m3-more"><summary>Articles that exist but miss the words callers use</summary>
+      <div class="m3-kg-weaks">${weak}</div></details>` : ""}`;
 }
 
 export function renderWeakSignals(el, data) {
@@ -430,24 +430,23 @@ export function renderWeakSignals(el, data) {
     const trig = (s.triggers || []).map((t) => `${t.name} (${t.date})`).join(", ");
     return `<div class="m3-ws-card">
       <div class="m3-ws-title"><b>${s.spikeEvent.name}</b> <span class="muted">${s.spikeEvent.date}</span></div>
-      <p class="muted">The spike week did ${s.spikeWeekContacts.toLocaleString()} contacts. But the weeks before it
-        already ran high: ${s.trickleWeeks} elevated weeks from ${s.trickleStart}, peaking at ${s.tricklePeak}
-        (${s.multipleOfBaseline}x the ${s.driver} baseline of ${s.baselinePerWeek}/week).</p>
-      <p><span class="prov">could have been caught</span> about <b>${s.monthsEarly} months early</b>
-        (${s.weeksEarly} weeks) on a simple threshold alert — ${s.trickleTotal} early contacts vs
-        ${s.spikeWeekContacts.toLocaleString()} in the spike week.</p>
+      <p class="muted">The worst week brought ${s.spikeWeekContacts.toLocaleString()} calls. But for
+        ${s.trickleWeeks} weeks before, from ${s.trickleStart}, '${s.driver.replace(/-/g, " ")}' calls already ran
+        high: up to ${s.tricklePeak} a week, ${s.multipleOfBaseline} times the usual ${s.baselinePerWeek}.</p>
+      <p><span class="prov" data-tip="A simple alert on unusually many calls of one kind would have fired this early">could have been caught</span>
+        about <b>${s.monthsEarly} months early</b> (${s.weeksEarly} weeks): ${s.trickleTotal} early calls, vs
+        ${s.spikeWeekContacts.toLocaleString()} in the worst week.</p>
       ${trig ? `<p class="muted">The trickle lines up with: ${trig}.</p>` : ""}
     </div>`;
   }).join("");
   el.innerHTML = `
     <div class="m3-head">
-      <h2>Missed weak signals <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
-      <p class="muted">Spikes look sudden in the week they happen. This looks at the weeks <i>before</i>
-        each spike and asks: how early could we have caught it? Baseline is each driver's own median
-        week outside event windows, so a slow cause is judged against itself.</p>
+      <h2>Early warnings that were missed <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
+      <p class="muted">A rush of calls looks sudden the week it hits. This looks at the weeks <i>before</i> each
+        rush: was there a trickle no one noticed, and how early could it have been caught?</p>
     </div>
     <p class="m3-headline">${data.headline}</p>
-    ${cards ? `<h3 class="muted">The trickle that preceded the spike</h3><div class="m3-ws-cards">${cards}</div>` : ""}`;
+    ${cards ? `<h3 class="muted">The trickle before the rush</h3><div class="m3-ws-cards">${cards}</div>` : ""}`;
 }
 
 export function renderStaffingForecast(el, data) {
@@ -457,26 +456,26 @@ export function renderStaffingForecast(el, data) {
       <td><b>${d.projectedContacts}</b></td><td>${d.projectedAgentHours}h</td>
     </tr>`).join("");
   const cards = (data.events || []).map((e) => `<div class="m3-sf-card">
-      <div class="m3-sf-title"><b>${e.name}</b> <span class="muted">${e.date} · ${e.type}</span></div>
+      <div class="m3-sf-title"><b>${e.name}</b> <span class="muted">${e.date} · ${e.type.replace(/-/g, " ")}</span></div>
       <p class="muted">Still active in the window: <b>${e.remainingDays} day${e.remainingDays === 1 ? "" : "s"} left</b>.
-        Projected to add <b>${e.projectedExcessContacts} more ${e.driver} calls</b>
-        (~${e.projectedExcessAgentHours} agent-hours) on top of the baseline.</p>
+        Expect about <b>${e.projectedExcessContacts} extra '${e.driver.replace(/-/g, " ")}' calls</b>
+        (~${e.projectedExcessAgentHours} agent-hours) on top of a normal day.</p>
     </div>`).join("");
   el.innerHTML = `
     <div class="m3-head">
       <h2>Staffing forecast <span class="prov" data-tip="The AI labelled every contact once; this view counts those labels with ordinary code, so every number can be checked">counted from the archive</span></h2>
-      <p class="muted">The next ${data.horizonDays} days, projected from the archive's trailing
-        90-weekday average (${data.weekdayBaseline} contacts a weekday) plus the events calendar's own
-        decay curve, with the agent-hours each day needs at the archive's measured handling times.</p>
+      <p class="muted">The next ${data.horizonDays} days: a normal weekday (${data.weekdayBaseline} calls, from
+        the last 90 weekdays), plus the extra calls each event on the calendar is still bringing in, and the
+        agent-hours that takes.</p>
     </div>
     <p class="m3-headline">${data.headline}</p>
     ${cards ? `<h3 class="muted">Calendar events in the window</h3><div class="m3-sf-cards">${cards}</div>` : ""}
     <h3 class="muted">Day by day</h3>
     <table class="m3-sf-table">
-      <thead><tr><th>date</th><th>day</th><th>baseline</th><th>event excess</th><th>projected contacts</th><th>agent-hours</th></tr></thead>
+      <thead><tr><th>date</th><th>day</th><th>normal day</th><th>extra from events</th><th>expected calls</th><th>agent-hours</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p class="muted">Totals: <b>${data.totalProjectedContacts} contacts</b> and
-      <b>${data.totalProjectedAgentHours} agent-hours</b> across the window. Weekends project at the
-      calendar alone — the archive is weekdays, so there is no weekday baseline to add.</p>`;
+    <p class="muted">In all: <b>${data.totalProjectedContacts} calls</b> and
+      <b>${data.totalProjectedAgentHours} agent-hours</b>. The centre is closed at weekends, so those days are
+      empty.</p>`;
 }

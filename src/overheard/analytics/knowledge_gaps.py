@@ -103,7 +103,7 @@ def _ivr_line(driver: str, team: str) -> str:
     """A one-line IVR option for the new topic, in the centre's existing voice."""
     name = driver.replace("-", " ").strip()
     return (f"Say {name[0].upper()}{name[1:]} for help "
-            f"with this topic from the {team} team")
+            f"with this topic from the {team.replace('_', ' ')} team")
 
 
 def knowledge_gaps(con: sqlite3.Connection) -> dict:

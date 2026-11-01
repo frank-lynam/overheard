@@ -503,18 +503,17 @@ def weak_signals_route(request: Request) -> dict:
         top = cards[0]
         trig = top["triggers"][0]["name"] if top["triggers"] else "no calendar event"
         trig_date = top["triggers"][0]["date"] if top["triggers"] else "nothing on the calendar"
+        reason = top["driver"].replace("-", " ")
         headline = (
-            f"{top['spikeEvent']['name']} ({top['spikeEvent']['date']}) was not sudden: "
-            f"{top['trickleWeeks']} weeks of elevated calls ran ahead of it, peaking at "
-            f"{top['multipleOfBaseline']}x the {top['driver']} baseline of "
-            f"{top['baselinePerWeek']}/week. A simple threshold alert would have fired "
-            f"about {top['monthsEarly']} months ({top['weeksEarly']} weeks) before the "
-            f"spike. The trickle lines up with {trig} ({trig_date}) — "
-            f"the early cost was {top['trickleTotal']} contacts; the spike week was "
-            f"{top['spikeWeekContacts']}."
+            f"The rush after {top['spikeEvent']['name']} ({top['spikeEvent']['date']}) was not sudden: "
+            f"for {top['trickleWeeks']} weeks before it, '{reason}' calls ran high, up to "
+            f"{top['multipleOfBaseline']} times their usual {top['baselinePerWeek']} a week. A simple alert "
+            f"would have caught it about {top['monthsEarly']} months ({top['weeksEarly']} weeks) early. "
+            f"The trickle started with {trig} ({trig_date}): {top['trickleTotal']} early calls, "
+            f"then {top['spikeWeekContacts']} in the worst week."
         )
     else:
-        headline = "No weak signals found: no driver ran elevated in the weeks before any spike."
+        headline = "No early warnings found: no reason for calling ran high in the weeks before a rush."
     return {"headline": headline, "signals": cards,
             "prov": "plain code · weekly totals over the archive"}
 
@@ -530,14 +529,11 @@ def staffing_forecast_route(request: Request) -> dict:
     if r["events"]:
         e = r["events"][0]
         headline = (
-            f"Over the next {r['horizonDays']} days, {e['name']} is in its last "
-            f"{e['remainingDays']} day"
-            f"{'s' if e['remainingDays'] != 1 else ''} "
-            f"({e['date']}), adding about {e['projectedExcessContacts']} more "
-            f"{e['driver']} calls (~{e['projectedExcessAgentHours']} agent-hours). "
-            f"Beyond it the desk is steady: ~{r['weekdayBaseline']} contacts a weekday "
-            f"baseline, ~{r['totalProjectedAgentHours']} agent-hours across the "
-            f"{r['horizonDays']} days."
+            f"Over the next {r['horizonDays']} days, {e['name']} ({e['date']}) is still bringing in calls "
+            f"for {e['remainingDays']} more day{'s' if e['remainingDays'] != 1 else ''}: about "
+            f"{e['projectedExcessContacts']} extra '{e['driver'].replace('-', ' ')}' calls "
+            f"(~{e['projectedExcessAgentHours']} agent-hours). Otherwise expect a normal "
+            f"~{r['weekdayBaseline']} calls a weekday, ~{r['totalProjectedAgentHours']} agent-hours in all."
         )
     else:
         headline = (

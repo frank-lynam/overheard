@@ -173,7 +173,7 @@ def clarity_report(text: str) -> dict:
     action = _has_action(text)
     issues = []
     if avg > 20:
-        issues.append(f"sents average {avg:.0f} words; split them")
+        issues.append(f"sentences average {avg:.0f} words; split them")
     if not deadline:
         issues.append("no deadline in sight: what to do, and by when")
     if not action:
