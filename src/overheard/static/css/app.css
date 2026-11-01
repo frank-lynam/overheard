@@ -265,3 +265,30 @@ body[data-mode="1"] .pane.queue::after, body[data-mode="2"] .pane.queue::after, 
 .ai-panels { padding-top: .35rem; }
 .ai-panels::before { border-top-left-radius: var(--radius-sm); }
 .mode2-panels:not(:empty) { padding: .6rem 0 0 .6rem; margin-bottom: 1rem; }
+
+/* --- Phones: one column, a full-width mode switcher with the number over a short label --- */
+@media (max-width: 700px) {
+  .topbar { grid-template-columns: 1fr; position: static; padding: .75rem; gap: .6rem; }
+  .brand { font-size: 1.05rem; gap: .4rem; }
+  .agency { font-size: .78rem; }
+  .stepper { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; border-radius: 16px; }
+  .stepper button { flex-direction: column; gap: .2rem; padding: .4rem .15rem; border-radius: 13px;
+    font-size: .7rem; line-height: 1.15; text-align: center; white-space: normal; }
+  .scoreboard { display: grid; grid-template-columns: 1fr 1fr; }
+  .stat { padding: .45rem .6rem; min-width: 0; }
+  .stat b { font-size: 1rem; }
+  .workbench { padding: .75rem; gap: .75rem; }
+  .pane { padding: .85rem; }
+  .queue-list { max-height: 60vh; overflow-x: auto; }
+  .entry { grid-template-columns: 1fr; }
+  .ai-field { flex-wrap: wrap; }
+  .ai-label { flex-basis: 100%; }
+  .mode3 { padding: .75rem; }
+  .m3-tabs { flex-wrap: nowrap; overflow-x: auto; width: 100%; border-radius: 16px; scrollbar-width: none; }
+  .m3-tab { white-space: nowrap; }
+  .m3-pane { padding: 1rem; }
+  .m3-pane table { display: block; overflow-x: auto; }
+  .m3-head h2 .prov { white-space: normal; display: inline-block; margin: .3rem 0 0; }
+  .m3-stats .stat { min-width: 0; flex: 1 1 8rem; }
+  .m3-bar-row { grid-template-columns: 7.5rem 1fr 3rem; }
+}
