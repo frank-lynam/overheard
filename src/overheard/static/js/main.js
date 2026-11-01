@@ -79,8 +79,11 @@ bindResolutionBump(store);
 renderScoreboard(document.querySelector(".scoreboard"), store);
 
 const refresh = async () => store.set({ queue: await api.queue(store.get().mode) });
-// mode 1: the same day, re-ordered by the AI's urgency (so the re-sort animation can slide)
-store.subscribe(() => { api.queue(1).then((q) => { if (store.get().mode === 1) store.set({ queue: q }); }).catch(() => {}); }, ["mode"]);
+// mode 0: back to arrival order; mode 1: the same day, re-ordered by the AI's urgency (so the re-sort animation can slide)
+store.subscribe((s) => {
+  if (s.mode > 1) return;
+  api.queue(s.mode).then((q) => { if (store.get().mode === s.mode) store.set({ queue: q }); }).catch(() => {});
+}, ["mode"]);
 // mode 2: the day's cross-message reasoning (clusters, repeats, the incident) comes with the queue
 store.subscribe((s) => {
   if (s.mode !== 2) return;

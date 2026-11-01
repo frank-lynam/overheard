@@ -78,6 +78,20 @@ def mode2_day(request: Request) -> dict:
     return request.app.state.mode2
 
 
+def mode2_messages(request: Request) -> dict:
+    """Each message's mode-2 section, once (what the queue shows of it doesn't change during the day)."""
+    mode2_day(request)  # the day first: the queue needs both, and the warm-up computes them together
+    with request.app.state.mode2_lock:
+        if request.app.state.mode2_messages is None:
+            d = deps(request)
+            backend = MockCaseBackend(con(request))
+            mdeps = Mode2Deps(d.con, d.store, d.provider, d.model)
+            request.app.state.mode2_messages = {
+                v.id: message_mode2(v, analyze_sync(v, d), backend, mdeps) for v in voicemails(request)
+            }
+    return request.app.state.mode2_messages
+
+
 class Message(BaseModel):
     id: str
     receivedAt: str
@@ -127,8 +141,7 @@ def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item] 
         items.sort(key=lambda i: (-i.urgency, i.receivedAt, i.id))
         return items
     day = mode2_day(request)
-    backend = MockCaseBackend(con(request))
-    mdeps = Mode2Deps(d.con, d.store, d.provider, d.model)
+    sections = mode2_messages(request)
     cluster_of: dict[str, int] = {}
     for members in day["clusters"].values():
         for mid in members:
@@ -140,7 +153,7 @@ def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item] 
     worked = {r[0] for r in d.con.execute("SELECT id FROM entries")}
     items = []
     for v in vms:
-        m2 = message_mode2(v, bundles[v.id], backend, mdeps)  # sync: the mock is local
+        m2 = sections[v.id]
         o = m2["resolution"]
         obligations = m2["obligations"]
         items.append(

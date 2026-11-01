@@ -5,7 +5,7 @@
 // clocks, the callback window, and the brief for the calls that still happen.
 // The manual case search stays below in every mode.
 import { api } from "../core/api.js";
-import { clock, el, hm, phone, put } from "../core/format.js";
+import { clock, day, el, hm, phone, put } from "../core/format.js";
 
 export function renderContext(root, store) {
   const resolution = el("div", { class: "mode2-panels" });
@@ -76,7 +76,7 @@ function drawResolution(root, r, s) {
   } else {
     kids.push(el("section", { class: "ai-panel" },
       el("header", { class: "ai-panel-head" }, el("b", {}, "Still needs a call"), badge(o.provenance)),
-      el("p", { class: "ai-line muted" }, `Lookups made: ${o.lookups.length ? o.lookups.join(", ") : "none"} · ${o.answer}`),
+      el("p", { class: "ai-line muted" }, `Lookups made: ${o.lookups.length ? o.lookups.map((l) => l.tool.replace(/_/g, " ")).join(", ") : "none"} · ${o.answer}`),
       el("p", { class: "ai-line bold-b" }, el("b", {}, "Callback brief: "), o.brief)));
   }
 
@@ -91,7 +91,7 @@ function drawResolution(root, r, s) {
       el("header", { class: "ai-panel-head" }, el("b", {}, "Deadline-bound")),
       r.obligations.map((ob) =>
         el("p", { class: "ai-line clock", title: `Detected: ${ob.source}${ob.evidence ? ` — “${ob.evidence}”` : ""}` },
-          `${ob.kind}: due ${clock(ob.due)}`))));
+          `${ob.kind}: due ${ob.due.includes("T") ? clock(ob.due) : day(ob.due)}`))));
   }
 
   if (r.missingInfo) {

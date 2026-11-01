@@ -68,6 +68,7 @@ export function renderScoreboard(root, store) {
     }
     if (s.mode === 2 && s._sb2) {
       const sb = s._sb2;
+      const before = stats.length;
       stats.push(
         stat("Callbacks avoided", `${sb.callbacksAvoided.closedWithNoCall} of ${sb.callbacksAvoided.resolvable}`,
           `${sb.callbacksAvoided.approved} approved by a human · ${Math.round(sb.callbacksAvoided.share * 100)}% of the resolvable`),
@@ -78,6 +79,7 @@ export function renderScoreboard(root, store) {
             `alerted ${sb.incident.title.toLowerCase().startsWith("a ") || sb.incident.title.toLowerCase().startsWith("an ") ? sb.incident.title : "“" + sb.incident.title + "”"}`)
           : stat("Incident lead", "—", "no spike today"),
       );
+      stats.slice(before).forEach((n) => n.classList.add("m2"));  // what Mode 2 adds, highlighted as such
     }
     put(root, ...stats);
   }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2"]);

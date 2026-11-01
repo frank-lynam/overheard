@@ -7,6 +7,8 @@ export const clock = (iso) => {
   return `${h}:${String(m).padStart(2, "0")} ${pm ? "pm" : "am"}`;
 };
 export const dayOf = (iso) => iso.split("T")[0];
+// "2026-03-12" -> "Thu, Mar 12"
+export const day = (iso) => new Date(`${iso.slice(0, 10)}T12:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 export const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 export const hm = (min) => (min >= 60 ? `${Math.floor(min / 60)}h ${Math.round(min % 60)}m` : `${Math.round(min)}m`);
 export const el = (tag, attrs = {}, ...kids) => {

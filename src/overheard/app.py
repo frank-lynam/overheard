@@ -64,11 +64,11 @@ async def warm_up(app: FastAPI):
     a background thread works out every message's analysis and the day's mode-2 reasoning, so the first click
     on Mode 1 or 2 doesn't wait seconds for it. Live mode stays lazy: warming would call the model on every start."""
     if app.state.settings.llm_mode in ("mock", "replay"):
-        from overheard.api.routes import mode2_day
+        from overheard.api.routes import mode2_messages
 
         def warm() -> None:
             try:
-                mode2_day(SimpleNamespace(app=app))
+                mode2_messages(SimpleNamespace(app=app))
             except Exception:  # a failure here shows up again, properly, on the first real request
                 pass
 
@@ -90,6 +90,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.analysis_cache = {}
     app.state.analyze_lock = threading.Lock()
     app.state.mode2 = None  # the day-2 computation (and with it every message's analysis); see warm()
+    app.state.mode2_messages = None  # each message's mode-2 section, for the queue
     app.state.mode2_lock = threading.Lock()
     app.state.store = ResponseStore(settings.llm_responses_path)
     app.state.provider = build_provider(settings, app.state.store)

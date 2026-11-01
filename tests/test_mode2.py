@@ -158,10 +158,10 @@ async def test_the_day_is_worked_out_when_the_server_starts(seeded):
     app = create_app(Settings(db_path=seeded[0]))
     async with app.router.lifespan_context(app):
         for _ in range(600):
-            if app.state.mode2 is not None:
+            if app.state.mode2_messages is not None:
                 break
             await asyncio.sleep(0.1)
-    assert app.state.mode2 is not None and len(app.state.analysis_cache) == 60
+    assert app.state.mode2_messages is not None and len(app.state.analysis_cache) == 60
     # live mode stays lazy: warming would call the model on every start
     live = create_app(Settings(db_path=seeded[0], llm_mode="live", llm_base_url="http://127.0.0.1:9", llm_api_key="x"))
     async with live.router.lifespan_context(live):

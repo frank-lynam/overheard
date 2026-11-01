@@ -50,7 +50,7 @@ function badge(part) {
 }
 
 function why(task, data) {
-  const b = el("button", { class: "small why" });
+  const b = el("button", { class: "small why", type: "button", "aria-expanded": "false" }, "Why?");
   b.addEventListener("click", () => {
     const old = b.nextElementSibling;
     if (old && old.classList.contains("why-pop")) { old.remove(); b.setAttribute("aria-expanded", "false"); return; }
@@ -164,10 +164,9 @@ export function renderMessage(root, store) {
     const bar = el("div", { class: "progress", title: "Click to jump" }, el("div", { class: "fill" }));
     const time = el("span", { class: "muted" }, `0:00 / ${mmss(totalSec)}`);
     const draw = () => {
-      t.replaceChildren(
-        ...words.slice(0, Math.floor(shown)).map((w, i) => el("span", { class: "word", "data-w": i, "data-v": w }, w)),
-        ...words.slice(Math.floor(shown)).map((w, i) => el("span", { class: "word dim", "data-w": i, "data-v": w }, w)),
-      );
+      const upTo = Math.floor(shown);
+      t.replaceChildren(...words.flatMap((w, i) => [
+        el("span", { class: i < upTo ? "word" : "word dim", "data-w": i, "data-v": w }, w), " "]));
       const frac = shown / words.length;
       bar.firstChild.style.width = `${Math.min(100, frac * 100)}%`;
       time.textContent = `${mmss(frac * totalSec)} / ${mmss(totalSec)}`;
@@ -195,7 +194,7 @@ export function renderMessage(root, store) {
       speed = speed === 1 ? 2 : 1; speedBtn.textContent = `${speed}×`;
     } }, "1×");
     draw();
-    return el("div", { class: "player" }, playBtn, speedBtn, bar, time, t);
+    return el("div", {}, el("div", { class: "player" }, playBtn, speedBtn, bar, time), t);
   }
 
   async function open(id) {

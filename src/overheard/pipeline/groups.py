@@ -28,6 +28,11 @@ _TOKEN = re.compile(r"[a-z][a-z'-]{2,}")
 _CODE = re.compile(r"\b[0-9]{3,}\b")
 
 
+
+def _ordinal(n: int) -> str:
+    """1 -> 1st, 2 -> 2nd, 3 -> 3rd, 11 -> 11th."""
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
 def _tokens(text: str) -> list[str]:
     ts = [t for t in _TOKEN.findall(text.lower()) if t not in STOP and not t.isdigit()]
     return ts + [c.lower() for c in _CODE.findall(text)]
@@ -148,7 +153,7 @@ def link_repeats(messages: list[Voicemail], bundles: dict[str, dict]) -> dict[st
         trend = "rising frustration" if urg[-1] > urg[0] else "same issue, still open"
         span_h = max(1, int((_t(group[-1].receivedAt) - _t(group[0].receivedAt)).total_seconds() // 3600))
         out[leader.id] = {"members": [v.id for v in group], "caseId": key[0] or None,
-                          "note": f"{len(group)}th contact in ~{span_h}h, {trend}",
+                          "note": f"{_ordinal(len(group))} contact in ~{span_h}h, {trend}",
                           "urgency": urg, "callers": group[0].truth.callerName}
     return out
 
