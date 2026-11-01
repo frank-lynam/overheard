@@ -90,6 +90,10 @@ docs/DESIGN.md
   "today" reads as a normal day plus an incident (~70,000 contacts over 3 years, ~67 a weekday); the demo leads
   with shares and hours ("one letter takes 1 in 8 agent-hours"), dollars alongside.
 
+- The demo is about what's possible, not what it costs (Nov 1, 2026): the console shows outcomes (the urgent caller
+  reached sooner, deadlines met, callers reached, agent time given back) and, from Mode 1 on, what each was without AI.
+  No dollars in the UI; the cost model stays in the API only. Mode 0 is the baseline and may show its workload.
+
 ## Still open (ask rather than guess)
 
 - Who the audience is (internal leadership or a government customer), and the demo date.
