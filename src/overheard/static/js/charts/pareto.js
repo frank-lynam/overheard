@@ -1,14 +1,8 @@
-// A hand-written Pareto chart: bars by cost, a cumulative-share line, an 80% guide. No libraries.
+// A hand-written Pareto chart: bars by hours, a cumulative-share line, an 80% guide. No libraries.
 const PALETTE = ["#2e5d8a", "#5b86ad", "#8aa8c5", "#b3c7da", "#d4c9a8", "#a8a29a"];
 
 function fmtHours(h) {
   return h >= 1000 ? (h / 1000).toFixed(1) + "k" : String(Math.round(h));
-}
-
-function fmtUsd(n) {
-  if (n >= 1_000_000) return "$" + (n / 1_000_000).toFixed(2) + "M";
-  if (n >= 1000) return "$" + Math.round(n / 1000) + "k";
-  return "$" + n;
 }
 
 // A round axis: the top tick at or above `max`, in steps of 1, 2, 2.5 or 5 times a power of ten.
@@ -90,4 +84,4 @@ export function renderPareto(el, data, shown = 12) {
   }
 }
 
-export { fmtHours, fmtUsd };
+export { fmtHours };

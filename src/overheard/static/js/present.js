@@ -110,9 +110,7 @@ const assumeFacts = document.querySelector("#p-assume-facts");
 
 async function loadAssumptionFacts() {
   if (assumptionFacts) return assumptionFacts;
-  const a = await api.assumptions();
-  const rc = await api.rootCauses();
-  assumptionFacts = { a, rc };
+  assumptionFacts = { a: await api.assumptions() };
   return assumptionFacts;
 }
 
@@ -123,16 +121,15 @@ async function toggleAssumptions() {
   if (assumptionsOpen) {
     assumeFacts.innerHTML = "<dd class='muted'>…</dd>";
     try {
-      const { a, rc } = await loadAssumptionFacts();
+      const { a } = await loadAssumptionFacts();
       const row = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
       assumeFacts.innerHTML = [
-        row("Labour rate (cost model)", `$${rc.laborRate}/hr`),
         row("Archive span", "3 years of weekday voicemail (seeded, synthetic)"),
         row("Handling time", `${a.handleMin} min/message + listening at ${a.listenSpeed}x`),
         row("Callback", `${a.callbackMin} min, when a message needs one`),
         row("Shift", `${a.shiftStart}–${a.shiftEnd}, lunch ${a.lunch} for ${a.lunchMin} min`),
         row("Urgent window", `welfare/urgent hardship reached within ${a.urgentWithinMin} min`),
-        row("Agent rate (queue sim)", `$${a.rate}/hr, ${a.workingDays} working days`),
+        row("Approving an AI answer", `${a.approveMin} min (mode 2: no listening, no callback)`),
       ].join("");
     } catch (e) {
       assumeFacts.innerHTML = `<dd class="muted">Could not read assumptions: ${e.message}</dd>`;

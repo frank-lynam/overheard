@@ -19,6 +19,7 @@ class Assumptions(BaseModel):
     rate: float = 75.0              # fully loaded dollars per agent-hour
     workingDays: int = 250
     urgentWithinMin: int = 120      # welfare and urgent hardship: a person reaches it within this
+    approveMin: float = 1.0         # mode 2: a person reads the AI's drafted answer and approves it (no callback)
 
 
 NO_CALLBACK = {"no-content", "compliment"}
@@ -51,16 +52,26 @@ def _at(day: str, hhmm: str) -> datetime:
     return datetime.fromisoformat(f"{day}T{hhmm}")
 
 
-def work_the_queue(vms: list[Voicemail], order: list[str], a: Assumptions, day: str) -> Simulation:
-    """One agent, messages in `order`, starting at the shift start (a message is worked once it has arrived)."""
+def work_the_queue(vms: list[Voicemail], order: list[str], a: Assumptions, day: str,
+                   approve: frozenset[str] = frozenset()) -> Simulation:
+    """One agent from the shift start, always taking the first message in `order` that has arrived (arrival
+    order for mode 0; the AI's urgency for modes 1 and 2). Messages in `approve` only need a person to approve
+    the AI's answer (`approveMin`): no listening, no handling, no callback."""
     by_id = {v.id: v for v in vms}
     clock, end = _at(day, a.shiftStart), _at(day, a.shiftEnd)
     lunch, lunch_done = _at(day, a.lunch), False
     touches, total, last = [], 0.0, None
-    for mid in order:
+    waiting = list(order)
+    while waiting:
+        arrived_now = [m for m in waiting if datetime.fromisoformat(by_id[m].receivedAt) <= clock]
+        mid = arrived_now[0] if arrived_now else min(waiting, key=lambda m: by_id[m].receivedAt)
+        waiting.remove(mid)
         v = by_id[mid]
-        callback = v.truth.rootCause not in NO_CALLBACK
-        minutes = v.durationSec / 60 / a.listenSpeed + a.handleMin + (a.callbackMin if callback else 0.0)
+        if mid in approve:
+            callback, minutes = False, a.approveMin
+        else:
+            callback = v.truth.rootCause not in NO_CALLBACK
+            minutes = v.durationSec / 60 / a.listenSpeed + a.handleMin + (a.callbackMin if callback else 0.0)
         total += minutes
         arrived = datetime.fromisoformat(v.receivedAt)
         clock = max(clock, arrived)
@@ -90,7 +101,7 @@ def work_the_queue(vms: list[Voicemail], order: list[str], a: Assumptions, day: 
             if not ok:
                 missed.append(f"{v.id}:{o}")
     return Simulation(
-        order=order, touches=touches, agentHours=round(total / 60, 2),
+        order=[t.id for t in touches], touches=touches, agentHours=round(total / 60, 2),
         reachedBy=last.strftime("%H:%M") if last and all(t.firstTouch for t in touches) else None,
         unreached=sum(t.firstTouch is None for t in touches), urgentId=urgent.id if urgent else None,
         urgentFirstTouch=first.get(urgent.id) if urgent else None, urgentWaitMin=round(wait) if wait is not None else None,

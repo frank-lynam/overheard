@@ -56,6 +56,7 @@ body[data-mode="3"] .scoreboard { display: none; }  /* the day's scoreboard; Mod
 .stat { display: flex; flex-direction: column; justify-content: center; line-height: 1.2; padding: .45rem .8rem; border-radius: var(--radius-sm); background: var(--soft); }
 .stat .label { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
 .stat b { font-size: 1.15rem; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.stat .gain { color: var(--ok); font-weight: 600; }
 .stat input { font: inherit; font-size: .8rem; padding: .05rem .3rem; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); margin: .15rem 0; }
 
 /* the workbench: queue, message, context */

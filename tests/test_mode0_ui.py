@@ -180,7 +180,7 @@ def test_the_console_renders_and_works_in_a_real_browser(live_server):
     assert out["firstRow"]["fields"] == ["q-time", "q-caller", "q-dur", "q-touch"] and out["firstRow"]["touched"] == ""
     # the workload clock is on screen before anything is worked, with an editable handling time
     assert out["workloadClock"] and re.search(r"Workload clock\s*\d+h", out["workloadClock"])
-    assert "Agent hours" in out["scoreboardBefore"]
+    assert "Agent time" in out["scoreboardBefore"] and "$" not in out["scoreboardBefore"]
     # opening a message: header, per-message workload cost, the full entry form, the effort timer
     assert out["messageHead"] and re.search(r"\d:\d\d [ap]m", out["messageHead"])
     assert out["workloadLine"] and "Costs the agent" in out["workloadLine"] and "listening" in out["workloadLine"]
@@ -193,6 +193,6 @@ def test_the_console_renders_and_works_in_a_real_browser(live_server):
     assert out["workloadAfterEdit"] == "Workload clock8h 47m"
     # "Work the queue": stamps roll down the inbox and the scoreboard fills with the day's cost
     assert out["touched"] >= 50
-    assert re.search(r"Agent hours\s*\d", out["afterSim"])
-    assert re.search(r"Urgent reached\s*\d", out["afterSim"])
+    assert re.search(r"Agent time\s*\d", out["afterSim"])
+    assert re.search(r"Urgent caller reached\s*\d", out["afterSim"])
     assert out["urgentStamp"] and ("2:4" in out["urgentStamp"] or "pm" in out["urgentStamp"])

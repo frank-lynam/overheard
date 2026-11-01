@@ -335,10 +335,24 @@ def put_assumptions(a: Assumptions, request: Request) -> Assumptions:
 
 @router.get("/simulation")
 def simulation(request: Request, mode: int = 0) -> Simulation:
-    """Mode 0: one agent, the queue in arrival order. (Later modes change the order and the work.)"""
+    """One agent working the day. Mode 0: arrival order. Mode 1: the AI's urgency order (its own guesses, so
+    its mistakes count). Mode 2: that order, and what the AI already answered only needs a person's approval:
+    messages the case record resolves, callers in an incident (one holding reply), and a repeat caller's
+    later messages (folded into the first)."""
     vms = voicemails(request)
-    order = [v.id for v in vms]
-    return work_the_queue(vms, order, request.app.state.assumptions, request.app.state.today)
+    a, today = request.app.state.assumptions, request.app.state.today
+    if mode == 0:
+        return work_the_queue(vms, [v.id for v in vms], a, today)
+    d = deps(request)
+    urgency = {v.id: urgency_of(analyze_sync(v, d)) for v in vms}
+    order = [v.id for v in sorted(vms, key=lambda v: (-urgency[v.id], v.receivedAt, v.id))]
+    if mode == 1:
+        return work_the_queue(vms, order, a, today)
+    day, sections = mode2_day(request), mode2_messages(request)
+    approve = {mid for mid, m2 in sections.items() if m2["resolution"]["resolvable"]}
+    approve |= {mid for inc in day["incidents"] for mid in inc["members"]}
+    approve |= {mid for r in day["repeats"].values() for mid in r["members"][1:]}
+    return work_the_queue(vms, order, a, today, frozenset(approve))
 
 
 @router.get("/incidents")

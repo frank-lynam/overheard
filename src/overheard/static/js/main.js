@@ -112,9 +112,18 @@ store.on("simulate", async () => {
   store.set({ touches: { ...touches }, sim, simClock: null });
 });
 
+// The scoreboard's day: this mode's, and Mode 0's to compare against (what each mode changes).
+let simAsked = 0;
+async function loadSim() {
+  const ask = ++simAsked, mode = store.get().mode;
+  const [sim, base] = await Promise.all([api.simulation(mode), mode ? api.simulation(0) : null]);
+  if (ask === simAsked) store.set({ sim, _base: base || sim });
+}
+store.subscribe(() => { loadSim().catch(() => {}); }, ["mode"]);
+store.on("assumptions-saved", () => { loadSim().catch(() => {}); });
+
 (async () => {
   const [day, assumptions] = await Promise.all([api.day(), api.assumptions()]);
   store.set({ today: day.date, assumptions });
   await refresh();
-  store.set({ sim: await api.simulation(store.get().mode) });
 })();

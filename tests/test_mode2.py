@@ -167,3 +167,15 @@ async def test_the_day_is_worked_out_when_the_server_starts(seeded):
     async with live.router.lifespan_context(live):
         await asyncio.sleep(0.5)
     assert live.state.mode2 is None
+
+
+async def test_each_mode_changes_what_the_day_gets_done(client):
+    # Mode 1 works in the AI's urgency order (its own guesses); Mode 2 also only needs a person's approval
+    # for what the AI already answered. Same day, same agent, same assumptions.
+    day = [(await client.get("/api/simulation", params={"mode": m})).json() for m in (0, 1, 2)]
+    m0, m1, m2 = day
+    assert m1["urgentWaitMin"] <= 30 < m0["urgentWaitMin"]          # the urgent caller: minutes, not hours
+    assert m0["obligationsMissed"] > 0 and m1["obligationsMissed"] == m2["obligationsMissed"] == 0
+    assert m1["agentHours"] == m0["agentHours"]                      # mode 1 reorders; it doesn't shrink the work
+    assert m2["agentHours"] < m0["agentHours"] / 2 and m2["unreached"] == 0 and m2["reachedBy"]
+    assert m1["order"][0] != m0["order"][0]                          # urgency, not arrival

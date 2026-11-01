@@ -11,7 +11,7 @@ export function renderScoreboard(root, store) {
   let acc = null; // mode 1: the AI's scoreboard, fetched when the mode is entered
 
   store.subscribe((s) => {
-    if (s.mode === 1 && !acc) api.accuracy().then((a) => { acc = a; store.set({ _acc: a }); }).catch(() => {});
+    if (s.mode >= 1 && !acc) api.accuracy().then((a) => { acc = a; store.set({ _acc: a }); }).catch(() => {});
     if (s.mode === 2 && !s._sb2) api.scoreboard2().then((sb) => store.set({ _sb2: sb })).catch(() => {});
     if (s.mode === 0) acc = null;
   }, ["mode", "_sb2"]);
@@ -22,29 +22,37 @@ export function renderScoreboard(root, store) {
       // The input node survives the rebuild (it's created once, above), so focus and
       // the value this keystroke just typed are kept; the board just re-extrapolates.
       store.set({ assumptions: { ...a, handleMin: v } });
-      api.saveAssumptions({ ...a, handleMin: v }).catch(() => {});
+      api.saveAssumptions({ ...a, handleMin: v }).then(() => store.emit("assumptions-saved")).catch(() => {});
     }
   });
 
   store.subscribe((s) => {
     const sim = s.sim;
-    const stat = (label, value, note) => el("div", { class: "stat" }, el("span", { class: "label" }, label),
-      el("b", {}, value), note ? el("span", { class: "note" }, note) : null);
+    const base = s.mode ? s._base : null;  // Mode 0's day, to show what each later mode changes
+    const stat = (label, value, note, gain) => el("div", { class: "stat" }, el("span", { class: "label" }, label),
+      el("b", {}, value), note ? el("span", { class: "note" }, note) : null, gain ? el("span", { class: "note gain" }, gain) : null);
     if (!s.queue.length) { put(root, el("span", { class: "muted" }, "scoreboard")); return; }
     if (s.assumptions && handleInput.value !== String(s.assumptions.handleMin)) handleInput.value = String(s.assumptions.handleMin);
-    const stats = [
-      sim ? stat("Agent hours", sim.agentHours.toFixed(1), `$${Math.round(sim.dollarsPerDay)} a day`)
-        : stat("Agent hours", "?", "run “Work the queue” to time the day"),
-    ];
+    const stats = [];
+    if (!sim) stats.push(stat("The day", "?", "run “Work the queue” to see it"));
     if (sim) {
+      const met = (x) => `${x.obligationsCaught} of ${x.obligationsCaught + x.obligationsMissed} met`;
+      const reached = (x) => `${x.touches.length - x.unreached} of ${x.touches.length}`;
       stats.push(
-        stat("Urgent reached", sim.urgentFirstTouch ? clock(sim.urgentFirstTouch) : "not today",
-          sim.urgentWaitMin != null ? `${hm(sim.urgentWaitMin)} after the call` : null),
-        stat("Deadline-bound", `${sim.obligationsCaught} caught · ${sim.obligationsMissed} missed`),
-        stat("Not reached", String(sim.unreached), "by end of shift"),
+        stat("Urgent caller reached", sim.urgentFirstTouch ? clock(sim.urgentFirstTouch) : "not today",
+          sim.urgentWaitMin != null ? `${hm(sim.urgentWaitMin)} after they called` : null,
+          base && base.urgentFirstTouch && sim.urgentWaitMin != null && sim.urgentWaitMin < base.urgentWaitMin
+            ? `${hm(base.urgentWaitMin - sim.urgentWaitMin)} sooner (was ${clock(base.urgentFirstTouch)})` : null),
+        stat("Deadline-bound requests", met(sim), null,
+          base && sim.obligationsCaught > base.obligationsCaught ? `was ${met(base)}` : null),
+        stat("Callers reached today", reached(sim),
+          sim.unreached ? `${sim.unreached} wait for tomorrow` : sim.reachedBy ? `everyone, by ${clock(sim.reachedBy)}` : null,
+          base && sim.unreached < base.unreached ? `was ${reached(base)}` : null),
+        stat("Agent time", `${sim.agentHours.toFixed(1)} h`, s.mode ? null : "for one day's voicemail",
+          base && sim.agentHours < base.agentHours - 0.05 ? `${(base.agentHours - sim.agentHours).toFixed(1)} h back for other work` : null),
       );
     }
-    if (s.assumptions) {
+    if (s.mode === 0 && s.assumptions) {
       const a = s.assumptions;
       // The same arithmetic as the simulation, straight from the day's queue: every message
       // costs its listening plus the handling time, and most need a callback.
@@ -56,7 +64,7 @@ export function renderScoreboard(root, store) {
         el("span", { class: "note" }, ` min handling each, ${hm(a.callbackMin)} a callback`)));
     }
     if (s.pace) stats.push(stat("Your pace", `${hm(s.pace / 60)}`, "per message"));
-    if (s.mode === 1 && s._acc) {
+    if (s.mode >= 1 && s._acc) {
       const a = s._acc;
       const pct = (x) => `${Math.round(x * 100)}%`;
       stats.push(
@@ -70,14 +78,13 @@ export function renderScoreboard(root, store) {
       const sb = s._sb2;
       const before = stats.length;
       stats.push(
-        stat("Callbacks avoided", `${sb.callbacksAvoided.closedWithNoCall} of ${sb.callbacksAvoided.resolvable}`,
-          `${sb.callbacksAvoided.approved} approved by a human · ${Math.round(sb.callbacksAvoided.share * 100)}% of the resolvable`),
-        stat("Deadlines", `${sb.deadlines.caught} caught · ${sb.deadlines.missed} missed`,
-          sb.deadlines.extraFlags ? `${sb.deadlines.extraFlags} extra flags (backstop)` : "keyword backstop checked"),
+        stat("No callback needed", `${s.queue.filter((m) => m.resolvable).length} messages`,
+          `the AI found the answer in the case record (${sb.callbacksAvoided.resolvable} could be); `
+            + `${sb.callbacksAvoided.approved} approved by a person so far`),
         sb.incident
-          ? stat("Incident lead", sb.incident.leadMin >= 60 ? `${Math.floor(sb.incident.leadMin / 60)}h ${sb.incident.leadMin % 60}m` : `${sb.incident.leadMin}m`,
-            `alerted ${sb.incident.title.toLowerCase().startsWith("a ") || sb.incident.title.toLowerCase().startsWith("an ") ? sb.incident.title : "“" + sb.incident.title + "”"}`)
-          : stat("Incident lead", "—", "no spike today"),
+          ? stat("Outage spotted", `${hm(sb.incident.leadMin)} after the first call`,
+            `“${sb.incident.title}”: one holding reply covers every caller`)
+          : stat("Outage spotted", "—", "no spike today"),
       );
       stats.slice(before).forEach((n) => n.classList.add("m2"));  // what Mode 2 adds, highlighted as such
     }
