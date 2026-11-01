@@ -16,5 +16,6 @@ pip install overheard
 overheard serve          # then open http://127.0.0.1:8000
 ```
 
-**Status:** early. This release is the skeleton: the console shell and its mode
-stepper. See [docs/DESIGN.md](docs/DESIGN.md) for where it's going.
+**Status:** 0.1.0. The full four-mode console, a record/replay mode for
+offline rehearsal, and a `/present` talk-through deck. See
+[docs/DESIGN.md](docs/DESIGN.md) for where it's going.

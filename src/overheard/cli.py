@@ -37,7 +37,19 @@ def main(argv: list[str] | None = None) -> int:
         counts = seed(settings.db_path, settings.seed)
         print(f"seeded {settings.db_path} (seed {settings.seed}): " + ", ".join(f"{v:,} {k}" for k, v in counts.items()))
         return 0
-    if args.command in ("record", "batch-label"):
+    if args.command == "record":
+        from overheard.config import Settings
+        from overheard.llm.record import record_day
+
+        settings = Settings()
+        summary = record_day(settings.db_path, settings)
+        print(
+            f"recorded {summary['llm_calls']} LLM responses "
+            f"({summary['voicemails']} messages, mode {summary['llm_mode']}, model {summary['model']}) "
+            f"into {summary['store']} ({summary['fixtures']} fixture files)"
+        )
+        return 0
+    if args.command == "batch-label":
         print(f"overheard {args.command}: not built yet (this is an early release)", file=sys.stderr)
         return 2
     parser.print_help()

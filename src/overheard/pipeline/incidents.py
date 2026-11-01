@@ -11,10 +11,11 @@ from overheard.pipeline.groups import spike_in_cluster
 
 
 class IncidentDeps:
-    def __init__(self, store: ResponseStore, provider: LLMProvider, model: str):
+    def __init__(self, store: ResponseStore, provider: LLMProvider, model: str, write: bool = False):
         self.store = store
         self.provider = provider
         self.model = model
+        self.write = write
 
 
 async def incident_card(member_msgs: list[Voicemail], deps: IncidentDeps,
@@ -28,7 +29,7 @@ async def incident_card(member_msgs: list[Voicemail], deps: IncidentDeps,
     msgs = sorted(member_msgs, key=lambda v: v.receivedAt)
     result = await run_task(
         deps.provider, incident.build([m.script for m in msgs[:6]], spike["firstAt"], spike["count"]),
-        deps.model, deps.store, write=False,
+        deps.model, deps.store, write=deps.write,
     )
     card = result.data.model_dump(mode="json")
     return {

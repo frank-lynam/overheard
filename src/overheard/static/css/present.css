@@ -1,0 +1,68 @@
+/* Presenter mode: full-screen deck over the Mode 3 archive views. */
+body.presenting { overflow: hidden; background: var(--bg); }
+
+.p-bar {
+  display: flex; align-items: center; gap: 1rem;
+  padding: .5rem 1rem; border-bottom: 1px solid var(--line); background: var(--panel);
+}
+.p-brand { font-weight: 700; white-space: nowrap; }
+.p-agency { font-weight: 400; color: var(--muted); font-size: .8rem; margin-left: .4rem; }
+.p-dots { display: flex; gap: .35rem; margin-left: .5rem; }
+.p-dot {
+  width: .7rem; height: .7rem; padding: 0; border: 1px solid var(--line);
+  border-radius: 50%; background: transparent; cursor: pointer;
+}
+.p-dot.active { background: var(--accent); border-color: var(--accent); }
+.p-tools { margin-left: auto; display: flex; align-items: center; gap: .6rem; font-size: .85rem; }
+.p-speed { display: flex; align-items: center; gap: .3rem; color: var(--muted); }
+.p-speed select { font: inherit; font-size: .8rem; padding: .1rem .25rem; }
+.p-count { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* The stage: one slide at a time, centered, roomy. */
+.p-stage {
+  max-width: 62rem; margin: 0 auto; padding: 1.25rem 1.5rem 4rem;
+  height: calc(100vh - 6.5rem); overflow-y: auto;
+}
+.p-stage .m3-head p { max-width: 56rem; }
+.p-stage .m3-headline { font-size: 1.15rem; }
+.p-stage .m3-stats { gap: 3rem; }
+.p-stage .stat b { font-size: 1.5rem; }
+.p-stage h2, .p-stage h3 { font-size: 1.15rem; }
+.p-stage svg { max-width: 100%; }
+
+/* Staggered reveal: content blocks start hidden and are brought in one by one. */
+body.presenting[data-reveal="1"] .p-reveal {
+  opacity: 0; transform: translateY(.4rem);
+}
+body.presenting .p-reveal.in {
+  opacity: 1; transform: none;
+  transition: opacity .35s ease, transform .35s ease;
+  transition-delay: calc(var(--i, 0) * var(--reveal-step, 180ms));
+}
+body.presenting[data-speed="fast"] { --reveal-step: 80ms; }
+body.presenting[data-speed="slow"] { --reveal-step: 420ms; }
+body.presenting[data-speed="off"] { --reveal-step: 0ms; }
+@media (prefers-reduced-motion: reduce) {
+  body.presenting .p-reveal.in { transition: none; }
+}
+
+/* Assumptions overlay panel. */
+.p-assume {
+  position: fixed; right: 1rem; top: 3.4rem; z-index: 30; width: 24rem; max-height: 75vh;
+  overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: 0 .5rem 2rem rgba(0, 0, 0, .18); padding: 1rem 1.25rem;
+}
+.p-assume h3 { margin: 0 0 .5rem; font-size: .95rem; }
+.p-assume-list { display: grid; grid-template-columns: auto 1fr; gap: .25rem .8rem; margin: 0 0 .75rem; }
+.p-assume-list dt { color: var(--muted); font-size: .85rem; }
+.p-assume-list dd { margin: 0; font-weight: 600; font-size: .9rem; }
+.p-assume p { font-size: .85rem; }
+
+.p-keys {
+  display: flex; gap: 1.5rem; flex-wrap: wrap; padding: .4rem 1rem;
+  border-top: 1px solid var(--line); font-size: .75rem;
+}
+kbd {
+  border: 1px solid var(--line); border-radius: 4px; padding: 0 .3rem;
+  font-family: ui-monospace, monospace; font-size: .9em; background: var(--panel);
+}

@@ -33,6 +33,7 @@ class AnalysisDeps:
     model: str
     lock: threading.Lock = threading.Lock()  # the connection is shared; one analysis at a time
     cache: dict[str, dict] | None = None  # message id -> bundle, so re-runs never touch the db
+    write: bool = False  # `overheard record`: land the provider's answers in the response store
 
 
 async def analyze(vm: Voicemail, deps: AnalysisDeps, force: bool = False) -> dict:
@@ -61,7 +62,7 @@ async def _analyze_locked(vm: Voicemail, deps: AnalysisDeps, force: bool = False
                 bundle[name] = {"data": json.loads(row["data"]), "provenance": row["provenance"], "model": row["model"]}
                 continue
         task = task_cls.build(vm)
-        result = await run_task(deps.provider, task, deps.model, deps.store, write=False)
+        result = await run_task(deps.provider, task, deps.model, deps.store, write=deps.write)
         deps.con.execute(
             "INSERT OR REPLACE INTO analysis (voicemail, task, model, data, provenance) VALUES (?, ?, ?, ?, ?)",
             (vm.id, name, result.model, result.data.model_dump_json(), result.provenance),

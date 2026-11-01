@@ -32,6 +32,7 @@ def deps(request: Request) -> AnalysisDeps:
         store=request.app.state.store,
         provider=request.app.state.provider,
         model=request.app.state.settings.llm_model or "mock",
+        write=request.app.state.settings.llm_mode == "record",
     )
 
 

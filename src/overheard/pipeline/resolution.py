@@ -64,11 +64,12 @@ def _window_at(script: str) -> str | None:
 class ResolutionDeps:
     """What `resolve()` needs: the connection (for the lookups), the LLM bits."""
 
-    def __init__(self, con, store: ResponseStore, provider: LLMProvider, model: str):
+    def __init__(self, con, store: ResponseStore, provider: LLMProvider, model: str, write: bool = False):
         self.con = con
         self.store = store
         self.provider = provider
         self.model = model
+        self.write = write
 
 
 def _case_by_extraction(extraction: dict, backend) -> Case | None:
@@ -121,7 +122,7 @@ async def resolve(vm: Voicemail, bundles: dict, backend, deps: ResolutionDeps) -
     if case:
         extra = f"Case on file (already looked up): {case.id}, status {case.status}."
     task = resolution.build(vm, case=case, extra=extra)
-    result = await run_task(deps.provider, task, deps.model, deps.store, write=False)
+    result = await run_task(deps.provider, task, deps.model, deps.store, write=deps.write)
     data = result.data.model_dump(mode="json")
 
     # the belief check is grounded in the record, not in the model's phrasing

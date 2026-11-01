@@ -22,17 +22,20 @@ from overheard.pipeline.resolution import ResolutionDeps, brief_context, resolve
 class Mode2Deps:
     """Everything a mode-2 computation needs (the API builds it from the app state)."""
 
-    def __init__(self, con: sqlite3.Connection, store: ResponseStore, provider: LLMProvider, model: str):
+    def __init__(self, con: sqlite3.Connection, store: ResponseStore, provider: LLMProvider, model: str,
+                 write: bool = False):
         self.con = con
         self.store = store
         self.provider = provider
         self.model = model
+        self.write = write
 
     def incidents(self) -> IncidentDeps:
-        return IncidentDeps(store=self.store, provider=self.provider, model=self.model)
+        return IncidentDeps(store=self.store, provider=self.provider, model=self.model, write=self.write)
 
     def resolution(self) -> ResolutionDeps:
-        return ResolutionDeps(con=self.con, store=self.store, provider=self.provider, model=self.model)
+        return ResolutionDeps(con=self.con, store=self.store, provider=self.provider, model=self.model,
+                              write=self.write)
 
 
 def message_mode2(v: Voicemail, bundle: dict, backend, deps: Mode2Deps) -> dict:

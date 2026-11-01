@@ -8,3 +8,6 @@ build/
 .ruff_cache/
 *.db
 *.sqlite
+overheard_responses/
+tools/.rehearsal/
+/rehearse_present_*.png

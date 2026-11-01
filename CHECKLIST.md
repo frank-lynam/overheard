@@ -1,26 +1,26 @@
 # Goal
 
-Rework the Mode-3 dashboard: tab navigation across the 10 panes, lazy pane loading, and a single harmonized bar-row visual language.
+giddy-sparrow: phase-6 release & rehearsal — record/replay fixtures, presenter mode, offline dry-run, 0.1.0 release prep, pushed and handed back to review
 
 ## How it works
 
-Mode 3 stacks 10 m3-pane sections in one scroll (index.html 23-34); main.js loads all 10 eagerly on mode entry; app.css has duplicated .m3-promise-* / .m3-equity-* bar-row blocks with mismatched fills (#c9573f vs #5773c9); docs/DESIGN.md specifies "Analytics (Mode 3) tabs".
+Read the ticket, CLAUDE.md, DESIGN.md phase 6, publish.yml, and the repo: llm/{cache,replay,provider,run}.py already implement the ResponseStore and ReplayProvider; analyze.py/resolution.py/incidents.py all call run_task with write=False so nothing ever lands in the store; cli.py has a `record` stub that exits 2; no presenter view exists in static/ (main.js only has mode stepper + workbench + tabbed mode-3); PyPI already has overheard 0.0.2; publish.yml does tag→PyPI, workflow_dispatch→TestPyPI.
 
 ## Why it doesn't
 
-No tab nav exists in the HTML, main.js has no per-pane gating, and the bar rows are per-pane ad-hoc CSS instead of one shared component.
+Missing: (1) `overheard record` never populates the store (stub, exit 2); (2) no presenter/talk-through view; (3) no proof that replay of a recorded store is identical and fully offline; (4) version is still 0.0.2 and no wheel-contents test.
 
 ## What would
 
-Add a .m3-tabs tablist to index.html with panes as role=tabpanel (inactive hidden); gate loading in main.js via a pane registry that fetches/renders only the active tab; collapse the promise/equity bar CSS into one shared style with a single accent fill. Update tools/probe_mode3_ui.py to click through tabs, assert nav + hidden panes, and point the server at its own repo. Verify: ruff --no-fix, full pytest, probe PROBE_MODE3 OK, screenshots of multiple panes. Then commit, push to deploy (announced), upload checklist (PUT), comment "Done", PATCH status review.
+Implement `overheard record` that runs every task on the seeded day through the real pipeline with write=True (mock by default, live host under OVERHEARD_LLM_MODE=record); add a test proving record→replay replay gives byte-identical task outputs with zero network; build a vanilla-JS /present full-screen deck (keyboard nav, reveal animations + speed, assumptions panel) over the Mode-3 analytics endpoints; add tools/probe_presenter.py + screenshots and an offline rehearsal dry-run script (seed→record→replay serve→drive endpoints with network cut); bump to 0.1.0, add a wheel-contents test, python -m build + twine check + clean-venv install+serve smoke; ruff --no-fix and full pytest throughout; commit, push branch ticket/giddy-sparrow + tag v0.1.0 (announced), hand back with Done comment + status review. Verify: 95+ tests green, probe prints OK, screenshots exist and look right, tag exists on deploy remote.
 
 ## Steps
 
-- [x] 1. Add .m3-tabs tab bar + tabpanel roles/hidden to panes in index.html
-- [x] 2. CSS: tab bar styling, hidden panes, unify promise/equity bar rows on one shared fill
-- [x] 3. main.js: pane registry, lazy-load only the active tab, default to root-causes
-- [x] 4. Update probe: tab bar in probe HTML, click through tabs, assert nav + hidden inactive panes, server from own repo
-- [x] 5. Verify: ruff --no-fix, full pytest, run probe, inspect JSON + screenshots of several panes
-- [x] 6. Commit + push to deploy ticket/mammoth-goblet (announced)
-- [x] 7. Upload checklist (PUT) + 'Done' comment + PATCH status review
-- [ ] 8. Tidy: update MEMORY.md, clean scratch files
+- [x] 1. Implement overheard record (store population via real pipeline, write=True)
+- [x] 2. Test: record then replay, identical outputs, zero network
+- [x] 3. Presenter mode /present deck (vanilla JS, keyboard nav, reveal + speed, assumptions panel)
+- [x] 4. Ruff --no-fix + full pytest
+- [x] 5. Offline rehearsal dry-run: seed→record→replay serve→probe + screenshots
+- [x] 6. Release prep: version 0.1.0, wheel-contents test, README touch-ups
+- [x] 7. Release verify: build + twine check + clean-venv install + serve smoke
+- [ ] 8. Commit, push branch + tag v0.1.0 (announced), Done comment + status review

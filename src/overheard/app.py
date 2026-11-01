@@ -5,6 +5,7 @@ import threading
 from importlib.resources import files
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from overheard import __version__
@@ -60,5 +61,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"ok": True, "version": __version__, "llm_mode": settings.llm_mode}
 
     app.include_router(router)
-    app.mount("/", StaticFiles(directory=str(files("overheard") / "static"), html=True), name="static")
+    static_dir = files("overheard") / "static"
+
+    @app.get("/present", include_in_schema=False)
+    async def present() -> FileResponse:
+        # The presenter deck. StaticFiles(html=True) only serves /present.html, so /present needs a route.
+        return FileResponse(str(static_dir / "present.html"))
+
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
     return app

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Overheard — presenter</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232e5d8a'/%3E%3Cpath d='M11 13a5 5 0 0 1 10 0c0 4-5 4-5 8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/present.css">
+  <script type="module" src="/js/present.js"></script>
+</head>
+<body class="presenting">
+  <header class="p-bar">
+    <div class="p-brand">Overheard <span class="p-agency">Mode 3 · the archive, presented</span></div>
+    <nav class="p-dots" aria-label="Slides"></nav>
+    <div class="p-tools">
+      <label class="p-speed"><span>reveal</span>
+        <select id="p-speed" aria-label="reveal speed">
+          <option value="fast">fast</option>
+          <option value="normal" selected>normal</option>
+          <option value="slow">slow</option>
+          <option value="off">off</option>
+        </select>
+      </label>
+      <button id="p-assumptions" class="p-assume-btn" aria-expanded="false">Assumptions</button>
+      <span id="p-count" class="p-count">1 / 12</span>
+      <button id="p-fullscreen">Full screen</button>
+    </div>
+  </header>
+  <div id="p-assumptions-panel" class="p-assume" hidden>
+    <h3>What the numbers assume</h3>
+    <dl class="p-assume-list" id="p-assume-facts"></dl>
+    <p class="muted">Toggle with <kbd>A</kbd>. Cost and staffing slides use the labour rate and handling times
+      from the config, and the archive is a seeded synthetic three years of voicemail.</p>
+  </div>
+  <main id="p-stage" class="p-stage" aria-live="polite"></main>
+  <footer class="p-keys muted">
+    <span><kbd>←</kbd>/<kbd>→</kbd> or <kbd>PgUp</kbd>/<kbd>PgDn</kbd> — slides</span>
+    <span><kbd>1</kbd>…<kbd>9</kbd> jump</span>
+    <span><kbd>Home</kbd>/<kbd>End</kbd></span>
+    <span><kbd>A</kbd> assumptions</span>
+  </footer>
+</body>
+</html>
