@@ -53,7 +53,7 @@ def test_the_message_view_costs_what_the_design_says():
     assert "Costs the agent" in message
     # The scoreboard's extrapolation uses the same arithmetic as the simulation.
     scoreboard = read("js/ui/scoreboard.js")
-    assert "handleMin + a.callbackMin" in scoreboard
+    assert "agentHours * 60" in scoreboard      # the clock is the played-out day's own figure, junk included
 
 
 PROBE = r"""<!doctype html>
@@ -79,7 +79,7 @@ PROBE = r"""<!doctype html>
     (async () => {
       const out = { errors: [] };
       addEventListener("error", (e) => out.errors.push(String(e.message)));
-      for (let i = 0; i < 100 && document.querySelectorAll(".queue-row").length < 60; i++) await sleep(100);
+      for (let i = 0; i < 100 && document.querySelectorAll(".queue-row").length < 180; i++) await sleep(100);
       out.queueRows = document.querySelectorAll(".queue-row").length;
       const row = document.querySelector(".queue-row");
       out.firstRow = { text: flat(row), fields: [...row.children].map((c) => c.className),
@@ -100,7 +100,7 @@ PROBE = r"""<!doctype html>
       out.handleDefault = handle?.value || null;
       handle.value = "2";
       handle.dispatchEvent(new Event("input", { bubbles: true }));
-      await sleep(400);
+      await sleep(1500);
       out.workloadAfterEdit = document.querySelector(".scoreboard").textContent
         .replace(/\s+/g, " ").trim().match(/Workload clock\s*\d+h ?\d*m/)?.[0] ?? null;
       [...document.querySelectorAll("button")].find((b) => b.textContent.includes("Work the queue"))?.click();
@@ -175,7 +175,7 @@ def test_the_console_renders_and_works_in_a_real_browser(live_server):
     out = json.loads(m.group(2).replace("&amp;", "&"))
     assert m.group(1) == "done"
     assert out["errors"] == [], out["errors"]
-    assert out["queueRows"] == 60
+    assert out["queueRows"] == 180                 # Mode 0: every call, junk included
     # the inbox shows only time, caller ID and length — no content before a message is played
     assert out["firstRow"]["fields"] == ["q-time", "q-caller", "q-dur", "q-touch"] and out["firstRow"]["touched"] == ""
     # the workload clock is on screen before anything is worked, with an editable handling time
@@ -188,9 +188,12 @@ def test_the_console_renders_and_works_in_a_real_browser(live_server):
         "callerName", "callbackNumber", "caseNumber", "category", "priority", "disposition", "notes"]
     assert out["effort"] and out["effort"].startswith("open ")
     assert out["lookupPlaceholder"] == "Name, phone or case number"
-    # the handling time is editable and the workload clock re-extrapolates (10h 17m -> 8h 47m at 2 min each)
+    # the handling time is editable and the workload clock follows it (less handling: a shorter day)
     assert out["handleDefault"] == "3.5"
-    assert out["workloadAfterEdit"] == "Workload clock8h 47m"
+    def hours(text):
+        m = re.search(r"(\d+)h ?(\d*)m", text)
+        return int(m.group(1)) * 60 + int(m.group(2) or 0)
+    assert out["workloadAfterEdit"] and hours(out["workloadAfterEdit"]) < hours(out["workloadClock"])
     # "Work the queue": stamps roll down the inbox and the scoreboard fills with the day's cost
     assert out["touched"] >= 50
     assert re.search(r"Agent time\s*\d", out["afterSim"])

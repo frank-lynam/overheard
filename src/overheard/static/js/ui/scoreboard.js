@@ -11,7 +11,8 @@ export function renderScoreboard(root, store) {
   let acc = null; // mode 1: the AI's scoreboard, fetched when the mode is entered
 
   store.subscribe((s) => {
-    if (s.mode >= 1 && !s._alerts) fetch("/api/alerts?mode=1").then((r) => r.json()).then((a) => store.set({ _alerts: a })).catch(() => {});
+    if (s.mode >= 1 && !s._alerts) api.alerts().then((a) => store.set({ _alerts: a })).catch(() => {});
+    if (s.mode >= 1 && !s._junk) api.junk().then((j) => store.set({ _junk: j })).catch(() => {});
     if (s.mode >= 1 && !acc) api.accuracy().then((a) => { acc = a; store.set({ _acc: a }); }).catch(() => {});
     if (s.mode === 2 && !s._sb2) api.scoreboard2().then((sb) => store.set({ _sb2: sb })).catch(() => {});
     if (s.mode === 0) acc = null;
@@ -48,7 +49,7 @@ export function renderScoreboard(root, store) {
     if (!sim) stats.push(stat("The day", "?", "run “Work the queue” to see it"));
     if (sim) {
       const met = (x) => `${x.obligationsCaught} of ${x.obligationsCaught + x.obligationsMissed} met`;
-      const reached = (x) => `${x.touches.length - x.unreached} of ${x.touches.length}`;
+      const reached = (x) => `${x.callers - x.unreached} of ${x.callers}`;
       stats.push(
         stat("Urgent caller reached", sim.urgentFirstTouch ? clock(sim.urgentFirstTouch) : "not today",
           sim.urgentWaitMin != null ? `${hm(sim.urgentWaitMin)} after they called` : null,
@@ -65,14 +66,13 @@ export function renderScoreboard(root, store) {
     }
     if (s.mode === 0 && s.assumptions) {
       const a = s.assumptions;
-      // The same arithmetic as the simulation, straight from the day's queue: every message
-      // costs its listening plus the handling time, and most need a callback.
-      const listen = s.queue.reduce((n, m) => n + m.durationSec / 60, 0);
-      const minutes = listen + s.queue.length * (a.handleMin + a.callbackMin);
-      stats.push(el("div", { class: "stat", "data-tip": "All of today's voicemail, worked by hand: listening, handling and calling back. Change the handling time to see the day move." },
+      // The played-out day's own arithmetic (the server's): every message is listened to, junk too (until you've
+      // heard it you can't tell); real ones are handled and most called back. It moves with the handling time.
+      const minutes = (s._base || s.sim) ? (s._base || s.sim).agentHours * 60 : null;
+      stats.push(el("div", { class: "stat", "data-tip": "All of today's voicemail, worked by hand: listening to every message (robocalls and silence included), handling the real ones and calling them back. Change the handling time to see the day move." },
         el("span", { class: "label" }, "Workload clock"),
-        el("b", {}, hm(minutes)),
-        el("span", { class: "note" }, `${s.queue.length} messages · `), handleInput,
+        el("b", {}, minutes == null ? "…" : hm(minutes)),
+        el("span", { class: "note" }, `${s.queue.length} messages, junk included · `), handleInput,
         el("span", { class: "note" }, ` min handling each, ${hm(a.callbackMin)} a callback`)));
     }
     if (s.pace) stats.push(stat("Your pace", `${hm(s.pace / 60)}`, "per message"));
@@ -86,6 +86,15 @@ export function renderScoreboard(root, store) {
         el("b", {}, `${a.length} today`),
         el("span", { class: "note" }, `each within ${slowest < 1 ? "1 ms" : Math.ceil(slowest) + " ms"} of its transcript`
           + (a.some((x) => x.safety) ? " · a safety alert pages someone" : ""))));
+    }
+    if (s.mode >= 1 && s._junk) {
+      const c = s._junk.counts;
+      stats.push(el("div", { class: "stat m1", "data-tip": "Robocalls, scams, silence and pocket dials, kept out of the "
+        + "queue before anyone listens. Unsure calls always go to a person, and any filtered call can be put back." },
+        el("span", { class: "label" }, "Junk kept out"),
+        el("b", {}, `${c.caught} of ${c.junk} junk calls`),
+        el("span", { class: "note" }, `${c.realFiltered} real call${c.realFiltered === 1 ? "" : "s"} filtered `
+          + `(${Math.round(c.falseJunkRate * 100)}%) · ${Math.round(c.listenMinSaved)} min of listening saved`)));
     }
     if (s.mode >= 1 && s._acc) {
       const a = s._acc;
@@ -112,5 +121,5 @@ export function renderScoreboard(root, store) {
       stats.slice(before).forEach((n) => n.classList.add("m2"));  // what Mode 2 adds, highlighted as such
     }
     put(root, ...stats);
-  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2", "_alerts"]);
+  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2", "_alerts", "_junk"]);
 }

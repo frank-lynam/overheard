@@ -6,7 +6,9 @@ from importlib.resources import files
 from overheard.data.models import Case, Voicemail
 
 DAY = json.loads((files("overheard.data") / "seed_today.json").read_text(encoding="utf-8"))
-VMS = [Voicemail(**v) for v in DAY["voicemails"]]
+ALL = [Voicemail(**v) for v in DAY["voicemails"]]
+VMS = [v for v in ALL if v.id.startswith("m")]       # the 60 hand-written ones
+JUNK = [v for v in ALL if v.id.startswith("j")]      # the 120 generated junk calls
 CASES = {c["id"]: Case(**c) for c in DAY["cases"]}
 
 
@@ -14,6 +16,17 @@ def test_sixty_in_order_with_ids():
     assert len(VMS) == 60
     assert [v.id for v in VMS] == [f"m{i:02d}" for i in range(1, 61)]
     assert [v.receivedAt for v in VMS] == sorted(v.receivedAt for v in VMS)
+
+
+def test_twice_as_much_junk_as_real_calls():
+    assert len(JUNK) == 120 and [v.id for v in JUNK] == [f"j{i:03d}" for i in range(1, 121)]
+    assert all(v.truth.junk for v in JUNK)
+    real = [v for v in ALL if not v.truth.junk]
+    assert len(real) == 59 and len(ALL) == 180          # one of the 60 was already a silent hang-up
+    # robocalls and scams run a minute or so: listening to junk is real work in Mode 0
+    assert sum(v.durationSec for v in JUNK if v.truth.junk in ("robocall", "scam")) / 60 > 50
+    # a few real calls look like junk (a few words, a bad line)
+    assert len([v for v in real if v.truth.looksLikeJunk]) >= 3
 
 
 def test_the_urgent_one_is_buried_at_37():

@@ -1,7 +1,8 @@
 """What happens to a voicemail as it comes in, stage by stage, in order. Each stage can end processing for it.
 
   [A] trigger scan: plain code, the moment the transcript exists; a hit raises an alert at once
-  later stages (the junk filter, the problem check, ...) run after it, never before
+  [B] junk filter (pipeline/junk.py): rules, then the LLM; a safety hit skips it
+  later stages (the problem check, ...) run after these, never before
 
 The log records the order things happened in, so tests can check that an alert is raised before any later
 stage starts (ordering, not speed)."""
@@ -23,6 +24,7 @@ class Intake:
     alert: dict | None = None
     log: list[str] = field(default_factory=list)      # "transcript", "alert", "<stage> start", ...
     alert_ms: float | None = None                      # transcript to alert, on the text path
+    junk: dict | None = None                           # stage [B]'s decision
 
 
 Stage = tuple[str, Callable[[Intake], None]]

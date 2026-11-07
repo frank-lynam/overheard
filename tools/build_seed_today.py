@@ -1,7 +1,10 @@
 """Builds src/overheard/data/seed_today.json: the 60 hand-written voicemails of "today" (Tue 2026-03-10) at the
-Federal Benefits Service Center, with ground truth and the case-system facts each caller's case needs. The scripts
-are the hand-written part; this file only assembles them and checks the planted signals. Run it after editing."""
+Federal Benefits Service Center, with ground truth and the case-system facts each caller's case needs, plus 120
+junk calls (robocalls, scams, silence, hang-ups, wrong numbers, pocket dials) generated from templates with a fixed
+seed, so the day has twice as much junk as real calls. The scripts are the hand-written part; this file assembles
+them, generates the junk and checks the planted signals. Run it after editing."""
 import json
+import random
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parents[1] / "src" / "overheard" / "data" / "seed_today.json"
@@ -16,13 +19,13 @@ def case(cid, name, phone, *, status, payments=(), docs=(), last, team, region, 
 
 def vm(at, phone, dur, script, *, intent, urgency, root, team, name=None, callback=None, case_id=None,
        lang="en", gist=None, group=None, obligations=(), resolvable=None, linked=(), said_case=True,
-       window=None, belief=None):
+       window=None, belief=None, junk=None):
     M.append({"receivedAt": at, "callerId": phone, "durationSec": dur, "lang": lang, "script": script.strip(),
               "truth": {"intent": intent, "urgency": urgency, "rootCause": root, "team": team, "callerName": name,
                         "callbackNumber": callback or phone, "caseId": case_id, "caseNumberSaid": said_case,
                         "group": group, "obligations": list(obligations), "resolvableBy": resolvable,
                         "linkedTo": list(linked), "callbackWindow": window, "beliefMismatch": belief,
-                        "englishGist": gist}})
+                        "englishGist": gist, "junk": junk}})
 
 
 # ---------------------------------------------------------------- the case system (only what today's callers need)
@@ -106,7 +109,7 @@ you got them. I don't have my case number in front of me, sorry. Thanks.
    name="Gerald Pruitt", case_id="FBS-190455", said_case=False, resolvable="status_lookup")
 vm("2026-03-09T23:14", "+1-480-555-0110", 9, """
 (silence, then a click)
-""", intent="other", urgency=1, root="no-content", team="general")
+""", intent="other", urgency=1, root="no-content", team="general", junk="hang-up")
 vm("2026-03-10T06:02", "+1-865-555-0102", 44, """
 Good morning, this is Ruth Abernathy. I just wanted to say thank you to the young man who helped me last week with
 my address, Kevin I think, everything came through fine. You don't need to call me back. Bless you.
@@ -344,7 +347,86 @@ missing = [t for t in tr if not t["caseNumberSaid"] and t["caseId"] and t["caseI
 assert len(missing) >= 6, len(missing)
 for t in tr:
     assert not t["caseId"] or t["caseId"] in CASES, t["caseId"]
-OUT.write_text(json.dumps({"date": "2026-03-10", "voicemails": M, "cases": sorted(CASES.values(), key=lambda c: c["id"])},
+
+# ---------------------------------------------------------------- junk: twice as much as the real calls, generated
+# Robocalls and scams run a minute or more (so listening to them is real work in Mode 0); silence, hang-ups and
+# pocket dials are quick or muffled. Some robocalls come word for word from many numbers; a few come from numbers
+# already on the blocked list; the rest have to be judged.
+rng = random.Random(2026)
+ROBO = [
+    ("This is an important message about your vehicle's extended warranty. Our records show your coverage is about "
+     "to expire. To speak with a specialist about extending your coverage, press one now. To be removed from our "
+     "list, press two.", (55, 75)),
+    ("Congratulations! You have been selected to receive a free three-night cruise to the Bahamas. This offer "
+     "expires today. Press one to claim your prize before it's given to another caller.", (45, 60)),
+    ("Hello, this is a final notice regarding your credit card account. You qualify for a lower interest rate. "
+     "Press one to speak with an account specialist now. This is not a sales call.", (50, 65)),
+    ("This call is to inform you that your social security number has been suspended due to suspicious activity. "
+     "To avoid legal consequences, press one immediately to speak with an officer.", (40, 55)),
+]
+ROBO_VARIANTS = [
+    "Hi there, we noticed you might be paying too much for your electricity. Our energy advisors can cut your bill "
+    "in half with a new solar program, at no cost to you. Call us back at your convenience to learn more.",
+    "Good afternoon, I'm calling on behalf of the Home Improvement Grants office. Homeowners in your area may be "
+    "eligible for a free roof inspection and replacement. Call us back to schedule your appointment.",
+    "This is Rachel from customer services. We've been trying to reach you about the warranty on your home "
+    "appliances. Please return our call so we can keep your protection active.",
+    "Hello, you've been pre-approved for a business loan of up to fifty thousand dollars with no credit check. "
+    "Call us back today, this approval is only good for twenty-four hours.",
+    "We are reaching out regarding a package that could not be delivered to your address. Please call back with "
+    "your tracking details so we can reschedule the delivery.",
+]
+WRONG = ["Hey Mike, it's me. Call me back about Saturday, okay? Bye.",
+         "Hi Mom, it's Jess. I'm running late, I'll pick up the kids at five. Love you.",
+         "Yeah, this is Tony from the shop, your truck's ready whenever you want to swing by.",
+         "Hi, is this the pizza place on Fourth? I wanted to change my order. Hello? Oh, sorry, wrong number."]
+QUIET = [("(silence)", "silence", (4, 20)), ("(a click)", "hang-up", (1, 5)), ("(silence, then a dial tone)", "hang-up", (6, 15)),
+         ("(muffled voices, rustling, traffic noise)", "pocket-dial", (30, 90)),
+         ("(a television in the background, then rustling)", "pocket-dial", (25, 70))]
+BLOCKED = ["+1-202-555-0199", "+1-212-555-0183", "+1-305-555-0177"]   # also in data/blocked_numbers.json
+
+
+def junk_number():
+    return f"+1-{rng.choice(['201', '312', '415', '469', '503', '602', '646', '702', '786', '818', '904', '972'])}-555-0{rng.randint(100, 199)}"
+
+
+def junk_time():
+    if rng.random() < 0.35:            # yesterday evening and overnight
+        mins = rng.randint(17 * 60, 23 * 60 + 59)
+        return f"2026-03-09T{mins // 60:02d}:{mins % 60:02d}"
+    mins = rng.randint(0, 16 * 60 + 15)
+    return f"2026-03-10T{mins // 60:02d}:{mins % 60:02d}"
+
+
+J = []
+plan = ["robo"] * 52 + ["variant"] * 20 + ["blocked"] * 8 + ["wrong"] * 14 + ["quiet"] * 26
+for kind in plan:
+    if kind in ("robo", "blocked"):
+        script, (lo, hi) = rng.choice(ROBO)
+        label, phone = "robocall", (rng.choice(BLOCKED) if kind == "blocked" else junk_number())
+    elif kind == "variant":
+        script, (lo, hi), label, phone = rng.choice(ROBO_VARIANTS), (35, 60), "scam", junk_number()
+    elif kind == "wrong":
+        script, (lo, hi), label, phone = rng.choice(WRONG), (8, 25), "wrong-number", junk_number()
+    else:
+        script, label, (lo, hi) = rng.choice(QUIET)
+        phone = junk_number()
+    J.append({"receivedAt": junk_time(), "callerId": phone, "durationSec": rng.randint(lo, hi), "lang": "en",
+              "script": script,
+              "truth": {"intent": "other", "urgency": 1, "rootCause": "junk", "team": "general", "callerName": None,
+                        "callbackNumber": phone, "caseId": None, "caseNumberSaid": False, "group": None,
+                        "obligations": [], "resolvableBy": None, "linkedTo": [], "callbackWindow": None,
+                        "beliefMismatch": None, "englishGist": None, "junk": label}})
+J.sort(key=lambda m: (m["receivedAt"], m["callerId"]))
+for i, m in enumerate(J, 1):
+    m["id"] = f"j{i:03d}"
+# Real calls that look like junk (a few words, a bad line): they must reach a person
+for m in M:
+    m["truth"]["looksLikeJunk"] = not m["truth"]["junk"] and len(m["script"].split()) <= 10
+assert len(J) == 120
+assert sum(not m["truth"]["junk"] for m in M) == 59 and sum(1 for m in M + J if m["truth"]["junk"]) == 121
+assert sum(m["truth"]["looksLikeJunk"] for m in M) >= 3, [m["script"] for m in M if m["truth"]["looksLikeJunk"]]
+OUT.write_text(json.dumps({"date": "2026-03-10", "voicemails": M + J, "cases": sorted(CASES.values(), key=lambda c: c["id"])},
                           indent=1, ensure_ascii=False) + "\n")
-print(f"wrote {OUT.name}: {len(M)} voicemails, {len(CASES)} cases; urgent at {M[36]['id']}; "
+print(f"wrote {OUT.name}: {len(M) + len(J)} voicemails ({len(J)} generated junk), {len(CASES)} cases; urgent at {M[36]['id']}; "
       f"{len(missing)} without a case number said but findable by caller ID")

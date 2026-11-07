@@ -3,6 +3,7 @@
 // changing mode re-sorts the rows with a short slide, the urgent one jumping to the top.
 // Mode 2: same order, plus the day's cross-message reasoning: the cluster size, the incident
 // flag, the resolvable/obligation/window badges — and repeat callers collapsed to their first message.
+import { api } from "../core/api.js";
 import { clock, dayOf, el, mmss, phone, put } from "../core/format.js";
 import { DEADLINES, TEAMS, URGENCY, plain, word } from "../core/words.js";
 
@@ -72,7 +73,28 @@ export function renderQueue(root, store) {
         badges.length ? el("span", { class: "q-tags" }, badges) : null,  // a second line: the team, then the tags
       ));
     }
+    if (mode >= 1 && s.showJunk && s._junk) {        // the junk list: what was kept out, why, and a way back
+      const rows = s._junk.filtered.map((j) => el("li", { class: "junk-row" },
+        el("span", { class: "q-time" }, clock(j.receivedAt)),
+        el("span", { class: "junk-what" }, el("span", { class: "junk-script" }, j.script),
+          el("span", { class: "muted junk-why", "data-tip": `Decided by ${j.decidedBy.startsWith("rule:")
+            ? "a rule (" + j.decidedBy.slice(5) + ")" : "the AI"}` }, j.reason)),
+        el("button", { class: "small", onclick: async () => {
+          await api.reopenJunk(j.id);
+          store.set({ _junk: await api.junk(), queue: await api.queue(store.get().mode) });
+        }, "data-tip": "Put it back in the queue for a person" }, "Reopen")));
+      put(root,
+        el("div", { class: "pane-head" }, el("h2", {}, `Kept out as junk · ${s._junk.filtered.length}`),
+          el("button", { class: "small", onclick: () => store.set({ showJunk: false }) }, "Back to the queue")),
+        el("p", { class: "queue-legend muted" }, "Nobody listened to these. Reopen anything that looks real."),
+        el("ol", { class: "queue-list junk-list" }, rows));
+      return;
+    }
+    const kept = mode >= 1 && s._junk ? s._junk.filtered.length : 0;
     put(root,
+      kept ? el("button", { class: "junk-link", onclick: () => store.set({ showJunk: true }),
+        "data-tip": "Robocalls, scams, silence and pocket dials the filter kept out: see them, reopen any" },
+        `${kept} junk calls kept out ›`) : null,
       el("div", { class: "pane-head" },
         el("h2", { "data-tip": mode ? "Most urgent first, as the AI judges it" : "In the order the messages arrived, oldest first" },
           `Voicemail · ${s.queue.length} · ${mode === 2 ? "most urgent first, repeat callers combined" : mode === 1 ? "most urgent first" : "oldest first"}`),
@@ -96,5 +118,5 @@ export function renderQueue(root, store) {
       }));
     }
   };
-  store.subscribe(draw, ["queue", "selected", "touches", "simClock", "mode", "incidents"]);
+  store.subscribe(draw, ["queue", "selected", "touches", "simClock", "mode", "incidents", "showJunk", "_junk"]);
 }

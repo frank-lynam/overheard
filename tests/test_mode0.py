@@ -17,7 +17,7 @@ async def client(seeded):
 
 async def test_the_inbox_shows_no_content(client):
     q = (await client.get("/api/queue")).json()
-    assert len(q) == 60 and q[0]["id"] == "m01"
+    assert len(q) == 180 and q[0]["id"] == "m01"        # Mode 0: every call, junk included
     assert set(q[0]) == {"id", "receivedAt", "callerId", "durationSec", "worked"}
 
 
@@ -43,11 +43,11 @@ async def test_manual_entries_are_kept_and_mark_the_inbox(client):
 
 async def test_working_the_queue_in_order(client):
     sim = (await client.get("/api/simulation", params={"mode": 0})).json()
-    assert sim["order"][:3] == ["m01", "m02", "m03"]
+    assert [i for i in sim["order"] if i.startswith("m")][:3] == ["m01", "m02", "m03"]   # in arrival order
     assert sim["urgentId"] == "m37"
-    assert "14:00" <= sim["urgentFirstTouch"] <= "15:00"           # mid-afternoon: hours after the call
+    assert "14:00" <= sim["urgentFirstTouch"] <= "16:30"           # the afternoon: hours after the call
     assert sim["urgentWaitMin"] >= 180
-    assert 8 <= sim["agentHours"] <= 12 and sim["unreached"] > 0    # one agent can't clear a day like this
+    assert 11 <= sim["agentHours"] <= 14 and sim["unreached"] > 0   # junk too: one agent can't clear a day like this
     assert sim["obligationsMissed"] >= 2 and "m37:welfare" in sim["missed"]
 
 

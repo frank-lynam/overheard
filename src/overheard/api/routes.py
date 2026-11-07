@@ -57,11 +57,46 @@ class Mode1Item(QueueItem):
 
 
 def intakes(request: Request) -> dict:
-    """Each of the day's voicemails as it came in ([A] the trigger scan, and the stages after it), once."""
+    """Each of the day's voicemails as it came in: [A] the trigger scan, [B] the junk filter, once."""
     if request.app.state.intakes is None:
+        import asyncio
+
+        from overheard.llm.run import run_task
+        from overheard.llm.tasks import TASKS
         from overheard.pipeline.intake import intake
-        request.app.state.intakes = {v.id: intake(v) for v in voicemails(request)}
+        from overheard.pipeline.junk import JunkRules, callers_per_script, decide
+        vms, d = voicemails(request), deps(request)
+        rules, per_script = JunkRules.load(), callers_per_script(vms)
+
+        def run(coro):                  # from an async route too: then in a thread with its own loop
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                return asyncio.run(coro)
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(1) as ex:
+                return ex.submit(asyncio.run, coro).result()
+
+        def classify(v):
+            r = run(run_task(d.provider, TASKS["junk_classify"].build(v), d.model, d.store, write=d.write))
+            return r.data.verdict, r.data.reason, r.provenance
+
+        def junk_stage(it):
+            it.junk = decide(it.voicemail, bool(it.alert and it.alert["safety"]), rules, per_script, classify)
+        request.app.state.intakes = {v.id: intake(v, later=[("junk filter", junk_stage)]) for v in vms}
     return request.app.state.intakes
+
+
+def filtered_ids(request: Request) -> set[str]:
+    """Voicemails the junk filter kept out of the queue (from Mode 1 on), less any a person reopened."""
+    reopened = {r[0] for r in con(request).execute("SELECT item_id FROM junk_reopened")}
+    return {i for i, it in intakes(request).items() if it.junk and it.junk["disposition"] == "filtered"} - reopened
+
+
+def queued(request: Request) -> list[Voicemail]:
+    """The voicemails that reach a person from Mode 1 on: everything but filtered junk."""
+    out = filtered_ids(request)
+    return [v for v in voicemails(request) if v.id not in out]
 
 
 def alert_of(request: Request, mid: str) -> dict | None:
@@ -91,7 +126,7 @@ def mode2_day(request: Request) -> dict:
     with request.app.state.mode2_lock:
         if request.app.state.mode2 is None:
             d = deps(request)
-            vms = voicemails(request)
+            vms = queued(request)
             bundles = {v.id: analyze_sync(v, d) for v in vms}
             backend = MockCaseBackend(con(request))
             request.app.state.mode2 = day_bundles(vms, bundles, backend, Mode2Deps(d.con, d.store, d.provider, d.model))
@@ -107,7 +142,7 @@ def mode2_messages(request: Request) -> dict:
             backend = MockCaseBackend(con(request))
             mdeps = Mode2Deps(d.con, d.store, d.provider, d.model)
             request.app.state.mode2_messages = {
-                v.id: message_mode2(v, analyze_sync(v, d), backend, mdeps) for v in voicemails(request)
+                v.id: message_mode2(v, analyze_sync(v, d), backend, mdeps) for v in queued(request)
             }
     return request.app.state.mode2_messages
 
@@ -149,7 +184,7 @@ def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item] 
         return [QueueItem(id=v.id, receivedAt=v.receivedAt, callerId=v.callerId, durationSec=v.durationSec,
                           worked=v.id in worked) for v in voicemails(request)]
     d = deps(request)
-    vms = voicemails(request)
+    vms = queued(request)                       # junk the filter kept out doesn't reach a person
     bundles = {v.id: analyze_sync(v, d) for v in vms}
     if mode == 1:
         worked = {r[0] for r in d.con.execute("SELECT id FROM entries")}
@@ -215,6 +250,49 @@ async def message(mid: str, request: Request, mode: int = 0) -> dict:
                                        Mode2Deps(d.con, d.store, d.provider, d.model))
         return {**m.model_dump(), "analysis": bundle, "mode2": section, "alert": alert}
     return {**m.model_dump(), "analysis": bundle, "alert": alert}
+
+
+class JunkItem(BaseModel):
+    id: str
+    receivedAt: str
+    callerId: str
+    durationSec: int
+    script: str
+    reason: str
+    decidedBy: str              # rule:<id> | llm | fallback
+
+
+@router.get("/junk")
+def junk(request: Request) -> dict:
+    """What the junk filter kept out of the queue today (from Mode 1 on), each with why and what decided it, and the
+    counts: how many it caught, how many real calls it filtered (the false-junk rate) and how many it left to a person
+    as unsure."""
+    out_ids, ins = filtered_ids(request), intakes(request)
+    vms = {v.id: v for v in voicemails(request)}
+    items = [JunkItem(id=i, receivedAt=vms[i].receivedAt, callerId=vms[i].callerId, durationSec=vms[i].durationSec,
+                      script=vms[i].script, reason=ins[i].junk["reason"], decidedBy=ins[i].junk["decidedBy"])
+             for i in sorted(out_ids, key=lambda i: (vms[i].receivedAt, i))]
+    real = [v for v in vms.values() if not v.truth.junk]
+    junk_ = [v for v in vms.values() if v.truth.junk]
+    false = sum(v.id in out_ids for v in real)
+    return {"filtered": [i.model_dump() for i in items],
+            "counts": {"calls": len(vms), "junk": len(junk_), "caught": sum(v.id in out_ids for v in junk_),
+                       "realFiltered": false, "falseJunkRate": round(false / len(real), 3) if real else 0.0,
+                       "unsure": sum(1 for it in ins.values() if it.junk and it.junk["verdict"] == "unsure"),
+                       "listenMinSaved": round(sum(vms[i].durationSec for i in out_ids) / 60, 1)}}
+
+
+@router.post("/junk/{mid}/reopen")
+def reopen_junk(mid: str, request: Request) -> dict:
+    """A person puts a filtered voicemail back in the queue."""
+    if mid not in filtered_ids(request):
+        raise HTTPException(404, f"{mid} isn't filtered")
+    c = con(request)
+    c.execute("INSERT OR IGNORE INTO junk_reopened (item_id, at) VALUES (?, datetime('now'))", (mid,))
+    c.commit()
+    with request.app.state.mode2_lock:            # the day's later work includes it now
+        request.app.state.mode2 = request.app.state.mode2_messages = None
+    return {"reopened": mid}
 
 
 @router.get("/alerts")
@@ -283,7 +361,7 @@ def accuracy(request: Request) -> dict:
     """How the AI is doing against the ground truth, corrected for human edits:
     per-task accuracy over the day's messages, plus the correction count."""
     d = deps(request)
-    vms = voicemails(request)
+    vms = queued(request)
     scores: dict[str, int] = {}
     n = len(vms)
     corrections_by: dict[str, dict[str, str | None]] = {}
@@ -375,8 +453,9 @@ def simulation(request: Request, mode: int = 0) -> Simulation:
     later messages (folded into the first)."""
     vms = voicemails(request)
     a, today = request.app.state.assumptions, request.app.state.today
-    if mode == 0:
+    if mode == 0:                               # everything, junk included: someone listens to all of it
         return work_the_queue(vms, [v.id for v in vms], a, today)
+    vms = queued(request)                       # from Mode 1: the junk filter keeps the rest out
     d = deps(request)
     urgency = {v.id: urgency_of(analyze_sync(v, d)) for v in vms}
     rank = {v.id: (intakes(request)[v.id].alert or {}).get("priority", 9) for v in vms}   # alerts first
@@ -447,7 +526,7 @@ def set_resolution_state(mid: str, body: ResolutionState, request: Request) -> d
 def get_scoreboard2(request: Request) -> dict:
     """The mode-2 scoreboard: callbacks avoided, deadlines caught vs missed, the incident's lead time."""
     d = deps(request)
-    vms = voicemails(request)
+    vms = queued(request)
     bundles = {v.id: analyze_sync(v, d) for v in vms}
     return scoreboard2(vms, bundles, Mode2Deps(d.con, d.store, d.provider, d.model))
 

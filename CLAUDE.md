@@ -10,7 +10,7 @@ A demo application that shows how AI streamlines call-center voicemail work for 
 
 | Mode | Name | Point |
 | --- | --- | --- |
-| 0 | No AI | Baseline: manual inbox, measured cost (~7 agent-hours for 60 voicemails) |
+| 0 | No AI | Baseline: manual inbox, measured cost (~12.5 agent-hours for 180 voicemails: 59 real, 121 junk) |
 | 1 | Obvious AI | Per-message transcription, summary, extraction, urgency, routing, translation, draft reply |
 | 2 | Non-obvious AI | Cross-message spike detection, resolution without callback (LLM tool use), deadline-bound request detection, repeat-caller linking |
 | 3 | Impossible without AI | Archive-wide cost by root cause, event impact, caller journeys, promises vs. outcomes, letter pre-testing, equity, ask-the-archive |
@@ -30,7 +30,7 @@ A demo application that shows how AI streamlines call-center voicemail work for 
 - **Rule of thumb:** LLM for language judgment; plain code for counting, statistics, joins, and baselines.
 - **Storage:** SQLite (stdlib `sqlite3` or a thin wrapper) for seeded data and the pipeline cache keyed by (message, mode). LLM responses live in the response store (above).
 - **Adapters** (all `Protocol` + mock + live): `TranscriptionProvider` (mock now; AWS Transcribe later), `LLMProvider`, `CaseBackend` (mock now; real system of record later). These are the seams for a future real integration; keep business logic out of them.
-- **Data is synthetic and deterministic.** `overheard seed` generates the 60-message "today" queue (hand-written scripts in `data/seed_today.json` with ground-truth labels) and a ~70,000-contact, 3-year archive from a fixed seed. Same seed → byte-identical database. Every planted pattern has a test that the analytics recover it (e.g. Form 22-B tops the root-cause Pareto, within ±10% of its planted cost).
+- **Data is synthetic and deterministic.** `overheard seed` generates the 180-message "today" queue (60 hand-written scripts with ground-truth labels, one a silent hang-up, plus 120 junk calls generated from templates by `tools/build_seed_today.py`, all in `data/seed_today.json`) and a ~70,000-contact, 3-year archive from a fixed seed. Same seed → byte-identical database. Every planted pattern has a test that the analytics recover it (e.g. Form 22-B tops the root-cause Pareto, within ±10% of its planted cost).
 - **Mode 3 is measured, not only planted.** Before a demo, `overheard batch-label` labels a sample of the archive (~1,000 contacts) with the live LLM; Mode 3 shows that measured accuracy against the truth and scales from it.
 - **Config:** pydantic-settings, `OVERHEARD_*` environment variables (`OVERHEARD_LLM_MODE`, `OVERHEARD_LLM_BASE_URL`, `OVERHEARD_LLM_API_KEY`, `OVERHEARD_LLM_MODEL`, `OVERHEARD_LLM_TIMEOUT`, `OVERHEARD_DB_PATH`, `OVERHEARD_SEED`, `OVERHEARD_HOST`, `OVERHEARD_PORT`).
 

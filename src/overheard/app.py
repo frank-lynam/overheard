@@ -34,6 +34,7 @@ def open_db(settings: Settings) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS corrections (id INTEGER PRIMARY KEY AUTOINCREMENT, voicemail TEXT NOT NULL, "
         "task TEXT NOT NULL, field TEXT NOT NULL, value TEXT, provenance TEXT NOT NULL, at TEXT)"
     )
+    con.execute("CREATE TABLE IF NOT EXISTS junk_reopened (item_id TEXT PRIMARY KEY, at TEXT)")
     con.execute(
         "CREATE TABLE IF NOT EXISTS resolutions (voicemail TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT, "
         "provenance TEXT, at TEXT)"

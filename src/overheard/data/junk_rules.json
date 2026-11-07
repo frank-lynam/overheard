@@ -1,0 +1,8 @@
+{
+  "blocked_numbers": ["+1-202-555-0199", "+1-212-555-0183", "+1-305-555-0177"],
+  "min_words": 4,
+  "same_script_from": 3,
+  "scripted_phrases": ["extended warranty", "press one", "press 1", "you have been selected", "final notice",
+                       "lower interest rate", "this is not a sales call", "social security number has been suspended",
+                       "claim your prize"]
+}

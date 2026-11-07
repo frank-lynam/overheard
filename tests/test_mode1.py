@@ -22,7 +22,7 @@ async def client(seeded):
 
 async def test_mode1_queue_is_sorted_by_urgency_with_teams(client):
     items = (await client.get("/api/queue", params={"mode": 1})).json()
-    assert len(items) == 60
+    assert len(items) == 59                              # the junk filter kept the junk out
     assert set(items[0]) == {"id", "receivedAt", "callerId", "durationSec", "worked", "urgency", "team", "alert"}
     # code-word alerts first (safety before the rest), then the AI's urgency
     keys = [((i["alert"] or {}).get("priority", 9), -i["urgency"], i["receivedAt"], i["id"]) for i in items]
@@ -97,7 +97,7 @@ async def test_corrections_round_trip(client):
 
 async def test_accuracy_scores_all_tasks_and_counts_corrections(client):
     acc = (await client.get("/api/accuracy")).json()
-    assert acc["messages"] == 60 and acc["corrections"] == 0
+    assert acc["messages"] == 59 and acc["corrections"] == 0
     for k in ("intent_urgency", "routing", "extraction"):
         assert isinstance(acc[k], float) and 0.0 <= acc[k] <= 1.0, k
     base = {k: acc[k] for k in ("intent_urgency", "routing", "extraction")}

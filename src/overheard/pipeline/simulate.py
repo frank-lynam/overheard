@@ -20,6 +20,7 @@ class Assumptions(BaseModel):
     workingDays: int = 250
     urgentWithinMin: int = 120      # welfare and urgent hardship: a person reaches it within this
     approveMin: float = 1.0         # mode 2: a person reads the AI's drafted answer and approves it (no callback)
+    junkHandleMin: float = 0.5      # mode 0: after listening to junk, deleting it
 
 
 NO_CALLBACK = {"no-content", "compliment"}
@@ -38,7 +39,8 @@ class Simulation(BaseModel):
     touches: list[Touch]
     agentHours: float
     reachedBy: str | None           # when the last message was finished, if within the shift
-    unreached: int
+    callers: int                    # real callers in the queue (junk isn't a caller)
+    unreached: int                  # real callers not reached by the end of the shift
     urgentId: str | None
     urgentFirstTouch: str | None
     urgentWaitMin: float | None
@@ -69,6 +71,8 @@ def work_the_queue(vms: list[Voicemail], order: list[str], a: Assumptions, day: 
         v = by_id[mid]
         if mid in approve:
             callback, minutes = False, a.approveMin
+        elif v.truth.junk:                       # listened to all the way through, then deleted
+            callback, minutes = False, v.durationSec / 60 / a.listenSpeed + a.junkHandleMin
         else:
             callback = v.truth.rootCause not in NO_CALLBACK
             minutes = v.durationSec / 60 / a.listenSpeed + a.handleMin + (a.callbackMin if callback else 0.0)
@@ -103,7 +107,9 @@ def work_the_queue(vms: list[Voicemail], order: list[str], a: Assumptions, day: 
     return Simulation(
         order=[t.id for t in touches], touches=touches, agentHours=round(total / 60, 2),
         reachedBy=last.strftime("%H:%M") if last and all(t.firstTouch for t in touches) else None,
-        unreached=sum(t.firstTouch is None for t in touches), urgentId=urgent.id if urgent else None,
+        callers=sum(not by_id[t.id].truth.junk for t in touches),
+        unreached=sum(t.firstTouch is None and not by_id[t.id].truth.junk for t in touches),
+        urgentId=urgent.id if urgent else None,
         urgentFirstTouch=first.get(urgent.id) if urgent else None, urgentWaitMin=round(wait) if wait is not None else None,
         obligationsCaught=caught, obligationsMissed=len(missed), missed=missed,
         dollarsPerDay=round(total / 60 * a.rate, 2))

@@ -200,6 +200,22 @@ def _routing(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
     return {"team": team, "reason": reason}
 
 
+def _junk(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
+    """From the truth, with the mistakes a careful screen makes: never calling a real caller junk, but sometimes
+    unsure (about junk, or a real call that looks like it)."""
+    kind = t.get("junk")
+    if kind:
+        if _wrong(rng):
+            return {"verdict": "unsure", "reason": "It could be a recording, but a person should check."}
+        return {"verdict": "junk", "reason": {"robocall": "A scripted robocall.", "scam": "A sales pitch or scam.",
+                                              "wrong-number": "A message meant for someone else.",
+                                              "pocket-dial": "Background noise, nobody speaking to us.",
+                                              "silence": "Silence.", "hang-up": "The caller hung up."}.get(kind, "Junk.")}
+    if t.get("looksLikeJunk") or _wrong(rng):
+        return {"verdict": "unsure", "reason": "Short or unclear, but it could be a real caller."}
+    return {"verdict": "not_junk", "reason": "A caller about their benefits."}
+
+
 def _translation(task: Task, rng: random.Random, t: dict[str, Any], script: str) -> dict:
     lang = (t.get("lang") or "en").split("-")[0]
     if lang == "en":
@@ -366,6 +382,7 @@ class MockProvider:
                 "extraction": lambda: _extraction(task, rng, t, _script(task)),
                 "intent_urgency": lambda: _intent(task, rng, t, _script(task)),
                 "routing": lambda: _routing(task, rng, t),
+                "junk_classify": lambda: _junk(task, rng, t),
                 "translation": lambda: _translation(task, rng, t, _script(task)),
                 "sentiment": lambda: _sentiment(task, rng, t, _script(task)),
                 "draft_reply": lambda: _draft(task, rng, t),

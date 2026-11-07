@@ -329,3 +329,12 @@ select.ai-value:focus { border-color: var(--accent); outline: none; }
   color: var(--ink); border: 1px solid var(--alert); font-size: .92rem; }
 .alert-banner.safety { background: var(--safety-bg); border-color: var(--safety); }
 .word-trigger { background: var(--alert-bg); color: var(--alert); font-weight: 600; border-radius: 3px; padding: 0 .08em; }
+
+/* --- The junk filter (Mode 1 on): the link above the queue, and the list of what it kept out --- */
+.junk-link { display: block; width: 100%; margin: 0 0 .7rem; text-align: left; background: var(--soft); border-color: var(--line);
+  color: var(--muted); font-size: .85rem; }
+.junk-row { display: grid; grid-template-columns: 4.4rem 1fr auto; gap: .5rem; align-items: start; padding: .45rem .5rem;
+  border-bottom: 1px solid var(--line); font-size: .85rem; }
+.junk-what { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.junk-script { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.junk-why { font-size: .78rem; }

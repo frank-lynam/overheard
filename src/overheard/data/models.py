@@ -23,6 +23,8 @@ class Truth(BaseModel):
     linkedTo: list[str] = []
     callbackWindow: str | None = None
     beliefMismatch: str | None = None
+    junk: str | None = None          # robocall | scam | silence | hang-up | wrong-number | pocket-dial; None: real
+    looksLikeJunk: bool = False      # a real call that looks like junk (a few words, a bad line): must reach a person
     englishGist: str | None = None
 
 

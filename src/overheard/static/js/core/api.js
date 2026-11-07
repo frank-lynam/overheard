@@ -22,6 +22,10 @@ export const api = {
     voicemail ? call("GET", `/corrections?voicemail=${encodeURIComponent(voicemail)}`) : call("GET", "/corrections"),
   postCorrection: (c) => call("POST", "/corrections", c),
   accuracy: () => call("GET", "/accuracy"),
+  // from mode 1: code-word alerts, and what the junk filter kept out (a person can put any back)
+  alerts: () => call("GET", "/alerts?mode=1"),
+  junk: () => call("GET", "/junk"),
+  reopenJunk: (id) => call("POST", `/junk/${id}/reopen`),
   // mode 2: the day's spike incidents, a message's resolution (and its human state), the mode-2 scoreboard
   incidents: () => call("GET", "/incidents"),
   resolution: (id) => call("GET", `/resolutions/${id}`),

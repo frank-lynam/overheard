@@ -107,7 +107,7 @@ store.on("simulate", async () => {
     touches[t.id] = { at: t.firstTouch, late: t.id === sim.urgentId };
     store.set({ touches: { ...touches }, simClock: t.firstTouch });
     document.querySelector(`[data-id="${t.id}"]`)?.scrollIntoView({ block: "nearest" });
-    await new Promise((r) => setTimeout(r, 120));
+    await new Promise((r) => setTimeout(r, Math.min(120, 7000 / reached.length)));   // ~7 s, however big the day
   }
   for (const t of sim.touches.filter((x) => !x.firstTouch)) touches[t.id] = { at: null, late: true };
   store.set({ touches: { ...touches }, sim, simClock: null });
