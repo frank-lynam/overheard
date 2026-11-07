@@ -360,11 +360,30 @@ The full build is about 19 focused dev-days. Phases 0–3 (about 11.5 days) alre
 
 **Demo script (about 15 minutes)**
 
-1. Mode 0: play two messages live and fill in one form. Run the simulation: 7 hours, urgent reached at 2:40 pm, the portal pattern never noticed.
-2. Mode 1: everything is transcribed and sorted; message 37 jumps to the top; show the Vietnamese message translated. Hours drop.
+Numbers are what the seeded day shows in mock and replay mode; a live recording can move them a little. Present
+from replay (`tools/rehearse_offline.py` checks the whole walk offline first). Outcomes, not dollars: the console
+shows what each mode gets done, and from Mode 1 on what it was without AI.
+
+1. **Mode 0, by hand.** 180 voicemails, robocalls and silence included: until you've listened you can't tell.
+   Play two, fill in one form, then "Work the queue": about 12.5 agent-hours, the urgent caller (the woman whose
+   power is being cut off) reached at 4:18 pm, 36 of 59 real callers reached, 3 of 6 deadlines met, and nobody
+   notices the portal is down.
+2. **Mode 1, the obvious AI.** The junk filter keeps out all 121 junk calls and no real one (unsure calls still
+   reach a person; any can be put back). A code word ("shut off") puts the hardship call in front of a person at
+   once. Everything is transcribed, summarised, sorted and routed; show the Vietnamese message translated.
 3. Pause: "This is what everyone shows. Here's what they don't."
-4. Mode 2: replay the morning at 60×. The incident banner fires at 9:40. Approve five replies that need no callback, then reveal the share closed with no call. Show the congressional-inquiry flag found in minute two of a rambling message.
-5. Mode 3: open Root causes. "One letter costs an estimated $600K a year."
-6. Letter lab: paste the rewritten notice; predicted calls drop.
-7. Ask the archive a live question from the audience.
-8. Close on the scoreboard: the same 60 messages, four very different outcomes.
+4. **Mode 2, the non-obvious AI.** Replay the morning: the outage is spotted 17 minutes after its first caller,
+   and one holding reply covers all of them. Nine messages need no callback: the case record already answers them,
+   and a person approves each reply. Open the hardship message: "Applies here" shows which policies and notices
+   fit, quoting the caller (hover a chip); an unsure one is amber, for a person to decide.
+5. **Tickets that learn.** Open the tickets: each real problem becomes one ticket for the team routing memory
+   proposes (93% right on past routings it hadn't seen). The first, a Form 22-B letter, is proposed to Outreach:
+   move it to Benefits Processing. Reveal on: the next 22-B ticket is proposed to Benefits Processing, citing the
+   one just moved. With `OVERHEARD_WORKFLOW_URL` set these are real hearthboard tickets (`tools/demo_board.py`).
+   Close on the scoreboard: urgent caller reached at 10:13 am (6 hours sooner), 6 of 6 deadlines, all 59 callers,
+   about 8.6 agent-hours back.
+6. **Mode 3, impossible without AI.** Root causes: one letter takes about 1 in 8 of the centre's hours.
+7. **Overlooked before today.** Today's outage, searched for in the past four weeks: 36 callers said "error 4012"
+   from Feb 10 on, were taken for password resets and never ticketed. It could have been spotted 28 days sooner.
+8. Letter lab: paste the rewritten notice; predicted calls drop. Then ask the archive a question from the audience.
+9. Close: the same 180 voicemails, four very different days.

@@ -98,6 +98,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.mode2_messages = None  # each message's mode-2 section, for the queue
     app.state.mode2_lock = threading.Lock()
     app.state.store = ResponseStore(settings.llm_responses_path)
+    app.state.write = settings.llm_mode == "record"   # keep every provider answer in the store (`overheard record`)
     app.state.provider = build_provider(settings, app.state.store)
 
     @app.get("/api/health")

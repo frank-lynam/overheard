@@ -103,6 +103,31 @@ def test_record_then_replay_is_identical_and_offline(tmp_path, monkeypatch):
         assert message_mode2(vm, replay_bundles[vm.id], backend, m2) == message_mode2(
             vm, rec["bundles"][vm.id], backend, m2)
 
+    con.close()
+
+    # the console's demo walk (junk filter, applies, tickets with the move, the retro search) replays the same,
+    # against another fresh database, with every new task in the store
+    assert {"junk_classify", "applies_triage", "problem_classify", "team_propose", "retro_match"} <= set(rec["per_task"])
+    from fastapi.testclient import TestClient
+
+    from overheard.app import create_app
+    from overheard.llm.record import demo_sequence
+    walk_db = tmp_path / "walk.db"
+    seed(walk_db, settings.seed)
+    app = create_app(Settings(llm_mode="replay", llm_model="mock", db_path=walk_db, llm_responses_path=store_path))
+    client = TestClient(app)
+    misses = []
+    real_complete = app.state.provider.complete
+
+    async def counting(task, model):
+        out = await real_complete(task, model)
+        if out is None:
+            misses.append(task.name)
+        return out
+    app.state.provider.complete = counting
+    walk = demo_sequence(lambda m, p, b=None: client.request(m, p, json=b).json())
+    assert not misses, misses
+    assert walk == rec["demo"] and walk["learned"] == "benefits-processing"
+
     # the store was read, not written to, by the replay
     assert len(list(store_path.glob("*.json"))) == fixtures
-    con.close()

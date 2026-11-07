@@ -155,6 +155,9 @@ class Desk:
                 if d["status"] == "proposed":
                     continue
                 at = d["decidedAt"] or time.strftime("%Y-%m-%dT%H:%M:%S")
+                # into the memory on the demo's day (its time of day kept): a decision made now is today's, for the
+                # recency weight, and the evidence a later proposal is shown doesn't depend on the wall clock
+                mem_at = f"{self.memory.today}T{at[11:19] or '12:00:00'}"
                 self.con.execute("UPDATE tickets SET status = ?, final_team = ?, final_assignee = ?, decided_by = ?, "
                                  "decided_at = ? WHERE ticket_id = ?",
                                  (d["status"], None if d["status"] == "declined" else d["team"], d["assignee"],
@@ -162,7 +165,7 @@ class Desk:
                 kind = {"accepted": "routing", "done": "routing", "moved": "move", "declined": "decline"}[d["status"]]
                 payload = {"team": d["team"]} if kind == "routing" else {"from": filed_in, "to": d["team"]} \
                     if kind == "move" else {}
-                self.memory.record(f"{tid}:{kind}", item_id, kind, payload, at, text=statement,
+                self.memory.record(f"{tid}:{kind}", item_id, kind, payload, mem_at, text=statement,
                                    team=None if kind == "decline" else d["team"], problem_type=ptype)
                 changed += 1
             self.con.commit()

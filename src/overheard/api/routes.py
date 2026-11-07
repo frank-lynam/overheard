@@ -32,7 +32,7 @@ def deps(request: Request) -> AnalysisDeps:
         store=request.app.state.store,
         provider=request.app.state.provider,
         model=request.app.state.settings.llm_model or "mock",
-        write=request.app.state.settings.llm_mode == "record",
+        write=request.app.state.write,
     )
 
 
@@ -130,7 +130,8 @@ def mode2_day(request: Request) -> dict:
             vms = queued(request)
             bundles = {v.id: analyze_sync(v, d) for v in vms}
             backend = MockCaseBackend(con(request))
-            request.app.state.mode2 = day_bundles(vms, bundles, backend, Mode2Deps(d.con, d.store, d.provider, d.model))
+            request.app.state.mode2 = day_bundles(vms, bundles, backend,
+                                                  Mode2Deps(d.con, d.store, d.provider, d.model, write=d.write))
     return request.app.state.mode2
 
 
@@ -141,7 +142,7 @@ def mode2_messages(request: Request) -> dict:
         if request.app.state.mode2_messages is None:
             d = deps(request)
             backend = MockCaseBackend(con(request))
-            mdeps = Mode2Deps(d.con, d.store, d.provider, d.model)
+            mdeps = Mode2Deps(d.con, d.store, d.provider, d.model, write=d.write)
             request.app.state.mode2_messages = {
                 v.id: message_mode2(v, analyze_sync(v, d), backend, mdeps) for v in queued(request)
             }
@@ -248,7 +249,7 @@ async def message(mid: str, request: Request, mode: int = 0) -> dict:
     alert = intakes(request)[v.id].alert       # the trigger scan's hits, highlighted in the transcript
     if mode == 2:
         section = await _message_mode2(v, bundle, MockCaseBackend(con(request)),
-                                       Mode2Deps(d.con, d.store, d.provider, d.model))
+                                       Mode2Deps(d.con, d.store, d.provider, d.model, write=d.write))
         return {**m.model_dump(), "analysis": bundle, "mode2": section, "alert": alert}
     return {**m.model_dump(), "analysis": bundle, "alert": alert}
 
@@ -622,7 +623,7 @@ def get_resolution(mid: str, request: Request) -> dict:
     d = deps(request)
     bundle = analyze_sync(v, d)
     section = message_mode2(v, bundle, MockCaseBackend(con(request)),
-                            Mode2Deps(d.con, d.store, d.provider, d.model))
+                            Mode2Deps(d.con, d.store, d.provider, d.model, write=d.write))
     row = con(request).execute("SELECT state, reply, provenance, at FROM resolutions WHERE voicemail = ?", (mid,)).fetchone()
     state = dict(row) if row else {"state": "draft", "reply": None, "provenance": None, "at": None}
     return {"voicemail": mid, **state, **section}
@@ -640,7 +641,7 @@ def set_resolution_state(mid: str, body: ResolutionState, request: Request) -> d
     d = deps(request)
     bundle = analyze_sync(v, d)
     section = message_mode2(v, bundle, MockCaseBackend(con(request)),
-                            Mode2Deps(d.con, d.store, d.provider, d.model))
+                            Mode2Deps(d.con, d.store, d.provider, d.model, write=d.write))
     reply = body.reply if body.reply is not None else section["resolution"].get("reply")
     c = con(request)
     c.execute(
@@ -659,7 +660,7 @@ def get_scoreboard2(request: Request) -> dict:
     d = deps(request)
     vms = queued(request)
     bundles = {v.id: analyze_sync(v, d) for v in vms}
-    return scoreboard2(vms, bundles, Mode2Deps(d.con, d.store, d.provider, d.model))
+    return scoreboard2(vms, bundles, Mode2Deps(d.con, d.store, d.provider, d.model, write=d.write))
 
 
 @router.get("/archive/root-causes")

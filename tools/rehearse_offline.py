@@ -58,6 +58,15 @@ def wait_http(url: str, tries: int = 100) -> None:
     raise SystemExit(f"never came up: {url}")
 
 
+def call(method: str, path: str, body: dict | None = None):
+    """The demo sequence's call: any method, an empty JSON body counts (POST /api/tickets/reveal takes {})."""
+    req = urllib.request.Request(BASE + path, method=method,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"Content-Type": "application/json"} if body is not None else {})
+    with urllib.request.urlopen(req, timeout=300) as r:
+        return json.loads(r.read().decode())
+
+
 def api(path: str, body: dict | None = None):
     req = urllib.request.Request(BASE + path, data=json.dumps(body).encode() if body else None,
                                  headers={"Content-Type": "application/json"} if body else {})
@@ -175,15 +184,23 @@ def main():
         shutil.rmtree(server_store)
     shutil.copytree(WORK / "fixtures", server_store)
 
+    # the server gets a fresh database of the same seed: record's walk left its tickets in the other one, and with
+    # nothing computed yet every answer has to come from the store
+    from overheard.data.generator import seed
+    serve_db = WORK / "rehearsal-serve.db"
+    serve_db.unlink(missing_ok=True)
+    seed(serve_db, rec_settings.seed)
+
     env = dict(os.environ)
-    env.update(OVERHEARD_DB_PATH=str(db), OVERHEARD_LLM_MODE="replay",
+    env.update(OVERHEARD_DB_PATH=str(serve_db), OVERHEARD_LLM_MODE="replay",
                OVERHEARD_LLM_MODEL="mock", OVERHEARD_LLM_RESPONSES_PATH=str(server_store),
                PYTHONPATH=str(NETCUT), DISPLAY="")
 
+    server_log = WORK / "server.log"     # a file, not a pipe: nobody reads it until the end
     server = subprocess.Popen(
         ["./.venv/bin/python", "-m", "uvicorn", "overheard.app:create_app", "--factory",
          "--host", "127.0.0.1", "--port", str(PORT), "--log-level", "info"],
-        env=env, cwd=REPO, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        env=env, cwd=REPO, stdout=server_log.open("w"), stderr=subprocess.STDOUT, text=True)
     try:
         wait_http(f"{BASE}/api/health")
 
@@ -220,6 +237,15 @@ def main():
         ask = api("/api/archive/ask", {"question": "Why did calls about the 22-B letter spike in June 2025?"})
         assert ask["understood"] is True and ask["answer"], ask
 
+        # ---- 2b. the demo's walk, as recorded: junk, applies, tickets with the move, the retro search
+        from overheard.llm.record import demo_sequence
+        print("walking the demo sequence (tickets, the move, the retro search)...")
+        walk = demo_sequence(call)
+        assert walk == rec["demo"], f"the replayed walk differs from the recorded one:\n{walk}\n{rec['demo']}"
+        assert walk["learned"] == "benefits-processing" and walk["retro"]["count"] >= 30, walk
+        print(f"  same as recorded: {walk['tickets']['problems']} tickets, learned {walk['learned']}, "
+              f"{walk['retro']['count']} overlooked callers")
+
         # ---- 3. the presenter deck, driven in a real browser -------------------
         if use_cdp:
             print("driving /present in chromium over CDP...")
@@ -235,13 +261,19 @@ def main():
         after = {f.name: f.read_bytes() for f in server_store.glob("*.json")}
         assert before == after, "the replay server wrote to the fixture store"
         print(f"  store untouched: {len(after)} fixtures, byte-identical")
-        print("REHEARSAL_OK")
     finally:
         server.terminate()
         try:
             server.wait(timeout=5)
         except Exception:
             server.kill()
+    # ---- 5. no replay misses: each would have been a fallback answer on stage
+    log = server_log.read_text()
+    misses = [ln for ln in log.splitlines() if "replay miss" in ln]
+    assert not misses, "replay misses:\n" + "\n".join(misses[:20])
+    assert "NETCUT" not in log, "the replay server tried the network"
+    print("  no replay misses, no network")
+    print("REHEARSAL_OK")
 
 
 if __name__ == "__main__":

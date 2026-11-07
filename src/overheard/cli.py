@@ -48,6 +48,11 @@ def main(argv: list[str] | None = None) -> int:
             f"({summary['voicemails']} messages, mode {summary['llm_mode']}, model {summary['model']}) "
             f"into {summary['store']} ({summary['fixtures']} fixture files)"
         )
+        print("  per task: " + ", ".join(f"{k} {v}" for k, v in summary["per_task"].items()))
+        d = summary["demo"]
+        t = d["tickets"]
+        print(f"  demo walk: {t['problems']} tickets ({t['moved']} moved, {t['accepted']} accepted), the next one like "
+              f"the moved ticket proposed to {d['learned']}; {d['retro']['count']} overlooked callers found")
         return 0
     if args.command == "batch-label":
         print(f"overheard {args.command}: not built yet (this is an early release)", file=sys.stderr)
