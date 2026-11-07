@@ -46,8 +46,10 @@ def _voicemails(con: sqlite3.Connection) -> list:
                       truth=json.loads(r["truth"])) for r in rows]
 
 
-# The demo's ticket decisions, in order: the first 22-B letter ticket (proposed to Outreach) is moved to Benefits
-# Processing; the next one is then proposed there, and accepted.
+# The demo's ticket decisions, in order: the first Form 22-B letter ticket (routing memory says Outreach) is moved to
+# Benefits Processing; the next 22-B ticket is then proposed there, and accepted. Found by problem type, not position:
+# a live model may file other tickets first.
+TEACH_TYPE = "form-22b-confusion"
 MOVE_TO = "benefits-processing"
 
 
@@ -62,19 +64,23 @@ def demo_sequence(call) -> dict:
         sec = call("GET", f"/api/resolutions/{item['id']}")
         applies += sum(a["verdict"] == "applies" for a in sec["applies"]["verdicts"])
     out["applies"] = applies
-    first = call("POST", "/api/tickets/reveal", {})["made"][0]
-    call("POST", f"/api/tickets/{first['ticket_id']}/decide", {"action": "move", "team": MOVE_TO})
-    nxt: list = []
-    while not any(t["problem_type"] == first["problem_type"] for t in nxt):
-        nxt = call("POST", "/api/tickets/reveal", {})["made"]
-        if not nxt:
-            break
-    learned = next((t for t in nxt if t["problem_type"] == first["problem_type"]), None)
-    if learned:
-        call("POST", f"/api/tickets/{learned['ticket_id']}/decide", {"action": "accept"})
+    def reveal_until(pred):
+        while made := call("POST", "/api/tickets/reveal", {})["made"]:
+            hit = next((t for t in made if pred(t)), None)
+            if hit:
+                return hit
+        return None
+    first = reveal_until(lambda t: t["problem_type"] == TEACH_TYPE)
+    learned = None
+    if first:
+        if first["proposed_team"] != MOVE_TO:
+            call("POST", f"/api/tickets/{first['ticket_id']}/decide", {"action": "move", "team": MOVE_TO})
+        learned = reveal_until(lambda t: t["problem_type"] == TEACH_TYPE)
+        if learned:
+            call("POST", f"/api/tickets/{learned['ticket_id']}/decide", {"action": "accept"})
     call("POST", "/api/tickets/reveal", {"all": True})
     tickets = call("GET", "/api/tickets")
-    out["tickets"] = tickets["counts"]
+    out["tickets"] = {**tickets["counts"], "filed": len(tickets["tickets"])}
     out["learned"] = learned and learned["proposed_team"]
     retro = call("POST", "/api/retro")
     out["retro"] = retro["summary"]

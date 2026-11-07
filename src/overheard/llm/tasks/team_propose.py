@@ -24,14 +24,20 @@ class team_propose:
     @classmethod
     def build(cls, problem_type: str, statement: str, weighed: dict) -> Task:
         teams = teams_map()["teams"]
-        lines = "\n".join(f"- {e['ref']} ({e['when']}, similarity {e['similarity']}): went to {e['team']}: {e['text']}"
+        lines = "\n".join(f"- {e['ref']} ({e['when']}, similarity {e['similarity']}, weight {e['weight']}): "
+                          f"{'a person sent it to ' if e.get('today') else 'went to '}{e['team']}"
+                          f"{' TODAY' if e.get('today') else ''}: {e['text']}"
                           for e in weighed["evidence"]) or "(no similar past problems)"
         return Task(
             name=cls.name,
             description="Propose the team that should own the problem.",
             system=("You route problems reported to a federal benefits-service call center to the back-office team "
                     "that should own them, learning from where people finally sent similar past problems (corrections "
-                    "count: a problem a person moved shows where it belongs). Reply with only a JSON object: "
+                    "count: a problem a person moved shows where it belongs). Each past problem has a weight: its "
+                    "similarity, less for older ones, and five times as much for a decision a person made today, "
+                    "which is the freshest word on where this kind of problem goes now. Propose the team with the "
+                    "most weight unless the problem itself plainly belongs elsewhere; count weight, not how many "
+                    "past problems point each way. Reply with only a JSON object: "
                     "{\"proposed_team\": string, \"confidence\": number 0-1, \"evidence\": [past ids]}. proposed_team "
                     "is one of " + json.dumps(sorted(teams)) + ", or \"unknown\" when the evidence doesn't point one "
                     "way. evidence lists the ids you relied on, from the list given."),

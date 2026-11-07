@@ -92,3 +92,42 @@ async def test_a_move_changes_the_next_similar_proposal(client):
         assert nxt, "ran out of tickets"
     assert nxt[0]["proposed_team"] == "benefits-processing"                    # learned from the move
     assert any(e["ref"] == "m01" for e in nxt[0]["evidence"])
+
+
+async def test_an_outage_caller_outside_the_cluster_joins_the_incident_ticket(tmp_path):
+    """Clustering by wording can miss callers who describe the outage in other words (a live model's summaries
+    vary): the problem check puts them on the open incident's ticket, not tickets of their own."""
+    from types import SimpleNamespace
+
+    from overheard.api.routes import mode2_day
+    seed(tmp_path / "day.db", 2026)
+    app = create_app(Settings(db_path=tmp_path / "day.db"))
+    import asyncio
+    day = await asyncio.to_thread(mode2_day, SimpleNamespace(app=app))   # sync code, as in the app's routes
+    inc = day["incidents"][0]
+    left_out = ["m22", "m23", "m36"]
+    inc["members"] = [m for m in inc["members"] if m not in left_out]
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t", timeout=300) as c:
+        made = (await c.post("/api/tickets/reveal", json={"all": True})).json()["made"]
+        assert not any(t["item_id"] in left_out for t in made)
+        got = (await c.get("/api/tickets")).json()["tickets"]
+    outage = next(t for t in got if t["problem_type"] == "portal-sign-in-failure")
+    assert set(left_out) <= set(outage["item_ids"]) and len(outage["item_ids"]) == 28
+    assert "(28 callers)" in outage["summary"]
+    assert sum(t["problem_type"] == "portal-sign-in-failure" for t in got) == 1
+
+
+def test_a_decision_today_counts_however_it_was_worded(tmp_path):
+    """Many near-identical old routings can fill the nearest neighbours; a person's move today on the same kind of
+    problem is evidence anyway, and outweighs them."""
+    old = [("form-22b-confusion", "The 22-B letter says my benefits will stop, what do I do?", "outreach",
+            f"2023-0{i % 9 + 1}-01") for i in range(12)]                # templated, and years old
+    m = small_memory(tmp_path, old)
+    m.record("t:move", "m10", "move", {"from": "outreach", "to": "benefits-processing"}, "2026-03-10T11:55:00",
+             text="Caller received a second Form 22B re-verification letter and already returned one",
+             team="benefits-processing", problem_type="form-22b-confusion")
+    w = m.weigh(doc("form-22b-confusion", "Caller sent Form 22-B in February and is afraid benefits will stop"))
+    assert any(e["ref"] == "m10" for e in w["evidence"])
+    assert next(iter(w["shares"])) == "benefits-processing"
+    other = m.weigh(doc("records-request", "Caller sent Form 22-B in February and is afraid benefits will stop"))
+    assert not any(e["ref"] == "m10" for e in other["evidence"])          # not for another kind of problem

@@ -1,7 +1,8 @@
 """Tickets, stages [C] to [H]: each problem voicemail becomes one ticket in the workflow system, owned by the team
 routing memory proposes; the human decision read back goes into the memory, and changes later proposals.
 
-  [C] problem check (LLM problem_classify): not a problem, no ticket
+  [C] problem check (LLM problem_classify): not a problem, no ticket; the same problem as an open incident's
+      ticket joins it
   [D] applies triage (pipeline/applies.py): the rules in force that fit, quoted in the ticket
   [E] team proposal: routing memory's evidence (memory/store.py), then the LLM team_propose; below the threshold,
       "unknown", and the ticket goes to general
@@ -93,14 +94,15 @@ class Desk:
                         a, w = alerts[i], vms[i]
                         self.notify("alert", {"item_id": i, "receivedAt": w.receivedAt, "callerId": w.callerId,
                                               **{k: a[k] for k in ("category", "label", "priority", "safety")}})
-                t = self._reveal_one(u, vms[u["item_id"]], alerts.get(u["item_id"]))
+                incidents = [f"T-{x['unit_id']}" for x in units if x.get("incident")]
+                t = self._reveal_one(u, vms[u["item_id"]], alerts.get(u["item_id"]), incidents)
                 if t:
                     made.append(t)
                     if not all_:
                         break
         return made
 
-    def _reveal_one(self, u: dict, v: Voicemail, alert: dict | None) -> dict | None:
+    def _reveal_one(self, u: dict, v: Voicemail, alert: dict | None, incidents: list[str] = ()) -> dict | None:
         from overheard.llm.tasks import TASKS
         now = time.strftime("%Y-%m-%dT%H:%M:%S")
         p = self.run(TASKS["problem_classify"].build(v)).data
@@ -109,6 +111,10 @@ class Desk:
                           p.statement, p.confidence, json.dumps(p.reasons), now))
         if not p.is_problem:
             self.con.commit()
+            return None
+        if not u.get("incident") and (joined := self._join_incident(u, p.problem_type, incidents)):
+            self.con.commit()
+            self.notify("ticket", {"event": "joined", **_brief(joined)})
             return None
         weighed = self.memory.weigh(doc(p.problem_type, p.statement))             # [E] from memory as it stands
         team = self.run(TASKS["team_propose"].build(p.problem_type, p.statement, weighed)).data
@@ -135,6 +141,21 @@ class Desk:
         t = self.ticket(tid)
         self.notify("ticket", {"event": "created", **_brief(t)})
         return t
+
+    def _join_incident(self, u: dict, problem_type: str, incidents: list[str]) -> dict | None:
+        """A caller with the same problem as an open incident's ticket joins it, instead of a ticket of their own:
+        clustering by wording catches most of an outage's callers, and the problem check catches the ones who
+        described it in other words. Returns the incident ticket, or None."""
+        for tid in incidents:
+            t = self.ticket(tid)
+            if t and t["problem_type"] == problem_type and t["status"] in ("proposed", "accepted"):
+                ids = t["item_ids"] + [i for i in u["item_ids"] if i not in t["item_ids"]]
+                old_n = len(t["item_ids"])
+                summary = t["summary"].replace(f"({old_n} callers)", f"({len(ids)} callers)")
+                self.con.execute("UPDATE tickets SET item_ids = ?, summary = ? WHERE ticket_id = ?",
+                                 (json.dumps(ids), summary, tid))
+                return self.ticket(tid)
+        return None
 
     @staticmethod
     def description(u, p, proposed, conf, evidence, alert, applies=()) -> str:

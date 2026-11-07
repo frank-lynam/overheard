@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
@@ -111,15 +112,27 @@ class Memory:
         return scored[:k]
 
     def weigh(self, text: str, exclude: str | None = None) -> dict:
-        """The evidence for a team proposal: the neighbours, each weighted by similarity and recency (a person's
-        decision today counts PERSON_TODAY times), and each team's share of the weight."""
+        """The evidence for a team proposal: the neighbours (plus today's decisions by people on the same kind of
+        problem), each weighted by similarity and recency (a person's decision today counts PERSON_TODAY times), and
+        each team's share of the weight."""
         today = date.fromisoformat(self.today)
         evidence, weight = [], {}
-        for it, sim in self.neighbours(text, exclude=exclude):
+        found = self.neighbours(text, exclude=exclude)
+        # A person's decision today on the same kind of problem is always evidence, however differently it was
+        # worded: the problem check already judged it the same kind, and a fresh correction is the strongest
+        # signal there is (in a templated archive, many near-identical old routings fill the K nearest otherwise).
+        label = re.search(r"type:([a-z0-9-]+)", text.lower())
+        if label:
+            have = {it.item_id for it, _ in found}
+            q = self.embedder.embed(text)
+            found += [(it, max(cosine(q, it.vector), MIN_SIMILARITY)) for it in self.items.values()
+                      if it.by_person_today and it.final_team and it.problem_type == label.group(1)
+                      and it.item_id not in have and it.item_id != exclude]
+        for it, sim in found:
             age = (today - date.fromisoformat(it.created_at[:10])).days
             w = sim * (0.5 ** (max(age, 0) / 365)) * (PERSON_TODAY if it.by_person_today else 1.0)
             evidence.append({"ref": it.item_id, "team": it.final_team, "similarity": round(sim, 3), "weight": round(w, 3),
-                             "text": it.text[:160], "when": it.created_at[:10]})
+                             "text": it.text[:160], "when": it.created_at[:10], "today": it.by_person_today})
             weight[it.final_team] = weight.get(it.final_team, 0.0) + w
         total = sum(weight.values())
         shares = {t: round(w / total, 3) for t, w in sorted(weight.items(), key=lambda x: -x[1])} if total else {}

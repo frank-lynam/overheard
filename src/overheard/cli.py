@@ -52,8 +52,9 @@ def main(argv: list[str] | None = None) -> int:
         print("  per task: " + ", ".join(f"{k} {v}" for k, v in summary["per_task"].items()))
         d = summary["demo"]
         t = d["tickets"]
-        print(f"  demo walk: {t['problems']} tickets ({t['moved']} moved, {t['accepted']} accepted), the next one like "
-              f"the moved ticket proposed to {d['learned']}; {d['retro']['count']} overlooked callers found")
+        print(f"  demo walk: {t['filed']} tickets for {t['problems']} problems ({t['moved']} moved, {t['accepted']} "
+              f"accepted), the next one like the moved ticket proposed to {d['learned']}; "
+              f"{d['retro']['count']} overlooked callers found")
         return 0
     if args.command == "batch-label":
         print(f"overheard {args.command}: not built yet (this is an early release)", file=sys.stderr)

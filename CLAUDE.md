@@ -113,6 +113,14 @@ All six are built (0.1.x). The review follow-up (`~/workspace/20261106.overheard
 
 - GovCloud (Nov 7, 2026): reached through a custom OpenAI-format API with a user-specific key, so it's the default `openai_compat` provider (`OVERHEARD_LLM_BASE_URL`, `OVERHEARD_LLM_API_KEY`, `OVERHEARD_LLM_MODEL`), not the Bedrock client. `tests/test_openai_gateway.py` checks that path against a strict fake gateway.
 
+- Live recording (Nov 7, 2026): the demo day is recorded with `nvidia/nemotron-3-ultra-550b-a55b` through OpenRouter
+  (an OpenAI-format gateway, like GovCloud's) in `~/.local/share/overheard/responses-nemotron` on this machine. Replay
+  it with `OVERHEARD_LLM_MODE=replay OVERHEARD_LLM_MODEL=nvidia/nemotron-3-ultra-550b-a55b
+  OVERHEARD_LLM_RESPONSES_PATH=~/.local/share/overheard/responses-nemotron`. A live model differs from the mock:
+  it splits the outage across clusters (callers then join the incident's ticket), files the first tickets in a
+  different order (the demo walk finds the 22-B ticket by type), and needs the weights explained to learn from a
+  move (team_propose's prompt). Re-record after changing any prompt: the prompt is part of each answer's key.
+
 - The demo is about what's possible, not what it costs (Nov 1, 2026): the console shows outcomes (the urgent caller
   reached sooner, deadlines met, callers reached, agent time given back) and, from Mode 1 on, what each was without AI.
   No dollars in the UI; the cost model stays in the API only. Mode 0 is the baseline and may show its workload.

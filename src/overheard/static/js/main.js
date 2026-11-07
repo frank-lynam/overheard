@@ -134,8 +134,10 @@ store.on("assumptions-saved", () => { loadSim().catch(() => {}); });
 })();
 
 // Server-sent events: a ticket made or decided (here, by another viewer, or in hearthboard) refreshes the tickets;
-// a code-word alert reaching the desk shows a notice. EventSource reconnects by itself.
-if ("EventSource" in window) {
+// a code-word alert reaching the desk shows a notice. Open from Mode 1 on only: Mode 0 has nothing to hear about, and
+// an idle page shouldn't hold a connection open. EventSource reconnects by itself while it's open.
+let events = null;
+function openEvents() {
   const es = new EventSource("/api/events");
   es.addEventListener("ticket", () => {
     if (store.get().mode >= 2) api.tickets().then((t) => store.set({ _tickets: t })).catch(() => {});
@@ -153,4 +155,10 @@ if ("EventSource" in window) {
     box.append(note);
     setTimeout(() => note.remove(), 8000);
   });
+  return es;
 }
+store.subscribe(({ mode }) => {
+  if (!("EventSource" in window)) return;
+  if (mode >= 1 && !events) events = openEvents();
+  if (mode === 0 && events) { events.close(); events = null; }
+}, ["mode"]);
