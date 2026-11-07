@@ -11,6 +11,7 @@ export function renderScoreboard(root, store) {
   let acc = null; // mode 1: the AI's scoreboard, fetched when the mode is entered
 
   store.subscribe((s) => {
+    if (s.mode >= 1 && !s._alerts) fetch("/api/alerts?mode=1").then((r) => r.json()).then((a) => store.set({ _alerts: a })).catch(() => {});
     if (s.mode >= 1 && !acc) api.accuracy().then((a) => { acc = a; store.set({ _acc: a }); }).catch(() => {});
     if (s.mode === 2 && !s._sb2) api.scoreboard2().then((sb) => store.set({ _sb2: sb })).catch(() => {});
     if (s.mode === 0) acc = null;
@@ -75,6 +76,17 @@ export function renderScoreboard(root, store) {
         el("span", { class: "note" }, ` min handling each, ${hm(a.callbackMin)} a callback`)));
     }
     if (s.pace) stats.push(stat("Your pace", `${hm(s.pace / 60)}`, "per message"));
+    if (s.mode >= 1 && s._alerts) {
+      const a = s._alerts.alerts;
+      const slowest = Math.max(0, ...a.map((x) => x.alertMs || 0));
+      stats.push(el("div", { class: "stat m1", "data-tip":
+        "Voicemails with a code word in them, put in front of a person the moment the transcript exists. The list is an "
+        + "illustrative sample; the timing is the text path only (no audio in the demo)." },
+        el("span", { class: "label" }, "Code-word alerts"),
+        el("b", {}, `${a.length} today`),
+        el("span", { class: "note" }, `each within ${slowest < 1 ? "1 ms" : Math.ceil(slowest) + " ms"} of its transcript`
+          + (a.some((x) => x.safety) ? " · a safety alert pages someone" : ""))));
+    }
     if (s.mode >= 1 && s._acc) {
       const a = s._acc;
       const pct = (x) => `${Math.round(x * 100)}%`;
@@ -100,5 +112,5 @@ export function renderScoreboard(root, store) {
       stats.slice(before).forEach((n) => n.classList.add("m2"));  // what Mode 2 adds, highlighted as such
     }
     put(root, ...stats);
-  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2"]);
+  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2", "_alerts"]);
 }

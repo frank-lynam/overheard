@@ -23,9 +23,11 @@ async def client(seeded):
 async def test_mode1_queue_is_sorted_by_urgency_with_teams(client):
     items = (await client.get("/api/queue", params={"mode": 1})).json()
     assert len(items) == 60
-    assert set(items[0]) == {"id", "receivedAt", "callerId", "durationSec", "worked", "urgency", "team"}
-    keys = [(-i["urgency"], i["receivedAt"], i["id"]) for i in items]
+    assert set(items[0]) == {"id", "receivedAt", "callerId", "durationSec", "worked", "urgency", "team", "alert"}
+    # code-word alerts first (safety before the rest), then the AI's urgency
+    keys = [((i["alert"] or {}).get("priority", 9), -i["urgency"], i["receivedAt"], i["id"]) for i in items]
     assert keys == sorted(keys)
+    assert {i["id"] for i in items if i["alert"]} == {"m09", "m16", "m37", "m53"}
     top = items[0]  # m37: Eleanor Voss, urgent hardship
     assert top["id"] == "m37" and top["urgency"] == 5 and top["team"] == "escalations"
 

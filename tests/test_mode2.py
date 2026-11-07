@@ -32,10 +32,10 @@ async def client(seeded):
 async def test_mode2_queue_carries_the_day_links(client):
     items = (await client.get("/api/queue", params={"mode": 2})).json()
     assert set(items[0]) == {
-        "id", "receivedAt", "callerId", "durationSec", "worked", "urgency", "team",
+        "id", "receivedAt", "callerId", "durationSec", "worked", "urgency", "team", "alert",
         "clusterSize", "repeat", "incident", "resolvable", "obligation", "window"}
-    keys = [(-i["urgency"], i["receivedAt"], i["id"]) for i in items]
-    assert keys == sorted(keys)
+    keys = [((i["alert"] or {}).get("priority", 9), -i["urgency"], i["receivedAt"], i["id"]) for i in items]
+    assert keys == sorted(keys)                  # alerts first, then the AI's urgency
     assert items[0]["id"] == "m37"  # the urgent one still on top
     # the portal cluster is one group
     by = {i["id"]: i for i in items}

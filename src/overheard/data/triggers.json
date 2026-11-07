@@ -1,0 +1,29 @@
+{
+  "illustrative": true,
+  "note": "An illustrative sample for the demo, not a vetted list. Safety paging is simulated.",
+  "categories": {
+    "safety": {"priority": 0, "label": "Safety", "page": "duty supervisor"},
+    "legal": {"priority": 1, "label": "Legal"},
+    "congressional": {"priority": 1, "label": "Congressional"},
+    "hardship": {"priority": 1, "label": "Hardship"},
+    "emergency": {"priority": 1, "label": "Emergency"}
+  },
+  "terms": [
+    {"term": "hurt myself", "category": "safety"},
+    {"term": "kill myself", "category": "safety"},
+    {"term": "end my life", "category": "safety"},
+    {"term": "going to hurt someone", "category": "safety"},
+    {"term": "lawyer", "category": "legal", "variants": ["lawyers"]},
+    {"term": "attorney", "category": "legal", "variants": ["attorneys"]},
+    {"term": "legal action", "category": "legal"},
+    {"term": "sue", "category": "legal"},
+    {"term": "congressman", "category": "congressional"},
+    {"term": "congresswoman", "category": "congressional"},
+    {"term": "senator", "category": "congressional", "variants": ["senators"]},
+    {"term": "member of congress", "category": "congressional"},
+    {"term": "lose my house", "category": "hardship"},
+    {"term": "evicted", "category": "hardship"},
+    {"term": "shut off", "category": "hardship"},
+    {"term": "emergency", "category": "emergency", "variants": ["emergencies"]}
+  ]
+}

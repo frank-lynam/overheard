@@ -53,10 +53,30 @@ class QueueItem(BaseModel):
 class Mode1Item(QueueItem):
     urgency: int
     team: str
+    alert: dict | None = None   # a trigger alert (from Mode 1 on): category, label, priority, safety
+
+
+def intakes(request: Request) -> dict:
+    """Each of the day's voicemails as it came in ([A] the trigger scan, and the stages after it), once."""
+    if request.app.state.intakes is None:
+        from overheard.pipeline.intake import intake
+        request.app.state.intakes = {v.id: intake(v) for v in voicemails(request)}
+    return request.app.state.intakes
+
+
+def alert_of(request: Request, mid: str) -> dict | None:
+    a = intakes(request)[mid].alert
+    return {k: a[k] for k in ("category", "label", "priority", "safety")} if a else None
+
+
+def alert_first(item) -> tuple:
+    """Alerted voicemails go in front of a person at once (safety first), then the AI's urgency."""
+    return (item.alert["priority"] if item.alert else 9, -item.urgency, item.receivedAt, item.id)
 
 
 class Mode2Item(QueueItem):
     urgency: int
+    alert: dict | None = None
     team: str
     clusterSize: int = 1
     repeat: dict | None = None  # the collapse note when this leads a repeat-caller group
@@ -135,10 +155,11 @@ def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item] 
         worked = {r[0] for r in d.con.execute("SELECT id FROM entries")}
         items = [
             Mode1Item(id=v.id, receivedAt=v.receivedAt, callerId=v.callerId, durationSec=v.durationSec,
-                      worked=v.id in worked, urgency=urgency_of(bundles[v.id]), team=team_of(bundles[v.id]))
+                      worked=v.id in worked, urgency=urgency_of(bundles[v.id]), team=team_of(bundles[v.id]),
+                      alert=alert_of(request, v.id))
             for v in vms
         ]
-        items.sort(key=lambda i: (-i.urgency, i.receivedAt, i.id))
+        items.sort(key=alert_first)
         return items
     day = mode2_day(request)
     sections = mode2_messages(request)
@@ -160,7 +181,7 @@ def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item] 
             Mode2Item(
                 id=v.id, receivedAt=v.receivedAt, callerId=v.callerId, durationSec=v.durationSec,
                 worked=v.id in worked, urgency=urgency_of(bundles[v.id]), team=team_of(bundles[v.id]),
-                clusterSize=cluster_of.get(v.id, 1),
+                alert=alert_of(request, v.id), clusterSize=cluster_of.get(v.id, 1),
                 repeat=day["repeats"].get(v.id),
                 incident=incident_members.get(v.id),
                 resolvable=o["resolvable"],
@@ -173,7 +194,7 @@ def queue(request: Request, mode: int = 0) -> list[QueueItem] | list[Mode1Item] 
     for r in day["repeats"].values():
         hidden.update(r["members"][1:])
     items = [i for i in items if i.id not in hidden]
-    items.sort(key=lambda i: (-i.urgency, i.receivedAt, i.id))
+    items.sort(key=alert_first)
     return items
 
 
@@ -188,11 +209,24 @@ async def message(mid: str, request: Request, mode: int = 0) -> dict:
         return m.model_dump()
     d = deps(request)
     bundle = await analyze(v, d)
+    alert = intakes(request)[v.id].alert       # the trigger scan's hits, highlighted in the transcript
     if mode == 2:
         section = await _message_mode2(v, bundle, MockCaseBackend(con(request)),
                                        Mode2Deps(d.con, d.store, d.provider, d.model))
-        return {**m.model_dump(), "analysis": bundle, "mode2": section}
-    return {**m.model_dump(), "analysis": bundle}
+        return {**m.model_dump(), "analysis": bundle, "mode2": section, "alert": alert}
+    return {**m.model_dump(), "analysis": bundle, "alert": alert}
+
+
+@router.get("/alerts")
+def alerts(request: Request, mode: int = 1) -> dict:
+    """Trigger alerts (from Mode 1 on): the voicemails with code words, most urgent first, each with its hits,
+    who it would page (safety, simulated) and how long the alert took from the transcript (the text path)."""
+    from overheard.triggers import default_list
+    tl = default_list()
+    found = [] if mode == 0 else sorted(
+        ({**it.alert, "alertMs": it.alert_ms} for it in intakes(request).values() if it.alert),
+        key=lambda a: (a["priority"], a["receivedAt"]))
+    return {"alerts": found, "illustrative": tl.illustrative, "note": tl.note}
 
 
 @router.post("/analysis/{mid}")
@@ -345,7 +379,8 @@ def simulation(request: Request, mode: int = 0) -> Simulation:
         return work_the_queue(vms, [v.id for v in vms], a, today)
     d = deps(request)
     urgency = {v.id: urgency_of(analyze_sync(v, d)) for v in vms}
-    order = [v.id for v in sorted(vms, key=lambda v: (-urgency[v.id], v.receivedAt, v.id))]
+    rank = {v.id: (intakes(request)[v.id].alert or {}).get("priority", 9) for v in vms}   # alerts first
+    order = [v.id for v in sorted(vms, key=lambda v: (rank[v.id], -urgency[v.id], v.receivedAt, v.id))]
     if mode == 1:
         return work_the_queue(vms, order, a, today)
     day, sections = mode2_day(request), mode2_messages(request)

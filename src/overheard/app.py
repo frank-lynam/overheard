@@ -89,6 +89,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # being computed twice at once: sync routes run in worker threads.
     app.state.analysis_cache = {}
     app.state.analyze_lock = threading.Lock()
+    app.state.intakes = None  # each voicemail's intake: the trigger scan (and later stages), computed once
     app.state.mode2 = None  # the day-2 computation (and with it every message's analysis); see warm()
     app.state.mode2_messages = None  # each message's mode-2 section, for the queue
     app.state.mode2_lock = threading.Lock()

@@ -131,6 +131,7 @@ async function toggleAssumptions() {
         row("Shift", `${a.shiftStart}–${a.shiftEnd}, lunch ${a.lunch} for ${a.lunchMin} min`),
         row("Urgent window", `welfare/urgent hardship reached within ${a.urgentWithinMin} min`),
         row("Approving an AI answer", `${a.approveMin} min (mode 2: no listening, no callback)`),
+        row("Code words", "an illustrative sample; alert timing is the text path only (no audio)"),
       ].join("");
     } catch (e) {
       assumeFacts.innerHTML = `<dd class="muted">Could not read assumptions: ${e.message}</dd>`;

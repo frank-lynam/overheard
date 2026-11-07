@@ -73,9 +73,17 @@ export function renderMessage(root, store) {
     const t = root.querySelector(".transcript");
     if (!t) return;
     const correction = store.get().correction;
-    t.querySelectorAll(".word-watch, .word-edited").forEach((w) => w.classList.remove("word-watch", "word-edited"));
+    t.querySelectorAll(".word-watch, .word-edited, .word-trigger").forEach((w) =>
+      w.classList.remove("word-watch", "word-edited", "word-trigger"));
     const extract = analysis?.extraction?.data;
     const offsets = t._offsets || [];
+    for (const h of current?.alert?.hits || []) {       // code words: marked whatever else is going on
+      offsets.forEach((off, i) => {
+        if (off < h.span[0] || off >= h.span[1]) return;
+        const w = t.querySelector(`[data-w="${i}"]`);
+        if (w) { w.classList.add("word-trigger"); w.dataset.tip = `Code word: ${h.term} (${h.category})`; }
+      });
+    }
     for (const f of ["caller", "callbackNumber", "caseId", "program", "requestedAction"]) {
       const env = extract?.[f];
       const s = env?.span, v = env?.value;
@@ -273,6 +281,11 @@ export function renderMessage(root, store) {
     put(root,
       el("div", { class: "pane-head" }, el("h2", {}, mode === 2 ? "Message · Mode 2" : mode ? "Message · Mode 1" : "Message"),
         el("span", { class: "muted" }, `${clock(current.receivedAt)} · ${phone(current.callerId)} · ${mmss(current.durationSec)}`)),
+      current.alert ? el("div", { class: `alert-banner${current.alert.safety ? " safety" : ""}`,
+        "data-tip": "A code word was heard, so this went in front of a person at once. The list is an illustrative sample." },
+        el("b", {}, current.alert.safety ? "Safety alert" : `${current.alert.label} alert`), " · heard: ",
+        current.alert.hits.map((h) => `“${h.said}”`).join(", "),
+        current.alert.page ? el("span", { class: "muted" }, ` · ${current.alert.page}`) : null) : null,
       mode ? null : el("p", { class: "workload muted" },
         `Costs the agent ${hm(workloadMin)}: ${hm(listenMin)} listening, ${hm(a.handleMin)} handling, ${hm(a.callbackMin)} on a callback.`),
       transcript(shown, current),

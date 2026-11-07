@@ -28,7 +28,16 @@ export function renderQueue(root, store) {
     for (const li of root.querySelectorAll(".queue-row")) oldTop[li.dataset.id] = li.getBoundingClientRect().top;
     const list = el("ol", { class: "queue-list" });
     let lastDay = null;
+    const alerts = mode >= 1 ? s.queue.filter((m) => m.alert) : [];
+    if (alerts.length) list.append(el("li", { class: "day-break lane-alert",
+      "data-tip": "Voicemails with a code word (an attorney, a senator, someone at risk) go in front of a person at once" },
+      `Alerts · ${alerts.length}`));
+    let laneDone = !alerts.length;
     for (const m of s.queue) {
+      if (!laneDone && !m.alert) {
+        laneDone = true;
+        list.append(el("li", { class: "day-break" }, "Everything else"));
+      }
       if (mode === 0 && dayOf(m.receivedAt) !== lastDay) {
         lastDay = dayOf(m.receivedAt);
         list.append(el("li", { class: "day-break" }, lastDay === s.today ? "Today" : "Yesterday, after hours"));
@@ -38,6 +47,8 @@ export function renderQueue(root, store) {
       const badges = mode >= 1 ? [
         mode === 2 && m.repeat ? el("span", { class: "repeat-note", "data-tip": `The same caller left ${m.repeat.members.length} messages; they're handled together, once` },
           `${m.repeat.members.length} messages · ${m.repeat.note}`) : null,
+        m.alert ? el("span", { class: `badge alert${m.alert.safety ? " safety" : ""}`,
+          "data-tip": `A code word was heard (${m.alert.label.toLowerCase()}): it goes to a person at once` }, m.alert.label) : null,
         el("span", { class: "team", "data-tip": `The AI would send this to ${word(TEAMS, m.team)}` }, word(TEAMS, m.team)),
         mode === 2 && m.clusterSize > 1 ? el("span", { class: "badge cluster", "data-tip": `${m.clusterSize} messages today are about the same thing` }, `${m.clusterSize} alike`) : null,
         mode === 2 && m.incident ? el("span", { class: "badge incident", "data-tip": `Part of a likely outage: ${m.incident}. One holding reply covers every caller.` }, "outage") : null,

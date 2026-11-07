@@ -1,9 +1,10 @@
 /* Overheard. Mode 0 is the old way, in sepia; Modes 1-3 are cool and clean. What each mode adds
    carries a fading corner bracket and a small tag in that mode's colour: rose, then blue, then green. */
 :root {
-  --bg: #f4f5f7; --panel: #ffffff; --ink: #161a21; --muted: #667085; --line: #e3e6eb; --soft: #f0f2f5;
-  --accent: #2f5d8f; --accent-ink: #ffffff; --radius: 12px; --radius-sm: 8px;
+  --bg: #f4f5f7; --panel: #ffffff; --panel-2: #f7f8fa; --ink: #161a21; --muted: #55606f; --line: #c5ccd8;
+  --soft: #f0f2f5; --accent: #2f5d8f; --accent-ink: #ffffff; --radius: 12px; --radius-sm: 8px;
   --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 2px 8px rgba(16, 24, 40, .05);
+  --shadow-strong: 0 1px 3px rgba(16, 24, 40, .10), 0 6px 18px rgba(16, 24, 40, .08);
   --f1: #e8a3a3; --f1-bg: #fcecec; --f1-ink: #9a3a3a;
   --f2: #8db4e6; --f2-bg: #e9f1fc; --f2-ink: #2a5a92;
   --f3: #8ccb9e; --f3-bg: #e6f5ea; --f3-ink: #2c6b40;
@@ -13,18 +14,26 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111418; --panel: #191d23; --ink: #e8eaed; --muted: #98a2b3; --line: #2a3038; --soft: #20252c;
+    --bg: #111418; --panel: #191d23; --panel-2: #1f242b; --ink: #e8eaed; --muted: #98a2b3; --line: #2a3038; --soft: #20252c;
     --accent: #7aa7da; --accent-ink: #0d1014; --shadow: 0 1px 2px rgba(0, 0, 0, .3);
     --f1: #b86a6a; --f1-bg: #3a2224; --f1-ink: #f2b8b8;
     --f2: #5f8cc4; --f2-bg: #1d2a3b; --f2-ink: #b5d0f3;
     --f3: #5fa274; --f3-bg: #1b2f22; --f3-ink: #ace0bb;
   }
 }
+/* Modes 1-3, light: the page takes a very light tint of the mode's colour (cards stay white on it) */
+body[data-mode="1"] { --bg: #fdf0f0; }
+body[data-mode="2"] { --bg: #edf3fc; }
+body[data-mode="3"] { --bg: #ecf7ef; }
+@media (prefers-color-scheme: dark) {
+  body[data-mode="1"], body[data-mode="2"], body[data-mode="3"] { --bg: #111418; }
+}
 /* Mode 0: pastel sepia, like an old case file */
 body[data-mode="0"] {
-  --bg: #f3ebdd; --panel: #fbf6ec; --ink: #3f3326; --muted: #8a755d; --line: #e4d6bf; --soft: #f1e6d3;
-  --accent: #8b6238; --accent-ink: #fffaf2; --touched: #efe1c8;
+  --bg: #f3ebdd; --panel: #fbf6ec; --ink: #3f3326; --muted: #76624c; --line: #e4d6bf; --soft: #f1e6d3;
+  --accent: #8b6238; --accent-ink: #fffaf2; --touched: #efe1c8; --panel-2: #f6eedf;
   --shadow: 0 1px 2px rgba(90, 60, 20, .06), 0 2px 8px rgba(90, 60, 20, .05);
+  --shadow-strong: 0 1px 3px rgba(90, 60, 20, .10), 0 6px 18px rgba(90, 60, 20, .07);
 }
 @media (prefers-color-scheme: dark) {
   body[data-mode="0"] {
@@ -62,7 +71,7 @@ body[data-mode="3"] .scoreboard { display: none; }  /* the day's scoreboard; Mod
 /* the workbench: queue, message, context */
 .workbench { display: grid; grid-template-columns: minmax(25rem, 1.15fr) 2fr minmax(18rem, 1.2fr); gap: 1rem; padding: 1.25rem; align-items: start; }
 .workbench > * { min-width: 0; }  /* long words and wide tables wrap or scroll inside their pane */
-.pane { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; box-shadow: var(--shadow); transition: background-color .4s; }
+.pane { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; box-shadow: var(--shadow-strong); transition: background-color .4s; }
 .pane h2 { margin: 0 0 .75rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
 @media (max-width: 1000px) { .workbench { grid-template-columns: 1fr; } }
 
@@ -170,7 +179,7 @@ body[data-mode="1"] .queue-row, body[data-mode="2"] .queue-row { grid-template-c
 
 /* --- Mode 3: the archive dashboard --- */
 .mode3 { padding: 1.25rem; max-width: 72rem; margin: 0 auto; }
-.m3-pane { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); }
+.m3-pane { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow-strong); }
 .m3-head h2 { margin: 0 0 .5rem; font-size: 1.25rem; letter-spacing: -.01em; }
 .m3-head h2 .prov { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .1rem .35rem; margin-left: .5rem; vertical-align: middle; }
 .m3-stats { display: flex; gap: .75rem; margin: 1rem 0; flex-wrap: wrap; }
@@ -179,7 +188,7 @@ body[data-mode="1"] .queue-row, body[data-mode="2"] .queue-row { grid-template-c
 .m3-headline { font-size: 1rem; line-height: 1.55; padding: .75rem 1rem; background: var(--soft); border-radius: var(--radius-sm); }
 .m3-chart svg { width: 100%; height: auto; display: block; margin: 1rem 0; }
 .m3-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-.m3-table th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: .3rem .5rem; border-bottom: 2px solid var(--line); }
+.m3-table th { background: var(--panel-2); text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: .3rem .5rem; border-bottom: 2px solid var(--line); }
 .m3-table td { padding: .3rem .5rem; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .m3-table .num { text-align: right; white-space: nowrap; }
 .mode3 .m3-pane + .m3-pane { margin-top: 1rem; }
@@ -235,7 +244,7 @@ body[data-mode="1"] .queue-row, body[data-mode="2"] .queue-row { grid-template-c
 
 /* --- What each mode adds: a corner bracket that fades out, and a small tag, in that mode's colour.
    A feature keeps the colour of the mode that brought it, so later modes show the layers building up. --- */
-.ai-panels, .stat.acc, body[data-mode="1"] .pane.queue {
+.ai-panels, .stat.acc, .stat.m1, .alert-banner, body[data-mode="1"] .pane.queue {
   --feat: var(--f1); --feat-bg: var(--f1-bg); --feat-ink: var(--f1-ink); --feat-tag: "Mode 1";
 }
 .stat.m2, .incident-banner, .mode2-panels:not(:empty), body[data-mode="2"] .pane.queue {
@@ -244,11 +253,11 @@ body[data-mode="1"] .queue-row, body[data-mode="2"] .queue-row { grid-template-c
 .mode3 .m3-pane {
   --feat: var(--f3); --feat-bg: var(--f3-bg); --feat-ink: var(--f3-ink); --feat-tag: "Mode 3";
 }
-.ai-panels, .stat.acc, .stat.m2, .incident-banner, .mode2-panels:not(:empty),
+.ai-panels, .stat.acc, .stat.m1, .alert-banner, .stat.m2, .incident-banner, .mode2-panels:not(:empty),
 body[data-mode="1"] .pane.queue, body[data-mode="2"] .pane.queue, .mode3 .m3-pane {
   position: relative;
 }
-.ai-panels::before, .stat.acc::before, .stat.m2::before, .incident-banner::before, .mode2-panels:not(:empty)::before,
+.ai-panels::before, .stat.acc::before, .stat.m1::before, .alert-banner::before, .stat.m2::before, .incident-banner::before, .mode2-panels:not(:empty)::before,
 body[data-mode="1"] .pane.queue::before, body[data-mode="2"] .pane.queue::before, .mode3 .m3-pane::before {
   content: ""; position: absolute; top: -1px; left: -1px; width: min(9rem, 60%); height: min(6rem, 80%);
   border-top: 2px solid var(--feat); border-left: 2px solid var(--feat); border-top-left-radius: var(--radius);
@@ -256,15 +265,15 @@ body[data-mode="1"] .pane.queue::before, body[data-mode="2"] .pane.queue::before
   mask-image: radial-gradient(circle at top left, #000 35%, transparent 75%);
   pointer-events: none;
 }
-.ai-panels::after, .stat.acc::after, .stat.m2::after, .incident-banner::after, .mode2-panels:not(:empty)::after,
+.ai-panels::after, .stat.acc::after, .stat.m1::after, .alert-banner::after, .stat.m2::after, .incident-banner::after, .mode2-panels:not(:empty)::after,
 body[data-mode="1"] .pane.queue::after, body[data-mode="2"] .pane.queue::after, .mode3 .m3-pane::after {
   content: var(--feat-tag); position: absolute; top: -.55rem; left: .9rem; padding: .02rem .45rem;
   font-size: .6rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1.5;
   color: var(--feat-ink); background: var(--feat-bg); border: 1px solid var(--feat); border-radius: 999px;
   pointer-events: none;
 }
-.stat.acc, .stat.m2 { border-top-left-radius: var(--radius); }
-.stat.acc::before, .stat.m2::before { height: 100%; }
+.stat.acc, .stat.m1, .stat.m2 { border-top-left-radius: var(--radius); }
+.stat.acc::before, .stat.m1::before, .stat.m2::before { height: 100%; }
 .ai-panels { padding-top: .35rem; }
 .ai-panels::before { border-top-left-radius: var(--radius-sm); }
 .mode2-panels:not(:empty) { padding: .6rem 0 0 .6rem; margin-bottom: 1rem; }
@@ -309,3 +318,14 @@ select.ai-value:focus { border-color: var(--accent); outline: none; }
 .m3-more { margin: .75rem 0; }
 .m3-more > summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: .9rem; padding: .4rem 0; }
 .m3-more[open] > summary { margin-bottom: .5rem; }
+
+/* --- Code-word alerts (Mode 1 on): the lane at the top of the queue, the banner on a message, the words --- */
+:root { --alert: #b3261e; --alert-bg: #fde8e6; --safety: #7a1fa2; --safety-bg: #f3e5f8; }
+@media (prefers-color-scheme: dark) { :root { --alert: #f2b8b5; --alert-bg: #3a2120; --safety: #e1b3f2; --safety-bg: #2f2136; } }
+.lane-alert { color: var(--alert); font-weight: 700; }
+.badge.alert { background: var(--alert-bg); color: var(--alert); border-color: var(--alert); }
+.badge.alert.safety { background: var(--safety-bg); color: var(--safety); border-color: var(--safety); }
+.alert-banner { margin: 0 0 .9rem; padding: .55rem .8rem; border-radius: var(--radius-sm); background: var(--alert-bg);
+  color: var(--ink); border: 1px solid var(--alert); font-size: .92rem; }
+.alert-banner.safety { background: var(--safety-bg); border-color: var(--safety); }
+.word-trigger { background: var(--alert-bg); color: var(--alert); font-weight: 600; border-radius: 3px; padding: 0 .08em; }
