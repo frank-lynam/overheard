@@ -17,6 +17,11 @@ CREATE INDEX contacts_case ON contacts (case_id);
 CREATE INDEX contacts_cause ON contacts (root_cause, at);
 CREATE TABLE kb_articles (id TEXT PRIMARY KEY, title TEXT, body TEXT, topics TEXT);
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE memory_items (item_id TEXT PRIMARY KEY, text TEXT, vector TEXT, created_at TEXT, problem_type TEXT,
+                           final_team TEXT, disposition TEXT, holdout INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX memory_team ON memory_items (final_team);
+CREATE INDEX memory_created ON memory_items (created_at);
+CREATE TABLE memory_events (event_id TEXT PRIMARY KEY, item_id TEXT, kind TEXT, payload_json TEXT, created_at TEXT);
 """
 
 

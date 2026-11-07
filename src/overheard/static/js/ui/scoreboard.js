@@ -12,6 +12,7 @@ export function renderScoreboard(root, store) {
 
   store.subscribe((s) => {
     if (s.mode >= 1 && !s._alerts) api.alerts().then((a) => store.set({ _alerts: a })).catch(() => {});
+    if (s.mode >= 2 && !s._tickets) api.tickets().then((t) => store.set({ _tickets: t })).catch(() => {});
     if (s.mode >= 1 && !s._junk) api.junk().then((j) => store.set({ _junk: j })).catch(() => {});
     if (s.mode >= 1 && !acc) api.accuracy().then((a) => { acc = a; store.set({ _acc: a }); }).catch(() => {});
     if (s.mode === 2 && !s._sb2) api.scoreboard2().then((sb) => store.set({ _sb2: sb })).catch(() => {});
@@ -40,6 +41,7 @@ export function renderScoreboard(root, store) {
       "Your pace": "Your own average time per message, from the ones you've worked",
       "No callback needed": "Messages the case record already answers: a person approves the AI's reply instead of calling back",
       "Outage spotted": "How soon after the first caller the AI flagged that many people had the same problem",
+      "Team proposals": "Each problem becomes a ticket for the team routing memory proposes. Checked against a fifth of past routings held back from the memory; people's moves today teach it.",
     };
     const stat = (label, value, note, gain) => el("div", { class: "stat", "data-tip": TIPS[label] }, el("span", { class: "label" }, label),
       el("b", {}, value), note ? el("span", { class: "note" }, note) : null, gain ? el("span", { class: "note gain" }, gain) : null);
@@ -118,8 +120,13 @@ export function renderScoreboard(root, store) {
             `“${sb.incident.title}”: one holding reply covers every caller`)
           : stat("Outage spotted", "—", "no spike today"),
       );
+      if (s._tickets) {
+        const a = s._tickets.accuracy, c = s._tickets.counts;
+        stats.push(stat("Team proposals", `${Math.round(a.accuracy * 100)}% right`,
+          `on ${a.heldOut} past routings it hadn't seen · ${c.problems} tickets filed today, ${c.moved} moved by people`));
+      }
       stats.slice(before).forEach((n) => n.classList.add("m2"));  // what Mode 2 adds, highlighted as such
     }
     put(root, ...stats);
-  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2", "_alerts", "_junk"]);
+  }, ["sim", "pace", "queue", "assumptions", "mode", "_acc", "_sb2", "_alerts", "_junk", "_tickets"]);
 }

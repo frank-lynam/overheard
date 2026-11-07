@@ -56,11 +56,21 @@ class Mode1Item(QueueItem):
     alert: dict | None = None   # a trigger alert (from Mode 1 on): category, label, priority, safety
 
 
+def run_coro(coro):
+    """Run a coroutine to its end from sync code, also from inside an async route (then in a thread of its own)."""
+    import asyncio
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(1) as ex:
+        return ex.submit(asyncio.run, coro).result()
+
+
 def intakes(request: Request) -> dict:
     """Each of the day's voicemails as it came in: [A] the trigger scan, [B] the junk filter, once."""
     if request.app.state.intakes is None:
-        import asyncio
-
         from overheard.llm.run import run_task
         from overheard.llm.tasks import TASKS
         from overheard.pipeline.intake import intake
@@ -68,17 +78,8 @@ def intakes(request: Request) -> dict:
         vms, d = voicemails(request), deps(request)
         rules, per_script = JunkRules.load(), callers_per_script(vms)
 
-        def run(coro):                  # from an async route too: then in a thread with its own loop
-            try:
-                asyncio.get_running_loop()
-            except RuntimeError:
-                return asyncio.run(coro)
-            from concurrent.futures import ThreadPoolExecutor
-            with ThreadPoolExecutor(1) as ex:
-                return ex.submit(asyncio.run, coro).result()
-
         def classify(v):
-            r = run(run_task(d.provider, TASKS["junk_classify"].build(v), d.model, d.store, write=d.write))
+            r = run_coro(run_task(d.provider, TASKS["junk_classify"].build(v), d.model, d.store, write=d.write))
             return r.data.verdict, r.data.reason, r.provenance
 
         def junk_stage(it):
@@ -293,6 +294,92 @@ def reopen_junk(mid: str, request: Request) -> dict:
     with request.app.state.mode2_lock:            # the day's later work includes it now
         request.app.state.mode2 = request.app.state.mode2_messages = None
     return {"reopened": mid}
+
+
+def desk(request: Request):
+    """The ticket desk (pipeline/tickets.py): problem check, team proposal from memory, the workflow sink."""
+    st = request.app.state
+    if st.desk is None:
+        from overheard.llm.run import run_task
+        from overheard.pipeline.tickets import Desk
+        from overheard.workflow.sink import HearthboardSink, MockWorkflowSink
+        s, d = st.settings, deps(request)
+        if s.workflow_url:
+            token = s.workflow_token.get_secret_value() if s.workflow_token else ""
+            factory = lambda _con: HearthboardSink(s.workflow_url, token)   # noqa: E731
+        else:
+            factory = MockWorkflowSink
+        st.desk = Desk(s.db_path, st.today, factory,
+                       lambda task: run_coro(run_task(d.provider, task, d.model, d.store, write=d.write)))
+    return st.desk
+
+
+@router.get("/tickets")
+def tickets(request: Request) -> dict:
+    """Mode 2 on: the tickets filed so far (decisions read back first), the day's progress through them, and how
+    well routing memory proposes teams on routings it hasn't seen."""
+    dk = desk(request)
+    dk.refresh()
+    units = dk.units(queued(request), mode2_day(request))
+    done = dk.done_units()
+    rows = dk.con.execute("SELECT is_problem, COUNT(*) FROM ticket_units GROUP BY is_problem").fetchall()
+    by = {r[0]: r[1] for r in rows}
+    ts = dk.tickets()
+    from overheard.memory.store import teams_map
+    return {"tickets": ts, "sink": dk.sink.name, "teams": teams_map()["teams"], "accuracy": dk.accuracy(),
+            "counts": {"revealed": len(done), "toReveal": sum(u["unit_id"] not in done for u in units),
+                       "problems": by.get(1, 0), "notProblems": by.get(0, 0),
+                       **{st: sum(t["status"] == st for t in ts) for st in ("proposed", "accepted", "moved", "declined")}}}
+
+
+class Reveal(BaseModel):
+    all: bool = False
+
+
+@router.post("/tickets/reveal")
+def reveal_tickets(body: Reveal, request: Request) -> dict:
+    """Reveal the day's voicemails in arrival order until the next one makes a ticket (or all of them): each team
+    proposal is worked out now, from the memory as it stands."""
+    dk = desk(request)
+    dk.refresh()
+    vms = queued(request)
+    alerts = {i: it.alert for i, it in intakes(request).items() if it.alert}
+    made = dk.reveal(dk.units(vms, mode2_day(request)), {v.id: v for v in vms}, alerts, body.all)
+    return {"made": made}
+
+
+@router.get("/tickets/{tid}")
+def get_ticket(tid: str, request: Request) -> dict:
+    t = desk(request).ticket(tid)
+    if not t:
+        raise HTTPException(404, f"no ticket {tid}")
+    return t
+
+
+class Decision(BaseModel):
+    action: str                 # accept | move | decline
+    team: str | None = None     # for a move
+    by: str = "supervisor"
+
+
+@router.post("/tickets/{tid}/decide")
+def decide_ticket(tid: str, body: Decision, request: Request) -> dict:
+    """The mock board's buttons (with hearthboard, people decide there): accept, move or decline."""
+    dk = desk(request)
+    if dk.sink.name != "mock":
+        raise HTTPException(400, "tickets are decided in the workflow system; this console only reads the decision back")
+    t = dk.ticket(tid)
+    if not t:
+        raise HTTPException(404, f"no ticket {tid}")
+    from overheard.memory.store import teams_map
+    if body.action == "move" and body.team not in {*teams_map()["teams"], teams_map()["general"]}:
+        raise HTTPException(400, "move it to one of the teams")
+    try:
+        dk.sink.decide(t["board_id"], body.action, body.team, body.by)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from None
+    dk.refresh()
+    return dk.ticket(tid)
 
 
 @router.get("/alerts")

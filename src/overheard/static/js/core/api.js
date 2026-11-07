@@ -26,6 +26,10 @@ export const api = {
   alerts: () => call("GET", "/alerts?mode=1"),
   junk: () => call("GET", "/junk"),
   reopenJunk: (id) => call("POST", `/junk/${id}/reopen`),
+  // from mode 2: tickets in the workflow system, team proposals from routing memory
+  tickets: () => call("GET", "/tickets"),
+  revealTickets: (all = false) => call("POST", "/tickets/reveal", { all }),
+  decideTicket: (id, action, team) => call("POST", `/tickets/${id}/decide`, { action, team }),
   // mode 2: the day's spike incidents, a message's resolution (and its human state), the mode-2 scoreboard
   incidents: () => call("GET", "/incidents"),
   resolution: (id) => call("GET", `/resolutions/${id}`),

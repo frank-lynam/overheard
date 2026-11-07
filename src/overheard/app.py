@@ -65,11 +65,12 @@ async def warm_up(app: FastAPI):
     a background thread works out every message's analysis and the day's mode-2 reasoning, so the first click
     on Mode 1 or 2 doesn't wait seconds for it. Live mode stays lazy: warming would call the model on every start."""
     if app.state.settings.llm_mode in ("mock", "replay"):
-        from overheard.api.routes import mode2_messages
+        from overheard.api.routes import desk, mode2_messages
 
         def warm() -> None:
             try:
                 mode2_messages(SimpleNamespace(app=app))
+                desk(SimpleNamespace(app=app)).accuracy()      # team proposals on the held-out routings
             except Exception:  # a failure here shows up again, properly, on the first real request
                 pass
 
@@ -90,6 +91,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # being computed twice at once: sync routes run in worker threads.
     app.state.analysis_cache = {}
     app.state.analyze_lock = threading.Lock()
+    app.state.desk = None     # the ticket desk: problem check, team proposals, the workflow sink (pipeline/tickets.py)
     app.state.intakes = None  # each voicemail's intake: the trigger scan (and later stages), computed once
     app.state.mode2 = None  # the day-2 computation (and with it every message's analysis); see warm()
     app.state.mode2_messages = None  # each message's mode-2 section, for the queue

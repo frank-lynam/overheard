@@ -141,10 +141,12 @@ def seed(path: Path | str, seed_value: int = 2026) -> dict:
                         (f"c{n:06d}", cid, f"{at.isoformat()}T{rng.randint(8, 16):02d}:{rng.randint(0, 59):02d}",
                          "phone", dname, lang, region, round(max(0.5, rng.gauss(d[3] * 1.2, 1.5)), 1), 0, None,
                          say(rng, d[5]), None))
+    from overheard.memory.store import build as build_memory
+    mem = build_memory(con, seed_value)          # routing memory, from the archive (deterministic)
     con.execute("INSERT INTO meta VALUES ('seed', ?)", (str(seed_value),))
     con.execute("INSERT INTO meta VALUES ('today', ?)", (today["date"],))
     con.commit()
     counts = {"voicemails": len(today["voicemails"]), "cases": len(today["cases"]) + len(callers),
-              "contacts": n, "loop_contacts": loops, "events": len(EVENTS)}
+              "contacts": n, "loop_contacts": loops, "events": len(EVENTS), **mem}
     con.close()
     return counts

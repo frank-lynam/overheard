@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     llm_timeout: float = 60.0
     llm_responses_path: Path = Path("overheard_responses")  # the JSON response store (one per (task, input, model))
     db_path: Path = Path("overheard.db")
+    # Where tickets go: a hearthboard (its URL and Overheard's agent token there), else a local mock board
+    workflow_url: str | None = None
+    workflow_token: SecretStr | None = None
     seed: int = 2026
     host: str = "127.0.0.1"
     port: int = 8000

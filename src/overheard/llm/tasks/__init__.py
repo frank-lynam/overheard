@@ -36,9 +36,11 @@ from overheard.llm.tasks import (  # noqa: E402,F401
     incident,
     intent_urgency,
     junk_classify,
+    problem_classify,
     resolution,
     routing,
     sentiment,
     summary,
+    team_propose,
     translation,
 )

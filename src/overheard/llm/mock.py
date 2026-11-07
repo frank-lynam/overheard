@@ -216,6 +216,30 @@ def _junk(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
     return {"verdict": "not_junk", "reason": "A caller about their benefits."}
 
 
+def _problem(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
+    """From the truth: the root cause's owner says whether it's a problem a team acts on, and its kind."""
+    from overheard.memory.store import owner
+    cause = t.get("rootCause") or "other"
+    _, problem = owner(cause)
+    conf = round(0.62 + 0.3 * rng.random(), 2) if not _wrong(rng) else round(0.5 + 0.1 * rng.random(), 2)
+    return {"is_problem": problem, "problem_type": cause if cause != "junk" else "other",
+            "statement": f"The caller's problem: {cause.replace('-', ' ')}." if problem else
+                         f"Answered on the call: {cause.replace('-', ' ')}.",
+            "confidence": conf, "reasons": ["From what the caller describes."]}
+
+
+def _team(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
+    """From the evidence it was given (the mock follows the memory): the team with the most weight, if it has enough."""
+    from overheard.memory.store import MIN_CONFIDENCE
+    w = t.get("weighed") or {}
+    shares = w.get("shares") or {}
+    top = next(iter(shares.items()), (None, 0.0))
+    if top[0] is None or top[1] < MIN_CONFIDENCE:
+        return {"proposed_team": "unknown", "confidence": round(top[1], 2), "evidence": []}
+    refs = [e["ref"] for e in w.get("evidence", []) if e["team"] == top[0]][:3]
+    return {"proposed_team": top[0], "confidence": round(top[1], 2), "evidence": refs}
+
+
 def _translation(task: Task, rng: random.Random, t: dict[str, Any], script: str) -> dict:
     lang = (t.get("lang") or "en").split("-")[0]
     if lang == "en":
@@ -383,6 +407,8 @@ class MockProvider:
                 "intent_urgency": lambda: _intent(task, rng, t, _script(task)),
                 "routing": lambda: _routing(task, rng, t),
                 "junk_classify": lambda: _junk(task, rng, t),
+                "problem_classify": lambda: _problem(task, rng, t),
+                "team_propose": lambda: _team(task, rng, t),
                 "translation": lambda: _translation(task, rng, t, _script(task)),
                 "sentiment": lambda: _sentiment(task, rng, t, _script(task)),
                 "draft_reply": lambda: _draft(task, rng, t),

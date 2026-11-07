@@ -21,7 +21,62 @@ function incidentBanner(incidents) {
   );
 }
 
+// Mode 2: the tickets filed in the workflow system, revealed voicemail by voicemail, each with its proposed team
+const TEAM_NAMES = (t) => t?.teams || {};
+function ticketCard(store, t, teams) {
+  const name = (slug) => teams[slug] || (slug === "general" ? "General" : slug);
+  const team = t.proposed_team === "unknown" ? "unknown (filed in General)" : name(t.proposed_team);
+  const status = { proposed: "waiting for the team", accepted: `accepted by ${name(t.final_team)}`,
+    moved: `moved to ${name(t.final_team)}`, declined: "declined" }[t.status] || t.status;
+  const why = t.evidence.map((e) => `${e.ref} (${e.when}): “${e.text}” went to ${name(e.team)}`).join("\n");
+  const act = async (action, teamSlug) => {
+    try {
+      await api.decideTicket(t.ticket_id, action, teamSlug);
+      store.set({ _tickets: await api.tickets() });
+    } catch (e) { alert(e.message); }
+  };
+  const move = el("select", { "aria-label": "Move to", onchange: (e) => e.target.value && act("move", e.target.value) },
+    el("option", { value: "" }, "Move to…"),
+    Object.entries(teams).filter(([k]) => k !== t.filed_in).map(([k, v]) => el("option", { value: k }, v)));
+  return el("li", { class: `ticket-card t-${t.status}` },
+    el("div", { class: "ticket-head" }, el("b", {}, t.summary),
+      t.priority === 1 ? el("span", { class: "badge alert", "data-tip": "Code words: priority 1" }, "priority") : null),
+    el("div", { class: "ticket-meta" },
+      el("span", { class: "chip-team", "data-tip": why || "No similar past problems" },
+        `Proposed: ${team} · ${Math.round(t.team_confidence * 100)}%`),
+      el("span", { class: "muted" }, ` · ${status}`)),
+    t.status === "proposed" && t.sink === "mock"
+      ? el("div", { class: "ticket-acts" }, el("button", { class: "small", onclick: () => act("accept") }, "Accept"), move,
+          el("button", { class: "small", onclick: () => act("decline") }, "Decline"))
+      : t.link ? el("a", { href: t.link, target: "_blank", rel: "noopener" }, "Open on the board ›") : null);
+}
+
 export function renderQueue(root, store) {
+  let polling = null;
+  const drawTickets = (s) => {
+    const t = s._tickets, teams = TEAM_NAMES(t);
+    const reveal = async (all) => {
+      await api.revealTickets(all);
+      store.set({ _tickets: await api.tickets() });
+    };
+    clearInterval(polling);   // decisions made on the board come back by polling
+    if (t.sink !== "mock") polling = setInterval(async () => {
+      if (!store.get().showTickets) { clearInterval(polling); return; }
+      store.set({ _tickets: await api.tickets() });
+    }, 5000);
+    put(root,
+      el("div", { class: "pane-head" }, el("h2", {}, `Tickets · ${t.tickets.length}`),
+        el("button", { class: "small", onclick: () => store.set({ showTickets: false }) }, "Back to the queue")),
+      el("p", { class: "queue-legend muted" }, t.sink === "mock"
+        ? "Each problem becomes a ticket for the team routing memory proposes. Accept, move or decline it: a move teaches the next proposal."
+        : "Filed on the board as proposals in the proposed team's project; the team accepts, moves or declines it there."),
+      el("div", { class: "row ticket-reveal" },
+        el("button", { class: "small", disabled: !t.counts.toReveal, onclick: () => reveal(false),
+          "data-tip": "Reveal voicemails in arrival order until the next one makes a ticket" }, "Next voicemail ›"),
+        el("button", { class: "small", disabled: !t.counts.toReveal, onclick: () => reveal(true) }, "Reveal the rest"),
+        el("span", { class: "muted" }, `${t.counts.toReveal} to go · ${t.counts.notProblems} weren't problems`)),
+      el("ol", { class: "queue-list ticket-list" }, [...t.tickets].reverse().map((x) => ticketCard(store, x, teams))));
+  };
   const draw = (s) => {
     const mode = s.mode;
     // remember where the rows are now, so after the re-sort we can slide them (FLIP)
@@ -90,11 +145,16 @@ export function renderQueue(root, store) {
         el("ol", { class: "queue-list junk-list" }, rows));
       return;
     }
+    if (mode >= 2 && s.showTickets && s._tickets) { drawTickets(s); return; }
     const kept = mode >= 1 && s._junk ? s._junk.filtered.length : 0;
+    const filed = mode >= 2 && s._tickets ? s._tickets.tickets.length : null;
     put(root,
       kept ? el("button", { class: "junk-link", onclick: () => store.set({ showJunk: true }),
         "data-tip": "Robocalls, scams, silence and pocket dials the filter kept out: see them, reopen any" },
         `${kept} junk calls kept out ›`) : null,
+      filed !== null ? el("button", { class: "junk-link tickets-link", onclick: () => store.set({ showTickets: true }),
+        "data-tip": "Problems become tickets for the team routing memory proposes; people accept, move or decline them" },
+        `${filed} ticket${filed === 1 ? "" : "s"} filed · ${s._tickets.counts.toReveal} voicemails to go ›`) : null,
       el("div", { class: "pane-head" },
         el("h2", { "data-tip": mode ? "Most urgent first, as the AI judges it" : "In the order the messages arrived, oldest first" },
           `Voicemail · ${s.queue.length} · ${mode === 2 ? "most urgent first, repeat callers combined" : mode === 1 ? "most urgent first" : "oldest first"}`),
@@ -118,5 +178,6 @@ export function renderQueue(root, store) {
       }));
     }
   };
-  store.subscribe(draw, ["queue", "selected", "touches", "simClock", "mode", "incidents", "showJunk", "_junk"]);
+  store.subscribe(draw, ["queue", "selected", "touches", "simClock", "mode", "incidents", "showJunk", "_junk",
+                         "showTickets", "_tickets"]);
 }
