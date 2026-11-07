@@ -74,7 +74,7 @@ async def test_incident_fires_from_the_spike(client):
 
 async def test_message_mode2_section_and_resolution_flow(client):
     m = (await client.get("/api/messages/m05", params={"mode": 2})).json()
-    assert set(m["mode2"]) == {"resolution", "brief", "obligations", "missingInfo"}
+    assert set(m["mode2"]) == {"resolution", "brief", "obligations", "missingInfo", "applies"}
     o = m["mode2"]["resolution"]
     assert o["provenance"] in ("mock", "llm", "fallback") and o["model"]
     assert isinstance(o["lookups"], list)

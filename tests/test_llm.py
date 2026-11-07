@@ -13,6 +13,7 @@ from overheard.llm.mock import MockProvider
 from overheard.llm.provider import LLMProvider, Task, build_provider, input_hash
 from overheard.llm.run import run_task
 from overheard.llm.tasks import TASKS
+from overheard.pipeline.applies import candidates
 
 
 def _vm() -> Voicemail:
@@ -136,6 +137,10 @@ def test_mock_offline_end_to_end(tmp_path):
             task = cls.build([v.script], v.receivedAt, 3)
         elif cls is TASKS["team_propose"]:          # built from a problem and memory's evidence, not a voicemail
             task = cls.build("returned-deposit", "A deposit came back.", {"evidence": [], "shares": {}})
+        elif cls is TASKS["applies_triage"]:        # built with the rules retrieval offered
+            task = cls.build(v, candidates(v, "2026-03-10"))
+        elif cls is TASKS["retro_match"]:           # built from a problem definition and past contacts
+            task = cls.build({"description": "Sign-in fails"}, [{"id": "c1", "at": "2026-02-10", "text": "x"}])
         else:
             task = cls.build(v)
         result = asyncio.run(run_task(MockProvider(), task, "mock", store=ResponseStore(tmp_path)))

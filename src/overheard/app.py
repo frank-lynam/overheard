@@ -94,6 +94,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.desk = None     # the ticket desk: problem check, team proposals, the workflow sink (pipeline/tickets.py)
     app.state.intakes = None  # each voicemail's intake: the trigger scan (and later stages), computed once
     app.state.mode2 = None  # the day-2 computation (and with it every message's analysis); see warm()
+    app.state.retro = {}    # retro searches done, by their definition (pipeline/retro.py)
     app.state.mode2_messages = None  # each message's mode-2 section, for the queue
     app.state.mode2_lock = threading.Lock()
     app.state.store = ResponseStore(settings.llm_responses_path)

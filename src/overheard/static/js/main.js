@@ -5,7 +5,7 @@ import { renderContext, bindResolutionBump } from "./ui/context.js";
 import { renderMessage } from "./ui/message.js";
 import { renderQueue } from "./ui/queue.js";
 import { renderScoreboard } from "./ui/scoreboard.js";
-import { renderRootCauses, renderEventImpact, renderJourneys, renderPromises, renderEquity, renderLetterLab, renderAsk, renderKnowledgeGaps, renderWeakSignals, renderStaffingForecast } from "./ui/mode3.js";
+import { renderRootCauses, renderEventImpact, renderJourneys, renderPromises, renderEquity, renderLetterLab, renderAsk, renderKnowledgeGaps, renderWeakSignals, renderStaffingForecast, renderOverlooked } from "./ui/mode3.js";
 
 const store = createStore({ mode: 0, queue: [], selected: null, sim: null, touches: null, simClock: null, pace: null, today: null, assumptions: null, incidents: null });
 const buttons = [...document.querySelectorAll(".stepper button")];
@@ -25,6 +25,7 @@ const M3_PANES = {
   ask: { render: renderAsk },
   "knowledge-gaps": { api: api.knowledgeGaps, render: renderKnowledgeGaps },
   "weak-signals": { api: api.weakSignals, render: renderWeakSignals },
+  overlooked: { api: api.retro, render: renderOverlooked },
   "staffing-forecast": { api: api.staffingForecast, render: renderStaffingForecast },
 };
 let m3Active = "root-causes";

@@ -5,7 +5,7 @@ import "./core/tip.js";
 import { api } from "./core/api.js";
 import {
   renderRootCauses, renderEventImpact, renderJourneys, renderPromises,
-  renderEquity, renderLetterLab, renderAsk, renderKnowledgeGaps,
+  renderEquity, renderLetterLab, renderAsk, renderKnowledgeGaps, renderOverlooked,
   renderWeakSignals, renderStaffingForecast,
 } from "./ui/mode3.js";
 
@@ -19,6 +19,7 @@ const SLIDES = [
   { id: "ask", title: "Ask the archive", load: () => null, render: (el) => renderAsk(el) },
   { id: "knowledge-gaps", title: "Knowledge gaps", load: () => api.knowledgeGaps(), render: (el, d) => renderKnowledgeGaps(el, d) },
   { id: "weak-signals", title: "Weak signals", load: () => api.weakSignals(), render: (el, d) => renderWeakSignals(el, d) },
+  { id: "overlooked", title: "Overlooked before today", load: () => api.retro(), render: (el, d) => renderOverlooked(el, d) },
   { id: "staffing-forecast", title: "Staffing", load: () => api.staffingForecast(), render: (el, d) => renderStaffingForecast(el, d) },
 ];
 

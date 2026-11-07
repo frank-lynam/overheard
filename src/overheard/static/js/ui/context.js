@@ -2,7 +2,7 @@
 // Mode 0: the case system, searched by hand (by name, phone or case number).
 // Mode 2: the work the AI has already done for the open message — its lookups,
 // its draft reply (a human approves before anything goes out), the obligation
-// clocks, the callback window, and the brief for the calls that still happen.
+// clocks, the callback window, the rules that apply, and the brief for the calls that still happen.
 // The manual case search stays below in every mode.
 import { api } from "../core/api.js";
 import { clock, day, el, hm, phone, put } from "../core/format.js";
@@ -99,6 +99,17 @@ function drawResolution(root, r, s) {
         el("p", { class: "ai-line clock",
           "data-tip": `${DEADLINES[ob.kind]?.[1] ?? ""}${ob.evidence ? `. Heard: “${ob.evidence}”` : ""}` },
           `${DEADLINES[ob.kind]?.[0] ?? plain(ob.kind)}: due ${ob.due.includes("T") ? clock(ob.due) : day(ob.due)}`))));
+  }
+
+  const ap = (r.applies?.verdicts || []).filter((a) => a.verdict !== "does_not_apply");
+  if (ap.length) {
+    const WORD = { applies: "applies", unsure: "unsure: a person decides" };
+    kids.push(el("section", { class: "ai-panel" },
+      el("header", { class: "ai-panel-head" }, el("b", { "data-tip": "Policies, programs, notices and outages in force when they called that fit this message; the AI quotes the caller's words" }, "Applies here"), badge(r.applies.provenance)),
+      el("div", { class: "applies" }, ap.map((a) =>
+        el("span", { class: `chip-applies a-${a.verdict}`,
+          "data-tip": `${a.reason}${a.quote ? `\nHeard: “${a.quote}”` : ""}` },
+          `${a.name} · ${WORD[a.verdict]}`)))));
   }
 
   if (r.missingInfo) {

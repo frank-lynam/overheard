@@ -141,10 +141,31 @@ def seed(path: Path | str, seed_value: int = 2026) -> dict:
                         (f"c{n:06d}", cid, f"{at.isoformat()}T{rng.randint(8, 16):02d}:{rng.randint(0, 59):02d}",
                          "phone", dname, lang, region, round(max(0.5, rng.gauss(d[3] * 1.2, 1.5)), 1), 0, None,
                          say(rng, d[5]), None))
+    # PLANTED, for the retroactive search: in the four weeks before today, callers said "error 4012" (the portal
+    # outage that breaks out today) and were taken for password resets: never ticketed, overlooked. Their own
+    # random stream, after everything else, so nothing above changes.
+    orng = random.Random(f"overlooked:{seed_value}")
+    said = ["The website keeps saying error 4012 when I try to log in.", "I get error 4012 every time I sign in.",
+            "Your portal shows an error, 4012, and kicks me out.", "Sign-in fails with code 4012, I reset my password "
+            "twice already.", "It says error four zero one two on the login page."]
+    overlooked = []
+    for _ in range(40):
+        when = date(2026, 2, 9) + timedelta(days=orng.randint(0, 25))
+        if when.weekday() >= 5:
+            when -= timedelta(days=when.weekday() - 4)
+        cid, lang, region = orng.choice(callers)
+        n += 1
+        overlooked.append(f"c{n:06d}")
+        con.execute("INSERT INTO contacts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (f"c{n:06d}", cid, f"{when.isoformat()}T{orng.randint(8, 16):02d}:{orng.randint(0, 59):02d}",
+                     orng.choice(["phone", "voicemail"]), "password-reset", lang, region,
+                     round(max(1.0, orng.gauss(4.0, 1.0)), 1), 1, 0, orng.choice(said), None))
+
     from overheard.memory.store import build as build_memory
     mem = build_memory(con, seed_value)          # routing memory, from the archive (deterministic)
     con.execute("INSERT INTO meta VALUES ('seed', ?)", (str(seed_value),))
     con.execute("INSERT INTO meta VALUES ('today', ?)", (today["date"],))
+    con.execute("INSERT INTO meta VALUES ('overlooked', ?)", (json.dumps(overlooked),))  # the truth, for the mock
     con.commit()
     counts = {"voicemails": len(today["voicemails"]), "cases": len(today["cases"]) + len(callers),
               "contacts": n, "loop_contacts": loops, "events": len(EVENTS), **mem}

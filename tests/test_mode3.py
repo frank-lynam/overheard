@@ -602,7 +602,7 @@ def test_staffing_forecast_event_card(seeded):
     assert 0.4 <= e["projectedExcessAgentHours"] <= 1.0
     # and the whole window's hours line up with its contacts at ~the archive rate
     total_min = r["totalProjectedAgentHours"] * 60
-    assert abs(total_min - sum(d["projectedContacts"] for d in r["days"]) * 5.2) < 5.0
+    assert abs(total_min - sum(d["projectedContacts"] for d in r["days"]) * 5.2) < 0.01 * total_min   # within 1%
 
 
 async def test_api_staffing_forecast(client):

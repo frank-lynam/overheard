@@ -240,6 +240,40 @@ def _team(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
     return {"proposed_team": top[0], "confidence": round(top[1], 2), "evidence": refs}
 
 
+def _applies(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
+    """From the truth: a rule covering the root cause or an obligation applies, quoting the rule's own words where
+    the caller said them; the rest don't. Now and then a right answer comes back unsure."""
+    from overheard.pipeline.applies import find_quote
+    script, out = t.get("script", ""), []
+    for r in t.get("rules", []):
+        yes = (t.get("rootCause") in r.get("causes", [])
+               or bool(set(t.get("obligations", [])) & set(r.get("obligations", []))))
+        span = find_quote(script, r)
+        quote = script[span[0]:span[1]] if span else ""
+        if yes and quote and not _wrong(rng):
+            out.append({"rule_id": r["id"], "verdict": "applies", "quote": quote,
+                        "reason": f"What the caller describes is what “{r['name']}” covers."})
+        elif yes or (quote and _wrong(rng)):
+            out.append({"rule_id": r["id"], "verdict": "unsure",
+                        "reason": f"It sounds close to “{r['name']}”, but the message doesn't say enough to be sure.",
+                        "quote": quote})
+        else:
+            out.append({"rule_id": r["id"], "verdict": "does_not_apply",
+                        "reason": f"The caller is about something else; “{r['name']}” doesn't fit.", "quote": quote})
+    return {"verdicts": out}
+
+
+def _retro(task: Task, rng: random.Random, t: dict[str, Any]) -> dict:
+    """From the truth (the planted ids): those match, the rest don't; now and then one is missed."""
+    truth = set(t.get("truth", []))
+    out = []
+    for i in t.get("items", []):
+        yes = i["id"] in truth and rng.random() > 0.03
+        out.append({"id": i["id"], "match": yes,
+                    "reason": f"Same failure: \"{i['text'][:80]}\"" if yes else "A different problem, in similar words."})
+    return {"matches": out}
+
+
 def _translation(task: Task, rng: random.Random, t: dict[str, Any], script: str) -> dict:
     lang = (t.get("lang") or "en").split("-")[0]
     if lang == "en":
@@ -409,6 +443,8 @@ class MockProvider:
                 "junk_classify": lambda: _junk(task, rng, t),
                 "problem_classify": lambda: _problem(task, rng, t),
                 "team_propose": lambda: _team(task, rng, t),
+                "applies_triage": lambda: _applies(task, rng, t),
+                "retro_match": lambda: _retro(task, rng, t),
                 "translation": lambda: _translation(task, rng, t, _script(task)),
                 "sentiment": lambda: _sentiment(task, rng, t, _script(task)),
                 "draft_reply": lambda: _draft(task, rng, t),

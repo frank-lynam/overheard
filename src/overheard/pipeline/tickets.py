@@ -2,6 +2,7 @@
 routing memory proposes; the human decision read back goes into the memory, and changes later proposals.
 
   [C] problem check (LLM problem_classify): not a problem, no ticket
+  [D] applies triage (pipeline/applies.py): the rules in force that fit, quoted in the ticket
   [E] team proposal: routing memory's evidence (memory/store.py), then the LLM team_propose; below the threshold,
       "unknown", and the ticket goes to general
   [F] the ticket, sent to the sink (workflow/sink.py): the proposed team's project
@@ -22,6 +23,7 @@ from collections.abc import Callable
 
 from overheard.data.models import Voicemail
 from overheard.memory.store import MIN_CONFIDENCE, Memory, doc, teams_map
+from overheard.pipeline.applies import triage_sync
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS ticket_units (unit_id TEXT PRIMARY KEY, item_id TEXT, item_ids TEXT, is_problem INTEGER,
@@ -109,8 +111,10 @@ class Desk:
         what = f"{u['incident']} ({n} callers)" if u.get("incident") else line[:1].upper() + line[1:]
         summary = (what + (f" · {n} messages from one caller" if n > 1 and not u.get("incident") else ""))[:190]
         priority = 1 if alert else 2
+        applies = [a for a in triage_sync(v, v.receivedAt[:10], self.run)["verdicts"]               # [D]
+                   if a["verdict"] != "does_not_apply"]
         board_id = self.sink.create(filed_in, summary, self.description(u, p, proposed, team.confidence, evidence,
-                                                                            alert), priority)   # [F]
+                                                                            alert, applies), priority)   # [F]
         tid = f"T-{u['unit_id']}"
         self.con.execute("INSERT INTO tickets VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                          (tid, u["item_id"], json.dumps(u["item_ids"]), now, summary, p.statement, p.problem_type,
@@ -120,12 +124,15 @@ class Desk:
         return self.ticket(tid)
 
     @staticmethod
-    def description(u, p, proposed, conf, evidence, alert) -> str:
+    def description(u, p, proposed, conf, evidence, alert, applies=()) -> str:
         teams = teams_map()["teams"]
         lines = [f"Problem: {p.statement} ({p.problem_type}, confidence {p.confidence:.2f})", "",
                  f"Proposed team: {teams.get(proposed, 'unknown: filed in general')} (confidence {conf:.2f}).",
                  "Why: similar past problems went there:"]
         lines += [f"- {e['ref']} ({e['when']}): {e['text']} -> {e['team']}" for e in evidence[:5]] or ["- (none close)"]
+        if applies:
+            lines += ["", "Applies:"] + [f"- {a['name']}: {a['verdict'].replace('_', ' ')}. {a['reason']}"
+                                         + (f" (heard: \"{a['quote']}\")" if a["quote"] else "") for a in applies]
         if alert:
             lines += ["", f"Code words: {', '.join(h['said'] for h in alert['hits'])} ({alert['label']})"]
         more = f" and {len(u['item_ids']) - 1} more" if len(u["item_ids"]) > 1 else ""

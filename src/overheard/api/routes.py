@@ -263,6 +263,50 @@ class JunkItem(BaseModel):
     decidedBy: str              # rule:<id> | llm | fallback
 
 
+class RetroDefinition(BaseModel):
+    description: str
+    examples: list[str] = []
+    since: str
+    until: str
+    team: str | None = None
+    origin: str = "analyst"
+
+
+def retro_suggestion(request: Request) -> dict | None:
+    """A problem definition offered from today's spike, or None on a day with no spike."""
+    from overheard.pipeline.retro import suggest
+    incidents = mode2_day(request)["incidents"]
+    if not incidents:
+        return None
+    by = {v.id: v for v in voicemails(request)}
+    inc = incidents[0]
+    return suggest(inc, [by[m] for m in inc["members"] if m in by], request.app.state.today)
+
+
+@router.get("/retro")
+def retro_suggest(request: Request) -> dict:
+    """Mode 3's "Overlooked before today": the definition offered from today's spike (the analyst can change it)."""
+    return {"suggested": retro_suggestion(request)}
+
+
+@router.post("/retro")
+def retro(request: Request, body: RetroDefinition | None = None) -> dict:
+    """Search the archive for past contacts that were this problem but were overlooked. With no body, the definition
+    offered from today's spike. On demand only; each definition is searched once."""
+    from overheard.llm.run import run_task
+    from overheard.pipeline.retro import search
+    d = body.model_dump() if body else retro_suggestion(request)
+    if d is None:
+        raise HTTPException(400, "no spike today to start from: give a definition")
+    key = json.dumps(d, sort_keys=True)
+    cache = request.app.state.retro
+    if key not in cache:
+        dp = deps(request)
+        cache[key] = search(con(request), d, lambda task: run_coro(run_task(dp.provider, task, dp.model, dp.store,
+                                                                            write=dp.write)))
+    return cache[key]
+
+
 @router.get("/junk")
 def junk(request: Request) -> dict:
     """What the junk filter kept out of the queue today (from Mode 1 on), each with why and what decided it, and the

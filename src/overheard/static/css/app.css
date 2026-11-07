@@ -308,7 +308,7 @@ body[data-mode="1"] .pane.queue::after, body[data-mode="2"] .pane.queue::after, 
 /* --- Hover hints (js/core/tip.js) --- */
 .tip { position: fixed; z-index: 100; max-width: min(20rem, calc(100vw - 16px)); padding: .5rem .7rem; border-radius: var(--radius-sm);
   background: var(--ink); color: var(--panel); font-size: .8rem; line-height: 1.4; font-weight: 400; letter-spacing: 0;
-  text-transform: none; box-shadow: 0 6px 24px rgba(16, 24, 40, .18); pointer-events: none; }
+  text-transform: none; box-shadow: 0 6px 24px rgba(16, 24, 40, .18); pointer-events: none; white-space: pre-line; }
 [data-tip] { cursor: help; }
 button[data-tip], a[data-tip], select[data-tip], input[data-tip], .queue-row [data-tip], .m3-tab[data-tip] { cursor: pointer; }
 input[data-tip] { cursor: text; }
@@ -351,4 +351,16 @@ select.ai-value:focus { border-color: var(--accent); outline: none; }
 .chip-team { background: var(--f2-bg); color: var(--f2-ink); border-radius: 999px; padding: .05rem .5rem; font-weight: 600;
   white-space: pre-line; }
 .ticket-acts { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .3rem; }
+.applies { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: .25rem; }
+.chip-applies { border-radius: 999px; padding: .1rem .55rem; font-size: .8rem; font-weight: 600;
+  background: var(--f2-bg); color: var(--f2-ink); border: 1px solid var(--f2); }
+.chip-applies.a-unsure { background: var(--watch); color: var(--ink); border-color: #c99a3a; }
 .ticket-acts select { font: inherit; font-size: .8rem; }
+
+/* --- Mode 3: overlooked before today --- */
+.m3-retro-form { display: grid; gap: .4rem; max-width: 52rem; margin: .5rem 0 1rem; }
+.m3-retro-form textarea { font: inherit; padding: .4rem .55rem; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--panel); color: var(--ink); }
+.m3-retro-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.m3-retro-row input { font: inherit; }
+.m3-retro-table mark { background: var(--watch); color: inherit; border-radius: 3px; padding: 0 .08em; }

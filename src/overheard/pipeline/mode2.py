@@ -1,6 +1,6 @@
 """Mode 2 · the day computed up front: the queue's groups, the per-message
 mode-2 section (resolution, obligations, missing info, repeat link, callback
-window), the incident list and the mode-2 scoreboard.
+window, the applies triage), the incident list and the mode-2 scoreboard.
 
 Everything here is the same code the tests and the front end read, so what the
 screen shows is what the tests check. The LLM parts (incident card, resolution
@@ -13,6 +13,8 @@ import sqlite3
 from overheard.data.models import Voicemail
 from overheard.llm import ResponseStore
 from overheard.llm.provider import LLMProvider
+from overheard.llm.run import run_task
+from overheard.pipeline.applies import triage
 from overheard.pipeline.flags import deadline_at, obligations_of
 from overheard.pipeline.groups import group_day, link_repeats, missing_info
 from overheard.pipeline.incidents import IncidentDeps, incidents_in_clusters
@@ -54,7 +56,10 @@ async def _message_mode2(v: Voicemail, bundle: dict, backend, deps: Mode2Deps) -
     for o in obligations_of(v.script, (bundle.get("intent_urgency", {}).get("data") or {}).get("obligations", [])):
         obligations.append({**o, "due": deadline_at(v.receivedAt, o["kind"])})
     missing = missing_info([v], {v.id: bundle}, backend).get(v.id)
+    applies = await triage(v, v.receivedAt[:10], lambda task: run_task(deps.provider, task, deps.model, deps.store,
+                                                                       write=deps.write))
     return {
+        "applies": applies,
         "resolution": resolution,
         "brief": brief_context(v, case, {v.id: bundle}),
         "obligations": obligations,

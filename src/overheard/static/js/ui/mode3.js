@@ -479,3 +479,78 @@ export function renderStaffingForecast(el, data) {
       <b>${data.totalProjectedAgentHours} agent-hours</b>. The centre is closed at weekends, so those days are
       empty.</p>`;
 }
+
+// Mode 3: "Overlooked before today": today's new problem, searched for in past contacts nobody ticketed.
+const escHtml = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const fmtDay = (d) => new Date(`${d}T12:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+export function renderOverlooked(el, data) {
+  const s = data?.suggested;
+  el.innerHTML = `
+    <div class="m3-head">
+      <h2>Overlooked before today <span class="prov" data-tip="Retrieval finds past contacts close to the problem; the AI confirms each with a reason; the dates, counts and hours are counted with ordinary code">AI-confirmed, counted</span></h2>
+      <p class="muted">Once a new problem is spotted, the AI reads back through the archive for callers who had it
+        before anyone knew: calls that were taken for something else and never ticketed, or sent to the wrong team.
+        It runs when you ask, never on every call.</p>
+    </div>
+    <form class="m3-retro-form">
+      <label class="muted" for="retro-desc">The problem${s ? ` <span class="prov" data-tip="Offered from the spike Mode 2 found today: its title, its first callers' words, and the team that owns it">from ${escHtml(s.origin)}</span>` : ""}</label>
+      <textarea id="retro-desc" rows="2">${escHtml(s?.description || "")}</textarea>
+      <div class="m3-retro-row">
+        <label class="muted">Look back from <input id="retro-since" type="date" value="${escHtml(s?.since || "")}"></label>
+        <span class="muted">to ${s ? fmtDay(s.until) : "today"}</span>
+        <button class="m3-ask-run" type="submit">Search the archive</button>
+      </div>
+      ${s?.examples?.length ? `<details class="m3-more"><summary>Today's callers it starts from (${s.examples.length})</summary>
+        <ul class="m3-letterlab-questions">${s.examples.map((x) => `<li>“${escHtml(x)}”</li>`).join("")}</ul></details>` : ""}
+    </form>
+    <div class="m3-retro-results">${s ? "" : `<p class="muted">No spike today to start from: describe a problem above.</p>`}</div>`;
+  const form = el.querySelector("form");
+  const out = el.querySelector(".m3-retro-results");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const btn = form.querySelector("button");
+    const description = el.querySelector("#retro-desc").value.trim();
+    if (!description) return;
+    btn.disabled = true; btn.textContent = "Reading back…";
+    const def = { ...(s || { examples: [], until: new Date().toISOString().slice(0, 10) }), description,
+      since: el.querySelector("#retro-since").value || s?.since };
+    if (s && description !== s.description) def.origin = "analyst";
+    api.retroSearch(def).then((r) => renderRetroResults(out, r))
+      .catch((err) => { out.innerHTML = `<p class="muted">Could not search: ${escHtml(err.message)}</p>`; })
+      .finally(() => { btn.disabled = false; btn.textContent = "Search the archive"; });
+  });
+  if (s) form.requestSubmit();   // the suggestion is the demo's point: show it found, then let them change it
+}
+
+function renderRetroResults(el, r) {
+  const m = r.summary;
+  if (!m.count) {
+    el.innerHTML = `<p class="m3-headline muted">Nothing overlooked: of ${r.checked} close past contacts, none was this problem and missed.</p>`;
+    return;
+  }
+  const recorded = [...new Set(r.items.map((i) => i.recordedAs.replace(/-/g, " ")))];
+  const mark = (text, words) => {
+    const set = new Set(words);
+    return escHtml(text).replace(/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*/g, (w) => set.has(w.toLowerCase()) ? `<mark>${w}</mark>` : w);
+  };
+  el.innerHTML = `
+    <p class="m3-headline"><b>${m.count} callers</b> had this problem before today, on ${m.days} different days from
+      ${fmtDay(m.first)} to ${fmtDay(m.last)}: <b>${m.leadDays} days</b> before it broke out. They were taken for
+      ${recorded.join(", ")} and never reached ${escHtml(m.team || "the owning team")}, and they took
+      <b>${m.agentHours} agent-hours</b> that a ticket on the first one could have saved.</p>
+    <div class="m3-stats">
+      <div class="stat"><b>${m.count}</b><span class="muted">overlooked callers</span></div>
+      <div class="stat"><b>${m.leadDays} days</b><span class="muted">sooner it could have been spotted</span></div>
+      <div class="stat"><b>${m.agentHours} h</b><span class="muted">of agent time on them</span></div>
+    </div>
+    <table class="m3-table m3-retro-table">
+      <thead><tr><th>when</th><th>recorded as</th><th>what they said</th><th>why it's a match</th></tr></thead>
+      <tbody>${r.items.map((i) => `<tr>
+        <td class="num">${fmtDay(i.at.slice(0, 10))}</td>
+        <td>${escHtml(i.recordedAs.replace(/-/g, " "))} <span class="muted">· ${escHtml(i.overlooked)}</span></td>
+        <td data-tip="Matching words: ${escHtml(i.matched.join(", "))}">${mark(i.text, i.matched)}</td>
+        <td class="muted">${escHtml(i.reason)}</td></tr>`).join("")}</tbody>
+    </table>
+    <p class="muted">${r.checked} close past contacts were checked; ${m.count} confirmed.</p>`;
+}

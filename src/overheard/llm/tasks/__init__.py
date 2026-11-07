@@ -31,6 +31,7 @@ def _register(cls: type) -> type:
 
 # Importing this package imports every task module so `_register` runs.
 from overheard.llm.tasks import (  # noqa: E402,F401
+    applies_triage,
     draft_reply,
     extraction,
     incident,
@@ -38,6 +39,7 @@ from overheard.llm.tasks import (  # noqa: E402,F401
     junk_classify,
     problem_classify,
     resolution,
+    retro_match,
     routing,
     sentiment,
     summary,
