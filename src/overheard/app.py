@@ -3,6 +3,7 @@
 import contextlib
 import sqlite3
 import threading
+import time
 from importlib.resources import files
 from types import SimpleNamespace
 
@@ -11,6 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from overheard import __version__
+from overheard.api.events import Bus
 from overheard.api.routes import router
 from overheard.config import Settings
 from overheard.data import db
@@ -59,6 +61,9 @@ class ThreadConnections:
         return c
 
 
+POLL_SECONDS = 10   # how often hearthboard decisions are read back
+
+
 @contextlib.asynccontextmanager
 async def warm_up(app: FastAPI):
     """The day is computed up front: when the server starts (in mock or replay mode, where it costs nothing),
@@ -75,6 +80,19 @@ async def warm_up(app: FastAPI):
                 pass
 
         threading.Thread(target=warm, name="warm-up", daemon=True).start()
+    if app.state.settings.workflow_url:
+        # [G]: decisions made in hearthboard are read back by polling, so they reach open consoles (as `ticket`
+        # events) without anyone clicking. Only once the desk exists: no tickets, nothing to read back.
+        def poll() -> None:
+            while True:
+                time.sleep(POLL_SECONDS)
+                if app.state.desk is not None:
+                    try:
+                        app.state.desk.refresh()
+                    except Exception:  # the board is down: next time
+                        pass
+
+        threading.Thread(target=poll, name="decision-poll", daemon=True).start()
     yield
 
 
@@ -97,6 +115,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.retro = {}    # retro searches done, by their definition (pipeline/retro.py)
     app.state.mode2_messages = None  # each message's mode-2 section, for the queue
     app.state.mode2_lock = threading.Lock()
+    app.state.events = Bus()  # server-sent events (api/events.py)
     app.state.store = ResponseStore(settings.llm_responses_path)
     app.state.write = settings.llm_mode == "record"   # keep every provider answer in the store (`overheard record`)
     app.state.provider = build_provider(settings, app.state.store)

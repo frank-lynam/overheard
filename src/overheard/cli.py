@@ -27,7 +27,8 @@ def main(argv: list[str] | None = None) -> int:
         settings = Settings()
         host, port = args.host or settings.host, args.port or settings.port
         print(f"Overheard {__version__} on http://{host}:{port}  (LLM mode: {settings.llm_mode})")
-        uvicorn.run(create_app(settings), host=host, port=port, log_level="warning")
+        # open event streams (/api/events) never end by themselves: give them 3 s on shutdown, not forever
+        uvicorn.run(create_app(settings), host=host, port=port, log_level="warning", timeout_graceful_shutdown=3)
         return 0
     if args.command == "seed":
         from overheard.config import Settings

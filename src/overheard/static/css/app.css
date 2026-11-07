@@ -364,3 +364,11 @@ select.ai-value:focus { border-color: var(--accent); outline: none; }
 .m3-retro-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
 .m3-retro-row input { font: inherit; }
 .m3-retro-table mark { background: var(--watch); color: inherit; border-radius: 3px; padding: 0 .08em; }
+
+/* --- Notices from the server (code-word alerts) --- */
+.toasts { position: fixed; right: 16px; bottom: 16px; z-index: 90; display: flex; flex-direction: column; gap: .4rem;
+  align-items: flex-end; max-width: min(24rem, calc(100vw - 32px)); }
+.toast {
+  padding: .6rem .85rem; border-radius: var(--radius-sm); background: var(--alert-bg); color: var(--ink);
+  border: 1px solid var(--alert); box-shadow: var(--shadow-strong); cursor: pointer; font-size: .88rem; font-weight: 600; }
+.toast.safety { background: var(--safety-bg); border-color: var(--safety); }

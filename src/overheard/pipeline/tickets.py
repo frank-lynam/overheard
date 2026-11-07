@@ -35,16 +35,22 @@ CREATE TABLE IF NOT EXISTS tickets (ticket_id TEXT PRIMARY KEY, item_id TEXT, it
 """
 
 
+def _brief(t: dict) -> dict:
+    return {k: t[k] for k in ("ticket_id", "item_id", "summary", "status", "proposed_team", "final_team", "filed_in")}
+
+
 class Desk:
     """One per app. `run(task)` runs an LLM task (provider, store and provenance are the app's); the sink is mock
     or hearthboard. Everything goes through one lock: tickets, memory and the sink are shared state."""
 
-    def __init__(self, path, today: str, sink_factory: Callable[[sqlite3.Connection], object], run: Callable):
+    def __init__(self, path, today: str, sink_factory: Callable[[sqlite3.Connection], object], run: Callable,
+                 notify: Callable[[str, dict], None] | None = None):
         self.con = sqlite3.connect(path, check_same_thread=False)
         self.con.executescript(SCHEMA)
         self.memory = Memory(self.con, today)
         self.sink = sink_factory(self.con)
         self.run = run
+        self.notify = notify or (lambda kind, data: None)   # server-sent events: "alert", "ticket"
         self.lock = threading.RLock()
         self._accuracy: dict | None = None
 
@@ -82,6 +88,11 @@ class Desk:
             for u in units:
                 if u["unit_id"] in done:
                     continue
+                for i in u["item_ids"]:                 # a code word: the voicemail has reached the desk
+                    if alerts.get(i):
+                        a, w = alerts[i], vms[i]
+                        self.notify("alert", {"item_id": i, "receivedAt": w.receivedAt, "callerId": w.callerId,
+                                              **{k: a[k] for k in ("category", "label", "priority", "safety")}})
                 t = self._reveal_one(u, vms[u["item_id"]], alerts.get(u["item_id"]))
                 if t:
                     made.append(t)
@@ -121,7 +132,9 @@ class Desk:
                           p.confidence, proposed, team.confidence, json.dumps(evidence), priority, filed_in, board_id,
                           "proposed", None, None, None, None))
         self.con.commit()
-        return self.ticket(tid)
+        t = self.ticket(tid)
+        self.notify("ticket", {"event": "created", **_brief(t)})
+        return t
 
     @staticmethod
     def description(u, p, proposed, conf, evidence, alert, applies=()) -> str:
@@ -168,6 +181,8 @@ class Desk:
                 self.memory.record(f"{tid}:{kind}", item_id, kind, payload, mem_at, text=statement,
                                    team=None if kind == "decline" else d["team"], problem_type=ptype)
                 changed += 1
+                self.con.commit()
+                self.notify("ticket", {"event": "decided", **_brief(self.ticket(tid))})
             self.con.commit()
         return changed
 

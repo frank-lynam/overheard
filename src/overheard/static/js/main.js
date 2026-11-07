@@ -129,3 +129,25 @@ store.on("assumptions-saved", () => { loadSim().catch(() => {}); });
   store.set({ today: day.date, assumptions });
   await refresh();
 })();
+
+// Server-sent events: a ticket made or decided (here, by another viewer, or in hearthboard) refreshes the tickets;
+// a code-word alert reaching the desk shows a notice. EventSource reconnects by itself.
+if ("EventSource" in window) {
+  const es = new EventSource("/api/events");
+  es.addEventListener("ticket", () => {
+    if (store.get().mode >= 2) api.tickets().then((t) => store.set({ _tickets: t })).catch(() => {});
+  });
+  es.addEventListener("alert", (e) => {
+    let a; try { a = JSON.parse(e.data); } catch { return; }
+    if (store.get().mode < 1) return;
+    const note = document.createElement("div");
+    note.className = `toast${a.safety ? " safety" : ""}`;
+    note.setAttribute("role", "alert");
+    note.textContent = `${a.label} · ${a.callerId} · ${a.receivedAt.slice(11, 16)}`;
+    note.addEventListener("click", () => { store.set({ selected: a.item_id }); note.remove(); });
+    let box = document.querySelector(".toasts");
+    if (!box) { box = document.createElement("div"); box.className = "toasts"; document.body.append(box); }
+    box.append(note);
+    setTimeout(() => note.remove(), 8000);
+  });
+}

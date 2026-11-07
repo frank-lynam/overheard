@@ -308,6 +308,38 @@ def retro(request: Request, body: RetroDefinition | None = None) -> dict:
     return cache[key]
 
 
+@router.get("/events")
+async def events(request: Request, limit: int = 0):
+    """Server-sent events while the console is open: `alert` (a code word reached the desk) and `ticket` (created,
+    or its decision read back). `limit` closes the stream after that many events (for tests)."""
+    import asyncio
+
+    from fastapi.responses import StreamingResponse
+
+    from overheard.api.events import frame
+    bus = request.app.state.events
+
+    async def stream():
+        q = bus.subscribe()
+        sent = 0
+        try:
+            yield ": connected\n\n"
+            while not limit or sent < limit:
+                try:
+                    kind, data = await asyncio.wait_for(q.get(), timeout=15)
+                except TimeoutError:
+                    if await request.is_disconnected():
+                        break
+                    yield ": ping\n\n"         # keeps proxies (and cloudflared) from closing an idle stream
+                    continue
+                yield frame(kind, data)
+                sent += 1
+        finally:
+            bus.unsubscribe(q)
+    return StreamingResponse(stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @router.get("/junk")
 def junk(request: Request) -> dict:
     """What the junk filter kept out of the queue today (from Mode 1 on), each with why and what decided it, and the
@@ -355,7 +387,8 @@ def desk(request: Request):
         else:
             factory = MockWorkflowSink
         st.desk = Desk(s.db_path, st.today, factory,
-                       lambda task: run_coro(run_task(d.provider, task, d.model, d.store, write=d.write)))
+                       lambda task: run_coro(run_task(d.provider, task, d.model, d.store, write=d.write)),
+                       notify=st.events.publish)
     return st.desk
 
 
