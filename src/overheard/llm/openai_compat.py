@@ -52,7 +52,7 @@ class OpenAICompatProvider:
                                                                                         "strict": True,
                                                                                         "schema": _json_schema(task)}}
         else:
-            response_format = {"type": "json"}
+            response_format = {"type": "json_object"}
         resp = await self.client.chat.completions.create(
             model=model or self.model,
             messages=[{"role": "system", "content": task.system},

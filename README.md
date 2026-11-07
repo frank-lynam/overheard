@@ -37,6 +37,12 @@ export OVERHEARD_LLM_MODEL=...
 overheard serve
 ```
 
+A gateway that speaks the OpenAI format with your own key (the GovCloud
+endpoint, for example) is this same setup: its URL (up to `/v1`), your key,
+and the model name it expects. Overheard asks once whether it takes
+`json_schema` structured output and otherwise uses JSON mode; record mode
+always uses JSON mode.
+
 Or Claude, on its own API or on Amazon Bedrock:
 
 ```sh

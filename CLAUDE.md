@@ -91,6 +91,8 @@ docs/DESIGN.md
   "today" reads as a normal day plus an incident (~70,000 contacts over 3 years, ~67 a weekday); the demo leads
   with shares and hours ("one letter takes 1 in 8 agent-hours"), dollars alongside.
 
+- GovCloud (Nov 7, 2026): reached through a custom OpenAI-format API with a user-specific key, so it's the default `openai_compat` provider (`OVERHEARD_LLM_BASE_URL`, `OVERHEARD_LLM_API_KEY`, `OVERHEARD_LLM_MODEL`), not the Bedrock client. `tests/test_openai_gateway.py` checks that path against a strict fake gateway.
+
 - The demo is about what's possible, not what it costs (Nov 1, 2026): the console shows outcomes (the urgent caller
   reached sooner, deadlines met, callers reached, agent time given back) and, from Mode 1 on, what each was without AI.
   No dollars in the UI; the cost model stays in the API only. Mode 0 is the baseline and may show its workload.
