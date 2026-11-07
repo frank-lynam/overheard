@@ -37,6 +37,22 @@ export OVERHEARD_LLM_MODEL=...
 overheard serve
 ```
 
+Or Claude, on its own API or on Amazon Bedrock:
+
+```sh
+export OVERHEARD_LLM_MODE=live
+export OVERHEARD_LLM_PROVIDER=anthropic   # openai_compat (default) | anthropic | bedrock
+export OVERHEARD_LLM_MODEL=claude-opus-5-5  # the default; on Bedrock, anthropic.claude-opus-5-5
+# anthropic: OVERHEARD_LLM_API_KEY, or the SDK's own ANTHROPIC_API_KEY / `ant auth login`
+# bedrock:   pip install 'overheard[bedrock]'; OVERHEARD_AWS_REGION=us-gov-west-1 and the usual AWS credentials
+overheard serve
+```
+
+`OVERHEARD_LLM_EFFORT` (default `medium`) sets Claude's effort, and
+`OVERHEARD_LLM_TASK_MODELS` gives single tasks their own model, as JSON
+(`{"junk_classify": "claude-haiku-5-5", "team_propose": "claude-opus-5-5"}`);
+the model is recorded with every answer.
+
 With the endpoint set, `OVERHEARD_LLM_MODE=record overheard record` runs the
 model over the whole day once and saves its answers; `OVERHEARD_LLM_MODE=replay`
 then serves those answers with no network at all, for a demo that can't be

@@ -41,7 +41,10 @@ async def run_task(
     provenance: str = "llm",
 ) -> LLMResult:
     """Run `task` on `provider`. Cache hit first, then the provider, then one
-    retry with the error appended, then the from-truth mock marked `fallback`."""
+    retry with the error appended, then the from-truth mock marked `fallback`. The model is the task's own when
+    per-task models are set (OVERHEARD_LLM_TASK_MODELS), else the one given."""
+    from overheard.llm.provider import model_for
+    model = model_for(task.name, model)
     key = input_hash(task, model)
     if store is not None and read_cache:
         cached = store.get(task.name, key, model)

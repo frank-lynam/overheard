@@ -53,10 +53,22 @@ def build_provider(settings: Settings, store: ResponseStore) -> LLMProvider:
     from overheard.llm.openai_compat import OpenAICompatProvider
     from overheard.llm.replay import ReplayProvider
 
-    if settings.llm_mode == "mock":
+    TASK_MODELS.clear()
+    if settings.llm_mode == "mock":       # the mock is one model, whatever the tasks would use live
         return MockProvider()
-    if settings.llm_mode == "live":
-        return OpenAICompatProvider(settings, store)
-    if settings.llm_mode == "record":
-        return OpenAICompatProvider(settings, store, record=True)
-    return ReplayProvider(settings, store)
+    TASK_MODELS.update(settings.llm_task_models)
+    if settings.llm_mode == "replay":
+        return ReplayProvider(settings, store)
+    if settings.llm_provider in ("anthropic", "bedrock"):
+        from overheard.llm.anthropic_provider import AnthropicProvider
+        return AnthropicProvider(settings, bedrock=settings.llm_provider == "bedrock")
+    return OpenAICompatProvider(settings, store, record=settings.llm_mode == "record")
+
+
+# Per-task models (OVERHEARD_LLM_TASK_MODELS), set from the settings when the provider is built; the runner looks
+# each task up here, so every caller keeps passing the one default model.
+TASK_MODELS: dict[str, str] = {}
+
+
+def model_for(task_name: str, model: str) -> str:
+    return TASK_MODELS.get(task_name, model)
