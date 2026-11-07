@@ -1,3 +1,6 @@
+// The console's entry point: the store, the mode stepper, the three panes (queue, message, context) and the
+// scoreboard for Modes 0-2, the Mode 3 tabs (each loads when first opened), the simulation, and the server's events.
+// Panes are in js/ui/, shared helpers in js/core/, charts in js/charts/; js/present.js is the presenter deck.
 import "./core/tip.js";
 import { api } from "./core/api.js";
 import { createStore } from "./core/store.js";

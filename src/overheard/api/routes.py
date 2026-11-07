@@ -1,4 +1,22 @@
-"""The REST API: the day's queue, a message, case lookups, manual entries, the simulation, the assumptions."""
+"""The REST API, everything under /api. The browser talks only to this (never to an LLM).
+
+`grep -n '^# ----' routes.py` lists the sections:
+
+  shared        connections and deps (`deps`), the day's voicemails, `intakes` ([A] code words, [B] junk, once),
+                `queued` (what reaches a person), `mode2_day` / `mode2_messages` (the Mode 2 day, once), `run_coro`
+  queue         GET /day, /queue?mode=, /messages/{id}?mode=
+  junk          GET /junk, POST /junk/{id}/reopen
+  tickets       `desk` (pipeline/tickets.py), GET /tickets, POST /tickets/reveal, GET /tickets/{id},
+                POST /tickets/{id}/decide, GET /alerts
+  retro, events GET and POST /retro (pipeline/retro.py), GET /events (server-sent events, api/events.py)
+  Mode 1        POST /analysis/{id}, /corrections, GET /accuracy
+  Mode 0        GET /lookup, /cases/{id}, /entries, /assumptions, /simulation
+  Mode 2        GET /incidents, /resolutions/{id} (and POST: approve), /scoreboard2
+  Mode 3        /archive/* (root causes, event impact, journeys, promises, equity, letter lab, ask),
+                /knowledge-gaps, /weak-signals, /staffing-forecast
+
+Sync routes run in worker threads, each with its own SQLite connection (`con`); the day's computations are cached
+on app.state and guarded by locks. LLM calls go through `run_coro(run_task(...))`."""
 
 import json
 import sqlite3
@@ -17,6 +35,8 @@ router = APIRouter(prefix="/api")
 #: marks a field nobody corrected, so a correction to `null` is not confused with no correction
 _UNCORRECTED = object()
 
+
+# ---- shared: connections and deps, the day's voicemails, intake ([A] code words, [B] junk), the Mode 2 day
 
 def con(request: Request) -> sqlite3.Connection:
     return request.app.state.db.get()
@@ -149,6 +169,8 @@ def mode2_messages(request: Request) -> dict:
     return request.app.state.mode2_messages
 
 
+# ---- the queue and a message (Modes 0-2)
+
 class Message(BaseModel):
     id: str
     receivedAt: str
@@ -254,6 +276,8 @@ async def message(mid: str, request: Request, mode: int = 0) -> dict:
     return {**m.model_dump(), "analysis": bundle, "alert": alert}
 
 
+# ---- the junk filter: what it kept out, and putting one back
+
 class JunkItem(BaseModel):
     id: str
     receivedAt: str
@@ -262,82 +286,6 @@ class JunkItem(BaseModel):
     script: str
     reason: str
     decidedBy: str              # rule:<id> | llm | fallback
-
-
-class RetroDefinition(BaseModel):
-    description: str
-    examples: list[str] = []
-    since: str
-    until: str
-    team: str | None = None
-    origin: str = "analyst"
-
-
-def retro_suggestion(request: Request) -> dict | None:
-    """A problem definition offered from today's spike, or None on a day with no spike."""
-    from overheard.pipeline.retro import suggest
-    incidents = mode2_day(request)["incidents"]
-    if not incidents:
-        return None
-    by = {v.id: v for v in voicemails(request)}
-    inc = incidents[0]
-    return suggest(inc, [by[m] for m in inc["members"] if m in by], request.app.state.today)
-
-
-@router.get("/retro")
-def retro_suggest(request: Request) -> dict:
-    """Mode 3's "Overlooked before today": the definition offered from today's spike (the analyst can change it)."""
-    return {"suggested": retro_suggestion(request)}
-
-
-@router.post("/retro")
-def retro(request: Request, body: RetroDefinition | None = None) -> dict:
-    """Search the archive for past contacts that were this problem but were overlooked. With no body, the definition
-    offered from today's spike. On demand only; each definition is searched once."""
-    from overheard.llm.run import run_task
-    from overheard.pipeline.retro import search
-    d = body.model_dump() if body else retro_suggestion(request)
-    if d is None:
-        raise HTTPException(400, "no spike today to start from: give a definition")
-    key = json.dumps(d, sort_keys=True)
-    cache = request.app.state.retro
-    if key not in cache:
-        dp = deps(request)
-        cache[key] = search(con(request), d, lambda task: run_coro(run_task(dp.provider, task, dp.model, dp.store,
-                                                                            write=dp.write)))
-    return cache[key]
-
-
-@router.get("/events")
-async def events(request: Request, limit: int = 0):
-    """Server-sent events while the console is open: `alert` (a code word reached the desk) and `ticket` (created,
-    or its decision read back). `limit` closes the stream after that many events (for tests)."""
-    import asyncio
-
-    from fastapi.responses import StreamingResponse
-
-    from overheard.api.events import frame
-    bus = request.app.state.events
-
-    async def stream():
-        q = bus.subscribe()
-        sent = 0
-        try:
-            yield ": connected\n\n"
-            while not limit or sent < limit:
-                try:
-                    kind, data = await asyncio.wait_for(q.get(), timeout=15)
-                except TimeoutError:
-                    if await request.is_disconnected():
-                        break
-                    yield ": ping\n\n"         # keeps proxies (and cloudflared) from closing an idle stream
-                    continue
-                yield frame(kind, data)
-                sent += 1
-        finally:
-            bus.unsubscribe(q)
-    return StreamingResponse(stream(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.get("/junk")
@@ -372,6 +320,8 @@ def reopen_junk(mid: str, request: Request) -> dict:
         request.app.state.mode2 = request.app.state.mode2_messages = None
     return {"reopened": mid}
 
+
+# ---- tickets (Mode 2 on): the desk, revealing the day, decisions; code-word alerts
 
 def desk(request: Request):
     """The ticket desk (pipeline/tickets.py): problem check, team proposal from memory, the workflow sink."""
@@ -472,6 +422,86 @@ def alerts(request: Request, mode: int = 1) -> dict:
     return {"alerts": found, "illustrative": tl.illustrative, "note": tl.note}
 
 
+# ---- retro search (Mode 3, "Overlooked before today") and server-sent events
+
+class RetroDefinition(BaseModel):
+    description: str
+    examples: list[str] = []
+    since: str
+    until: str
+    team: str | None = None
+    origin: str = "analyst"
+
+
+def retro_suggestion(request: Request) -> dict | None:
+    """A problem definition offered from today's spike, or None on a day with no spike."""
+    from overheard.pipeline.retro import suggest
+    incidents = mode2_day(request)["incidents"]
+    if not incidents:
+        return None
+    by = {v.id: v for v in voicemails(request)}
+    inc = incidents[0]
+    return suggest(inc, [by[m] for m in inc["members"] if m in by], request.app.state.today)
+
+
+@router.get("/retro")
+def retro_suggest(request: Request) -> dict:
+    """Mode 3's "Overlooked before today": the definition offered from today's spike (the analyst can change it)."""
+    return {"suggested": retro_suggestion(request)}
+
+
+@router.post("/retro")
+def retro(request: Request, body: RetroDefinition | None = None) -> dict:
+    """Search the archive for past contacts that were this problem but were overlooked. With no body, the definition
+    offered from today's spike. On demand only; each definition is searched once."""
+    from overheard.llm.run import run_task
+    from overheard.pipeline.retro import search
+    d = body.model_dump() if body else retro_suggestion(request)
+    if d is None:
+        raise HTTPException(400, "no spike today to start from: give a definition")
+    key = json.dumps(d, sort_keys=True)
+    cache = request.app.state.retro
+    if key not in cache:
+        dp = deps(request)
+        cache[key] = search(con(request), d, lambda task: run_coro(run_task(dp.provider, task, dp.model, dp.store,
+                                                                            write=dp.write)))
+    return cache[key]
+
+
+@router.get("/events")
+async def events(request: Request, limit: int = 0):
+    """Server-sent events while the console is open: `alert` (a code word reached the desk) and `ticket` (created,
+    or its decision read back). `limit` closes the stream after that many events (for tests)."""
+    import asyncio
+
+    from fastapi.responses import StreamingResponse
+
+    from overheard.api.events import frame
+    bus = request.app.state.events
+
+    async def stream():
+        q = bus.subscribe()
+        sent = 0
+        try:
+            yield ": connected\n\n"
+            while not limit or sent < limit:
+                try:
+                    kind, data = await asyncio.wait_for(q.get(), timeout=15)
+                except TimeoutError:
+                    if await request.is_disconnected():
+                        break
+                    yield ": ping\n\n"         # keeps proxies (and cloudflared) from closing an idle stream
+                    continue
+                yield frame(kind, data)
+                sent += 1
+        finally:
+            bus.unsubscribe(q)
+    return StreamingResponse(stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ---- Mode 1: saved analysis, corrections, accuracy
+
 @router.post("/analysis/{mid}")
 async def save_analysis(mid: str, request: Request, force: bool = False) -> dict:
     """Run (or re-run) the whole task set on one message and persist the bundle."""
@@ -564,6 +594,8 @@ def accuracy(request: Request) -> dict:
     return {"messages": n, **acc, "corrections": total_corrections}
 
 
+# ---- Mode 0: case lookup, manual entries, assumptions, the simulation
+
 @router.get("/lookup")
 def lookup(q: str, request: Request) -> list[Case]:
     return MockCaseBackend(con(request)).search(q)[:20]
@@ -634,6 +666,8 @@ def simulation(request: Request, mode: int = 0) -> Simulation:
     return work_the_queue(vms, order, a, today, frozenset(approve))
 
 
+# ---- Mode 2: incidents, resolutions (approve a reply), the Mode 2 scoreboard
+
 @router.get("/incidents")
 def incidents(request: Request) -> list[dict]:
     """The day's spike incidents: the alert time, the lead time and the card
@@ -695,6 +729,8 @@ def get_scoreboard2(request: Request) -> dict:
     bundles = {v.id: analyze_sync(v, d) for v in vms}
     return scoreboard2(vms, bundles, Mode2Deps(d.con, d.store, d.provider, d.model, write=d.write))
 
+
+# ---- Mode 3: the archive views
 
 @router.get("/archive/root-causes")
 def get_archive_root_causes(request: Request) -> dict:

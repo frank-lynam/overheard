@@ -17,7 +17,7 @@ from openai import AsyncOpenAI
 
 from overheard.config import Settings
 from overheard.llm.cache import ResponseStore
-from overheard.llm.provider import Task
+from overheard.llm.provider import Task, per_loop
 
 log = logging.getLogger("overheard.llm")
 
@@ -32,13 +32,23 @@ def _json_schema(task: Task) -> dict[str, Any]:
 class OpenAICompatProvider:
     name = "live"
 
+    @property
+    def client(self):
+        """This event loop's client (see per_loop), unless one was set (the tests' fakes)."""
+        return self.__dict__.get("_client") or self._clients.get(self._make)
+
+    @client.setter
+    def client(self, value) -> None:
+        self._client = value
+
     def __init__(self, settings: Settings, store: ResponseStore | None = None, record: bool = False) -> None:
         if not settings.llm_base_url:
             raise ValueError(f"OVERHEARD_LLM_BASE_URL is required for llm_mode={settings.llm_mode}")
         if not settings.llm_api_key:
             raise ValueError(f"OVERHEARD_LLM_API_KEY is required for llm_mode={settings.llm_mode}")
-        self.client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key.get_secret_value(),
-                                  timeout=settings.llm_timeout)
+        self._make = lambda: AsyncOpenAI(base_url=settings.llm_base_url,
+                                         api_key=settings.llm_api_key.get_secret_value(), timeout=settings.llm_timeout)
+        self._clients = per_loop()
         self.model = settings.llm_model or "gpt-4o-mini"
         self.store = store
         self.record = record

@@ -8,9 +8,9 @@ Overheard replays one day of voicemail at a fictional federal call center, the
 | Mode | What you see |
 | --- | --- |
 | **0 · No AI** | Today's way: an agent listens to every message, oldest first, and types it up. |
-| **1 · Obvious AI** | Every message read for you: a summary, the details, how urgent it is, who should handle it, a translation and a suggested reply. People check and correct it. |
-| **2 · Non-obvious AI** | The day connected: an outage spotted from the first few callers, answers found in the case record, deadlines caught, repeat callers combined. |
-| **3 · Impossible without AI** | Three years of calls read at once: why people call, what letters set the phones ringing, early warnings that were missed, questions no help article answers. |
+| **1 · Obvious AI** | Every message read for you: a summary, the details, how urgent it is, who should handle it, a translation and a suggested reply. Robocalls, scams and silence are kept out before anyone listens, and code words ("shut off", "senator") put a call in front of a person at once. People check and correct it. |
+| **2 · Non-obvious AI** | The day connected: an outage spotted from the first few callers, answers found in the case record, deadlines caught, repeat callers combined, and the policies or notices that apply, quoted from the caller. Each real problem becomes a ticket for the team routing memory proposes, and a person's correction teaches the next proposal. |
+| **3 · Impossible without AI** | Three years of calls read at once: why people call, what letters set the phones ringing, early warnings that were missed, questions no help article answers, and the callers who had today's problem weeks before anyone knew. |
 
 A scoreboard plays out the day in each mode and shows what changes: when the
 caller in real hardship is reached, how many deadline-bound requests are met,
@@ -65,4 +65,20 @@ then serves those answers with no network at all, for a demo that can't be
 surprised. `OVERHEARD_DB_PATH`, `OVERHEARD_HOST` and
 `OVERHEARD_PORT` set where the data lives and where it listens.
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the design.
+## Tickets in hearthboard
+
+By default tickets go to a board inside Overheard. To file them in a real
+[hearthboard](https://github.com/frank-lynam/hearthboard) (0.2.0 or later), one
+project per team, run `python tools/demo_board.py` from a checkout: it sets the
+board up and prints the two settings to export, `OVERHEARD_WORKFLOW_URL` and
+`OVERHEARD_WORKFLOW_TOKEN`. Tickets then arrive as proposals in the proposed
+team's project; accepting, moving or declining them there is read back within
+seconds, and a move changes the next similar proposal.
+
+## Working on it
+
+`pip install -e '.[dev]'`, then `pytest` (offline, no model) and `ruff check`.
+`python tools/rehearse_offline.py` records the demo's whole walk and replays it
+with the network cut, failing on any answer that isn't in the store.
+[CLAUDE.md](CLAUDE.md) has the code map and the decisions not to drift from;
+[docs/DESIGN.md](docs/DESIGN.md) has the design and the demo script.

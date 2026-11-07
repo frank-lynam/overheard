@@ -35,23 +35,41 @@ A demo application that shows how AI streamlines call-center voicemail work for 
 - **Config:** pydantic-settings, `OVERHEARD_*` environment variables (`OVERHEARD_LLM_MODE`, `OVERHEARD_LLM_BASE_URL`, `OVERHEARD_LLM_API_KEY`, `OVERHEARD_LLM_MODEL`, `OVERHEARD_LLM_TIMEOUT`, `OVERHEARD_LLM_PROVIDER`, `OVERHEARD_AWS_REGION`, `OVERHEARD_LLM_EFFORT`, `OVERHEARD_LLM_TASK_MODELS`, `OVERHEARD_DB_PATH`, `OVERHEARD_SEED`, `OVERHEARD_HOST`, `OVERHEARD_PORT`, `OVERHEARD_WORKFLOW_URL`, `OVERHEARD_WORKFLOW_TOKEN`).
 - **Intake and tickets** (the review follow-up, Phases 6-10): voicemail goes through stages in order (`pipeline/intake.py`): [A] code-word triggers (plain code), [B] the junk filter (rules, then the LLM task `junk_classify`), then in Mode 2 the ticket desk (`pipeline/tickets.py`): [C] `problem_classify`, [D] applies triage (`pipeline/applies.py`: the rules in `data/applicability.json` in force when the call came in, retrieved, then `applies_triage`; an "applies" must quote the transcript or it becomes "unsure"), [E] team proposal from routing memory (`memory/`: mock hashed bag-of-words embeddings behind `EmbeddingProvider`, brute-force cosine) and `team_propose`, [F] a ticket through a `WorkflowSink` (`MockWorkflowSink`, or `HearthboardSink` when `OVERHEARD_WORKFLOW_URL` is set: proposals in the proposed team's hearthboard project), [G] the decision read back by polling, [H] into the memory. `tools/demo_board.py` sets up a local hearthboard with the team projects. Teams and which root causes they own: `data/teams.json`. The retro search ("Overlooked before today", `pipeline/retro.py`, `POST /api/retro`, Mode 3) runs on demand from a problem definition (offered from today's spike) and confirms candidates with `retro_match`; the seed plants 40 overlooked "error 4012" contacts for it (ids in `meta.overlooked`).
 
-## Repo layout
+## Code map
+
+Every module starts with a docstring saying what it is and where it sits; the big files have their own index
+(`grep -n '^# ----' src/overheard/api/routes.py`). Where things live:
 
 ```text
-pyproject.toml
 src/overheard/
-  cli.py  app.py  config.py
-  api/          queue, analysis, replay, incidents, archive, letter_lab, ask, settings
-  pipeline/     stages/, modes.py, runner.py
-  llm/          provider.py, openai_compat.py, mock.py, replay.py, cache.py, tasks/
-  adapters/     transcription/, backend/
-  data/         models.py, db.py, generator.py, templates.py, events.py, seed_today.json
-  analytics/    root_causes.py, event_impact.py, journeys.py, promises.py, equity.py
-  static/       index.html, css/, js/core/, js/ui/, js/charts/
-fixtures/
-tests/
-.github/workflows/  ci.yml, publish.yml
-docs/DESIGN.md
+  cli.py            the `overheard` command: serve, seed, record, batch-label (not built yet)
+  app.py            FastAPI app: state on app.state, the warm-up thread, the hearthboard decision poll, static files
+  config.py         Settings (OVERHEARD_* variables)
+  triggers.py       code words ([A]): the list and the scan
+  api/routes.py     every /api route, in sections (shared helpers, queue, junk, tickets, retro and events, Modes 0-3)
+  api/events.py     the server-sent event bus (`alert`, `ticket`)
+  llm/              provider.py (Protocol, build_provider, per-task models, per_loop), run.py (the runner: cache,
+                    validate, retry, fallback), mock.py (answers from the truth), openai_compat.py,
+                    anthropic_provider.py (Claude API, Bedrock), replay.py, cache.py (the response store),
+                    record.py (`overheard record`, demo_sequence), tasks/ (one module per LLM task)
+  pipeline/         analyze.py (Mode 1 bundle), intake.py + junk.py ([A], [B]), mode2.py + groups.py + incidents.py
+                    + resolution.py + flags.py (Mode 2), tickets.py ([C]-[H], the Desk), applies.py ([D]),
+                    retro.py (Overlooked before today), simulate.py (Work the queue)
+  memory/           embed.py (hashed bag-of-words), store.py (routing memory: build, weigh, record, holdout)
+  workflow/sink.py  WorkflowSink: MockWorkflowSink, HearthboardSink
+  analytics/        Mode 3 views over the archive: root_causes, events, journeys, promises, equity, letter_lab,
+                    ask, knowledge_gaps, weak_signals, staffing
+  adapters/backend/ the case system: Protocol and mock
+  data/             models.py, db.py, generator.py (`overheard seed`), templates.py, events.py, and the JSON:
+                    seed_today.json (built by tools/build_seed_today.py), teams.json, triggers.json,
+                    junk_rules.json, applicability.json
+  static/           index.html, present.html, css/app.css (sections marked /* --- */), js/main.js (entry),
+                    js/core/ (api, store, format, tip, words), js/ui/ (queue, message, context, scoreboard,
+                    mode3), js/charts/pareto.js, js/present.js
+tools/              build_seed_today.py, contrast.py (WCAG check), demo_board.py (local hearthboard),
+                    rehearse_offline.py (record, then replay with the network cut)
+tests/              one file per area (test_mode0..3, test_tickets, test_applies, test_retro, test_events, ...)
+docs/DESIGN.md      the design, the build phases and the demo script
 ```
 
 ## Build order (stop and demo after each phase)
@@ -62,6 +80,8 @@ docs/DESIGN.md
 4. **Mode 2** — similarity grouping (TF-IDF or host embeddings), spike detection + incident card, tool-use lookups for resolution without callback, callback brief, deadline-bound detection with keyword backstop and deadline clocks, repeat-caller linking, missing-info recovery, callback windows. **MVP gate: Modes 0–2 run end to end.**
 5. **Mode 3** — root-cause Pareto with cost model first, then event impact, journeys, promises, equity, letter lab, ask-the-archive, knowledge gaps.
 6. **Release and rehearsal** — presenter mode, publish workflow (GitHub release → PyPI via trusted publishing), record fixtures against the live host, offline dry run in replay mode.
+
+All six are built (0.1.x). The review follow-up (`~/workspace/20261106.overheard.md`, Phases 6-10: code words, the junk filter, routing memory and tickets, applies triage, the retro search, recording the demo walk; plus Claude and Bedrock providers and server-sent events) is built too (0.2.0).
 
 ## Packaging and release
 

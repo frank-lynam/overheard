@@ -77,3 +77,17 @@ def test_an_openai_format_gateway_with_a_user_key(tmp_path, mode, schema_ok):
         assert bool(list(tmp_path.glob("*.json"))) == (mode == "record")
     finally:
         srv.shutdown()
+
+
+def test_calls_from_separate_event_loops(tmp_path):
+    """The app runs each call in an event loop of its own: a client kept from an earlier loop must not be reused."""
+    srv, seen = gateway(True)
+    try:
+        s = Settings(llm_mode="live", llm_base_url=f"http://127.0.0.1:{srv.server_port}/v1", llm_api_key=KEY,
+                     llm_model="gov-claude")
+        p = build_provider(s, ResponseStore(tmp_path))
+        for _ in range(3):
+            r = asyncio.run(run_task(p, task(), "gov-claude"))
+            assert r.provenance == "llm"
+    finally:
+        srv.shutdown()

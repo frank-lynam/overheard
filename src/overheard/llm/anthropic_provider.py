@@ -20,7 +20,7 @@ import logging
 from typing import Any
 
 from overheard.config import Settings
-from overheard.llm.provider import Task
+from overheard.llm.provider import Task, per_loop
 
 log = logging.getLogger("overheard.llm")
 
@@ -42,7 +42,8 @@ class AnthropicProvider:
             if not settings.aws_region:
                 raise ValueError("OVERHEARD_AWS_REGION is required for OVERHEARD_LLM_PROVIDER=bedrock")
             from anthropic import AsyncAnthropicBedrockMantle
-            self.client = AsyncAnthropicBedrockMantle(aws_region=settings.aws_region, timeout=settings.llm_timeout)
+            self._make = lambda: AsyncAnthropicBedrockMantle(aws_region=settings.aws_region,
+                                                              timeout=settings.llm_timeout)
             self.model = settings.llm_model or f"anthropic.{DEFAULT_MODEL}"
         else:
             from anthropic import AsyncAnthropic
@@ -51,9 +52,20 @@ class AnthropicProvider:
                 kw["api_key"] = settings.llm_api_key.get_secret_value()
             if settings.llm_base_url:
                 kw["base_url"] = settings.llm_base_url
-            self.client = AsyncAnthropic(**kw)
+            self._make = lambda: AsyncAnthropic(**kw)
             self.model = settings.llm_model or DEFAULT_MODEL
         self.effort = settings.llm_effort
+        self._clients = per_loop()
+        self.client_type = type(self._make()).__name__     # built once here, so bad settings fail at startup
+
+    @property
+    def client(self):
+        """This event loop's client (see per_loop), unless one was set (the tests' fakes)."""
+        return self.__dict__.get("_client") or self._clients.get(self._make)
+
+    @client.setter
+    def client(self, value) -> None:
+        self._client = value
 
     def request(self, task: Task, model: str) -> dict[str, Any]:
         """The Messages API request for a task (separate, so the tests can check it without a network)."""

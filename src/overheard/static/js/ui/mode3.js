@@ -1,3 +1,7 @@
+// Mode 3: the archive views, one renderer each (main.js's tabs and present.js's slides both use them).
+// In order: root causes (the Pareto), event impact, journeys, promises, equity, the letter lab, ask the archive,
+// knowledge gaps, weak signals, the staffing forecast, and "Overlooked before today" (the retro search).
+
 // Mode 3, view 1: why people call — the archive's time by root cause, the Pareto.
 import { api } from "../core/api.js";
 import { renderPareto, fmtHours } from "../charts/pareto.js";

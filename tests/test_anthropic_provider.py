@@ -63,7 +63,7 @@ def test_bedrock_uses_the_mantle_client_in_its_region():
     with pytest.raises(ValueError, match="AWS_REGION"):
         AnthropicProvider(Settings(llm_provider="bedrock"), bedrock=True)
     p = AnthropicProvider(Settings(llm_provider="bedrock", aws_region="us-gov-west-1"), bedrock=True)
-    assert type(p.client).__name__ == "AsyncAnthropicBedrockMantle" and p.model == "anthropic.claude-opus-5-5"
+    assert p.client_type == "AsyncAnthropicBedrockMantle" and p.model == "anthropic.claude-opus-5-5"
     plain, beta = fake(p)
     asyncio.run(p.complete(task(), ""))
     assert plain.calls[0]["model"] == "anthropic.claude-opus-5-5" and "fallbacks" not in plain.calls[0]

@@ -33,6 +33,24 @@ class Task(BaseModel):
     context: str | None = None
 
 
+class per_loop:
+    """One SDK client per event loop. The app runs each LLM call to its end in an event loop of its own (sync
+    routes, worker threads: `run_coro`), and an async HTTP client's pooled connections belong to the loop that
+    opened them: reused from another loop, the call fails ("Event loop is closed"). Clients of finished loops go
+    with them (weak keys)."""
+
+    def __init__(self) -> None:
+        import weakref
+        self._by_loop: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+
+    def get(self, make):
+        import asyncio
+        loop = asyncio.get_running_loop()
+        if loop not in self._by_loop:
+            self._by_loop[loop] = make()
+        return self._by_loop[loop]
+
+
 @runtime_checkable
 class LLMProvider(Protocol):
     name: str
